@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class AbstractShrMemLoader(ABC):
-  def __init__(self, matrix, num_active_threads, load_and_transpose=False):
+  def __init__(self, matrix, num_active_threads, manufacturer, load_and_transpose=False):
     self.matrix = matrix
     self.num_active_threads = num_active_threads
     self.out_symbol = "ShrMat{}".format(self.matrix.name)
@@ -10,6 +10,7 @@ class AbstractShrMemLoader(ABC):
     self.shm_size = None
     self.lid_dim = None
     self.manual_unroll_threshold = 3
+    self.manufacturer = manufacturer
 
   @abstractmethod
   def compute_shared_mem_size(self):
