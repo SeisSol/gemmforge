@@ -4,6 +4,7 @@ from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .loaders import shm_mem_factory, StubLoader
+from .arch_dictionary import arch_dictionary_factory
 import math
 import hashlib
 
@@ -12,24 +13,17 @@ class GemmGenerator(GemmLikeGenerator):
     """ Generates GEMM GPU kernels: C = alpha * A * B + beta * C
   """
 
-    def __init__(self, arch, precision):
-        super(GemmGenerator, self).__init__(arch, precision)
+    def __init__(self, arch_name, precision):
+        super(GemmGenerator, self).__init__(arch_name, precision)
         self.mat_a = None
         self.mat_b = None
         self.mat_c = None
         self.mat_a_loader = None
         self.mat_b_loader = None
-        self.TEAM_INDEX_STR = None
-        self.name_threadIdx_y = None
-        self.name_threadIdx_x = None
-        if arch.manufacturer == "nvidia":
-            self.TEAM_INDEX_STR = "(threadIdx.y + blockDim.y * blockIdx.x)"
-            self.name_threadIdx_y = "threadIdx.y"
-            self.name_threadIdx_x = "threadIdx.x"
-        elif arch.manufacturer == "amd":
-            self.TEAM_INDEX_STR = "(hipThreadIdx_y + hipBlockDim_y * hipBlockIdx_x)"
-            self.name_threadIdx_y = "hipThreadIdx_y"
-            self.name_threadIdx_x = "hipThreadIdx_x"
+        self.arch_dictionary = arch_dictionary_factory(arch_name.manufacturer)
+        self.TEAM_INDEX_STR = self.arch_dictionary.get_tid_counter()
+        self.name_threadIdx_y = self.arch_dictionary.get_thread_idx_y()
+        self.name_threadIdx_x = self.arch_dictionary.get_thread_idx_x()
 
     def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
         self.mat_a = mat_a
@@ -200,14 +194,11 @@ class GemmGenerator(GemmLikeGenerator):
             with file.Function(self.base_name, self._get_func_params()):
                 file.VariableDeclaration("dim3", self._get_block_dim_spec())
                 file.VariableDeclaration("dim3", self._get_grid_dim_spec())
-                if self.arch.manufacturer == "nvidia":
-                    krnl_launch_param = "<<<Grid,Block>>>"
-                    file.Expression("kernel_{}{}({})".format(self.base_name,
-                                                             krnl_launch_param,
-                                                             self._get_func_args()))
-                elif self.arch.manufacturer == "amd":
-                    file.Expression("hipLaunchKernelGGL({}, Grid, Block, 0, 0, {})".format(self.base_name,
-                                                                                           self._get_func_args()))
+                file.Expression(self.arch_dictionary.get_launch_code(self.base_name, 
+                                                                     "Grid", 
+                                                                     "Block", 
+                                                                     self._get_func_args()))
+
                 file.Expression("CHECK_ERR")
             self._launcher = src.getvalue()
 
