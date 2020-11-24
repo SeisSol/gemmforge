@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 
 
 class AbstractArchDictionary(ABC):
+    """
+    You can use this abstract class to add a dictionary for any manufacturer for variables like e.g. threadIdx.x for
+    CUDA that are used by the generators and loaders
+    """
 
     def __init__(self):
         self.threadIdx_x = None
