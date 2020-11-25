@@ -160,9 +160,9 @@ path = os.path.join(dir_name, "test.cpp")
 with open(path, 'w') as file:
     file.write(tests_code.getvalue())
 
-if args.manufacturer == "nvidia":
+if arch.manufacturer == "nvidia":
     path = os.path.join(dir_name, "kernels.cu")
-elif args.manufacturer == "amd":
+elif arch.manufacturer == "amd":
     path = os.path.join(dir_name, "kernels.cpp")
 else:
     print("Manufacturer not supported, could not write kernel file")
