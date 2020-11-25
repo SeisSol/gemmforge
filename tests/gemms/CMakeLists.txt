@@ -149,6 +149,7 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
                       "generating compute kernels"
                     WORKING_DIRECTORY
                       ${CMAKE_SOURCE_DIR})
+endif()
 
 add_custom_target(copy_params ALL
                   cmake -E copy ${CMAKE_BINARY_DIR}/${TEST_SUITE} ${CMAKE_BINARY_DIR}
