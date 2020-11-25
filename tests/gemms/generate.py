@@ -16,7 +16,7 @@ parser.add_argument("-m",
                     action="store",
                     help="Name of the Manufacturer, currently nvidia and amd are supported",
                     default="nvidia")
-parser.add_argument("-s",
+parser.add_argument("-a",
                     "--sub_arch",
                     action="store",
                     help="Sub_arch of the GPU, e.g sm_60 for Nvidia or gfx906 for AMD",
