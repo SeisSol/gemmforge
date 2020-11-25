@@ -4,7 +4,7 @@ from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .loaders import shm_mem_factory, StubLoader
-from .arch_dictionary import arch_dictionary_factory
+from .arch_lexicon import arch_lexicon_factory
 import math
 import hashlib
 
@@ -13,17 +13,20 @@ class GemmGenerator(GemmLikeGenerator):
     """ Generates GEMM GPU kernels: C = alpha * A * B + beta * C
   """
 
-    def __init__(self, arch_name, precision):
-        super(GemmGenerator, self).__init__(arch_name, precision)
+    def __init__(self, arch, precision):
+        super(GemmGenerator, self).__init__(arch, precision)
         self.mat_a = None
         self.mat_b = None
         self.mat_c = None
         self.mat_a_loader = None
         self.mat_b_loader = None
-        self.arch_dictionary = arch_dictionary_factory(arch_name.manufacturer)
-        self.TEAM_INDEX_STR = self.arch_dictionary.get_tid_counter()
-        self.name_threadIdx_y = self.arch_dictionary.get_thread_idx_y()
-        self.name_threadIdx_x = self.arch_dictionary.get_thread_idx_x()
+        self.arch_lexicon = arch_lexicon_factory(arch.manufacturer)
+        # For better readability for the remaining code
+        self.TEAM_INDEX_STR = self.arch_lexicon.get_tid_counter(self.arch_lexicon.get_thread_idx_y(),
+                                                                self.arch_lexicon.get_block_dim_y(),
+                                                                self.arch_lexicon.get_block_idx_x())
+        self.name_threadIdx_y = self.arch_lexicon.get_thread_idx_y()
+        self.name_threadIdx_x = self.arch_lexicon.get_thread_idx_x()
 
     def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
         self.mat_a = mat_a
@@ -194,10 +197,10 @@ class GemmGenerator(GemmLikeGenerator):
             with file.Function(self.base_name, self._get_func_params()):
                 file.VariableDeclaration("dim3", self._get_block_dim_spec())
                 file.VariableDeclaration("dim3", self._get_grid_dim_spec())
-                file.Expression(self.arch_dictionary.get_launch_code(self.base_name, 
+                file.Expression(self.arch_lexicon.get_launch_code(self.base_name,
                                                                      "Grid", 
-                                                                     "Block", 
-                                                                     self._get_func_args()))
+                                                                     "Block",
+                                                                  self._get_func_args()))
 
                 file.Expression("CHECK_ERR")
             self._launcher = src.getvalue()
