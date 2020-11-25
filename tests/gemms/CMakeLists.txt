@@ -128,7 +128,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} gpu_part)
 if(${DEVICE_BACKEND} STREQUAL "CUDA")
   add_custom_target(gpu_generator ALL
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate.py
-                              --specfile=${CMAKE_BINARY_DIR}/${TEST_SUITE} --realsize=${REAL_SIZE} --manufacturer ${MANUFACTURER} --sub_arch ${SUB_ARCH}
+                              --specfile=${CMAKE_BINARY_DIR}/${TEST_SUITE} --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SUB_ARCH}
                     BYPRODUCTS
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.cu
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.h
