@@ -27,7 +27,7 @@ else:
     raise ValueError("Floating point size must be either 4 or 8")
 
 
-arch = arch.produce("nvidia")
+arch = arch.produce("nvidia", "sm_61")
 generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
 stream = open(args.specfile, 'r')
 suites = yaml.safe_load(stream)["test_suites"]
