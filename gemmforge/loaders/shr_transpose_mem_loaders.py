@@ -29,7 +29,7 @@ class ExtendedTransposePatchLoader(AbstractShrMemLoader):
         self.shm_volume = optimal_num_cols * self.matrix.num_rows
         self.lid_dim = optimal_num_cols
         # For better readability
-        self.name_treadIdx_x = self.arch_lexicon.get_thread_idx_x()
+        self.name_treadIdx_x = self.arch_lexic.get_thread_idx_x()
 
     def compute_shared_mem_size(self):
         return self.shm_volume

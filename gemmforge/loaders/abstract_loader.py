@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..arch_lexicon import arch_lexicon_factory
+from ..arch_lexic import arch_lexic_factory
 
 
 class AbstractShrMemLoader(ABC):
@@ -11,7 +11,7 @@ class AbstractShrMemLoader(ABC):
         self.shm_size = None
         self.lid_dim = None
         self.manual_unroll_threshold = 3
-        self.arch_lexicon = arch_lexicon_factory(manufacturer)
+        self.arch_lexic = arch_lexic_factory(manufacturer)
 
     @abstractmethod
     def compute_shared_mem_size(self):
