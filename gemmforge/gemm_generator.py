@@ -4,7 +4,7 @@ from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .loaders import shm_mem_factory, StubLoader
-from .arch_lexicon import arch_lexicon_factory
+from .arch_lexic import arch_lexic_factory
 import math
 import hashlib
 
@@ -20,13 +20,13 @@ class GemmGenerator(GemmLikeGenerator):
         self.mat_c = None
         self.mat_a_loader = None
         self.mat_b_loader = None
-        self.arch_lexicon = arch_lexicon_factory(arch.manufacturer)
+        self.arch_lexic = arch_lexic_factory(arch.manufacturer)
         # For better readability for the remaining code
-        self.TEAM_INDEX_STR = self.arch_lexicon.get_tid_counter(self.arch_lexicon.get_thread_idx_y(),
-                                                                self.arch_lexicon.get_block_dim_y(),
-                                                                self.arch_lexicon.get_block_idx_x())
-        self.name_threadIdx_y = self.arch_lexicon.get_thread_idx_y()
-        self.name_threadIdx_x = self.arch_lexicon.get_thread_idx_x()
+        self.TEAM_INDEX_STR = self.arch_lexic.get_tid_counter(self.arch_lexic.get_thread_idx_y(),
+                                                              self.arch_lexic.get_block_dim_y(),
+                                                              self.arch_lexic.get_block_idx_x())
+        self.name_threadIdx_y = self.arch_lexic.get_thread_idx_y()
+        self.name_threadIdx_x = self.arch_lexic.get_thread_idx_x()
 
     def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
         self.mat_a = mat_a
@@ -197,10 +197,10 @@ class GemmGenerator(GemmLikeGenerator):
             with file.Function(self.base_name, self._get_func_params()):
                 file.VariableDeclaration("dim3", self._get_block_dim_spec())
                 file.VariableDeclaration("dim3", self._get_grid_dim_spec())
-                file.Expression(self.arch_lexicon.get_launch_code(self.base_name,
+                file.Expression(self.arch_lexic.get_launch_code(self.base_name,
                                                                      "Grid", 
                                                                      "Block",
-                                                                  self._get_func_args()))
+                                                                self._get_func_args()))
 
                 file.Expression("CHECK_ERR")
             self._launcher = src.getvalue()
