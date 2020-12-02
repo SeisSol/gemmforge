@@ -47,7 +47,8 @@ tests_code = StringIO()
 
 with constructs.Cpp(StringIO()) as file:
     file.Include("gemmgen_aux.h")
-    file.Include("hip/hip_runtime.h")
+    if arch.manufacturer == "amd":
+        file.Include("hip/hip_runtime.h")
     src.write(file.stream.getvalue())
 
 with constructs.Cpp(StringIO()) as file:
