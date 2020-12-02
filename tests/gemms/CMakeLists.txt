@@ -117,6 +117,8 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
 
   hip_add_library(gpu_part STATIC ${SOURCE_FILES} HIPCC_OPTIONS ${HIPCC_FLAGS} HCC_OPTIONS ${HCC_FLAGS} NVCC_OPTIONS ${NVCC_FLAGS})
 
+  target_link_libraries(gpu_part PUBLIC ${HIP_PATH}/lib/libamdhip64.so)
+
 endif()
 
 
