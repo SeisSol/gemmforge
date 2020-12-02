@@ -107,7 +107,7 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
                    include/gemmgen_aux.cpp
                    gen_code/kernels.cpp)
 
-  set(HIPCC_FLAGS -DREAL_SIZE=${REAL_SIZE_IN_BYTES}; -std=c++11; -O3)
+  set(HIPCC_FLAGS -DREAL_SIZE=${REAL_SIZE}; -std=c++11; -O3)
   set(HCC_FLAGS)
   set(NVCC_FLAGS)
 
