@@ -48,8 +48,8 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
 
   set(HIPCC_FLAGS -DREAL_SIZE=${REAL_SIZE_IN_BYTES}; 
                   -std=c++11; 
-                  -O3; 
-                  -res-usage)
+                  -O3) 
+                  #-res-usage)
   set(HCC_FLAGS)
   set(NVCC_FLAGS)
 
