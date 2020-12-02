@@ -55,6 +55,7 @@ with constructs.Cpp(StringIO()) as file:
     file.Include("gemm_driver.h")
     file.Include("kernels.h")
     file.Include("gemm.h")
+    file.Include("hip/hip_runtime.h")
     file.Expression("using namespace gemmgen::reference")
     file.Emptyline()
     tests_code.write(file.stream.getvalue())
