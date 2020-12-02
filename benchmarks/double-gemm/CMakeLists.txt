@@ -4,13 +4,13 @@ project(double-gemm)
 set(REAL_SIZE "4" CACHE STRING "size of the floating point data type")
 set_property(CACHE REAL_SIZE PROPERTY STRINGS "8" "4")
 
-set(SM_ARCH "sm_61" CACHE STRING "size of the floating point data type")
+set(SM_ARCH "gfx906" CACHE STRING "size of the floating point data type")
 set_property(CACHE SM_ARCH PROPERTY STRINGS "sm_60" "sm_61" "sm_70" "sm_71")
 
 set(REFERENCE_IMPL "GEMMGEN" CACHE STRING "size of the floating point data type")
 set_property(CACHE REFERENCE_IMPL PROPERTY STRINGS "GEMMGEN" "OPENBLAS")
 
-set(DEVICE_BACKEND "CUDA" CACHE STRING "type of an interface")
+set(DEVICE_BACKEND "HIP" CACHE STRING "type of an interface")
 set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS "CUDA" "HIP")
 
 set(MANUFACTURER "")
@@ -89,10 +89,10 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
                    include/gemmgen_aux.cpp
                    gen_code/kernels.cpp)
 
-  set(HIPCC_FLAGS -DREAL_SIZE=${REAL_SIZE_IN_BYTES}; 
+  set(HIPCC_FLAGS -DREAL_SIZE=${REAL_SIZE}; 
                   -std=c++11; 
                   -O3;
-                  -res-usage;
+                  #-res-usage;
                   -lineinfo)
   set(HCC_FLAGS)
   set(NVCC_FLAGS)
@@ -102,6 +102,8 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
   set_source_files_properties(${SOURCE_FILES} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
 
   hip_add_library(gpu_part STATIC ${SOURCE_FILES} HIPCC_OPTIONS ${HIPCC_FLAGS} HCC_OPTIONS ${HCC_FLAGS} NVCC_OPTIONS ${NVCC_FLAGS})
+  
+  target_link_libraries(gpu_part PUBLIC ${HIP_PATH}/lib/libamdhip64.so)
 
 endif()
 
@@ -129,7 +131,7 @@ if(${DEVICE_BACKEND} STREQUAL "CUDA")
 
   add_custom_target(gpu_generator ALL
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate.py
-                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SUB_ARCH}
+                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SM_ARCH}
                     BYPRODUCTS
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.cu
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.h
@@ -142,7 +144,7 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
 
   add_custom_target(gpu_generator ALL
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate.py
-                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SUB_ARCH}
+                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SM_ARCH}
                     BYPRODUCTS
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.cpp
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.h
