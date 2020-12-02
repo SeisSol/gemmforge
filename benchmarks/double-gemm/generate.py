@@ -79,6 +79,8 @@ try:
 
     with open(path, 'w') as file:
         file.write("#include \"gemmgen_aux.h\"\n")
+        if arch.manufacturer == "amd":
+            file.write("#include \"hip/hip_runtime.h\"\n")
         for kernel in kernels:
             file.write(kernel)
             print(kernel)
