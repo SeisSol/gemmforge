@@ -133,7 +133,7 @@ if(${DEVICE_BACKEND} STREQUAL "CUDA")
 
   add_custom_target(gpu_generator ALL
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate.py
-                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SUB_ARCH}
+                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SM_ARCH}
                     BYPRODUCTS
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.cu
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.h
@@ -146,7 +146,7 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
 
   add_custom_target(gpu_generator ALL
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate.py
-                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SUB_ARCH}
+                              --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SM_ARCH}
                     BYPRODUCTS
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.cpp
                       ${CMAKE_SOURCE_DIR}/gen_code/kernels.h
