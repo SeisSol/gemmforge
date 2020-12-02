@@ -62,7 +62,7 @@ try:
     with open(path, 'w') as file:
         file.write("#include \"gemmgen_aux.h\"\n")
         if arch.manufacturer == "amd":
-            file.write("#include hip/hip_runtime.h")
+            file.write("#include \"hip/hip_runtime.h\"\n")
         file.write(krnl)
         file.write(lnch)
 
