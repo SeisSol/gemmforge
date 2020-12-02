@@ -1,6 +1,7 @@
 #include "aux.h"
 #include "simple_driver.h"
 #include "gemmgen_aux.h"
+#include "hip/hip_runtime.h"
 #include <sstream>
 #include <iostream>
 
