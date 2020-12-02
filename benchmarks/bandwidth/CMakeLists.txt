@@ -40,8 +40,8 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
   else()
     message(FATAL_ERROR "Could not find HIP. Ensure that HIP is either installed in /opt/rocm/hip or the variable HIP_PATH is set to point to the right location.")
   endif()
-
-  set(HIP_COMPILER hcc)
+  #Do NOT set this if you make an executable
+  #set(HIP_COMPILER hcc)
 
   set(SOURCE_FILES global.cpp
                    include/gemmgen_aux.cpp)
