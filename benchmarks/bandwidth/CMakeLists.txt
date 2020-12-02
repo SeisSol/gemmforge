@@ -46,8 +46,7 @@ elseif(${DEVICE_BACKEND} STREQUAL "HIP")
   set(SOURCE_FILES global.cpp
                    include/gemmgen_aux.cpp)
 
-  set(HIPCC_FLAGS -DREAL_SIZE=${REAL_SIZE_IN_BYTES}; 
-                  -std=c++11; 
+  set(HIPCC_FLAGS -std=c++11; 
                   -O3) 
                   #-res-usage)
   set(HCC_FLAGS)
