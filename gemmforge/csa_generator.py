@@ -4,12 +4,14 @@ from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .initializers import initializer_factory, StubInitializer
+from .arch_lexic import arch_lexic_factory
 import math
 import hashlib
 from copy import deepcopy
 
 
 class CsaGenerator(GemmLikeGenerator):
+  
   TEAM_INDEX_STR = "(threadIdx.z + blockDim.z * blockIdx.x)"
 
   """ Copy-Add-Scale Generator: B = beta * B + alpha * A, where alpha is a real number

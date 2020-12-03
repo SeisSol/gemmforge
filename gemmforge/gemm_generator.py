@@ -4,131 +4,139 @@ from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .loaders import shm_mem_factory, StubLoader
+from .arch_lexic import arch_lexic_factory
 import math
 import hashlib
 
 
 class GemmGenerator(GemmLikeGenerator):
-  """ Generates GEMM GPU kernels: C = alpha * A * B + beta * C
+    """ Generates GEMM GPU kernels: C = alpha * A * B + beta * C
   """
-  TEAM_INDEX_STR = "(threadIdx.y + blockDim.y * blockIdx.x)"
 
-  def __init__(self, arch, precision):
-    super(GemmGenerator, self).__init__(arch, precision)
-    self.mat_a = None
-    self.mat_b = None
-    self.mat_c = None
-    self.mat_a_loader = None
-    self.mat_b_loader = None
+    def __init__(self, arch, precision):
+        super(GemmGenerator, self).__init__(arch, precision)
+        self.mat_a = None
+        self.mat_b = None
+        self.mat_c = None
+        self.mat_a_loader = None
+        self.mat_b_loader = None
+        self.arch_lexic = arch_lexic_factory(arch.manufacturer)
+        # For better readability for the remaining code
+        self.TEAM_INDEX_STR = self.arch_lexic.get_tid_counter(self.arch_lexic.get_thread_idx_y(),
+                                                              self.arch_lexic.get_block_dim_y(),
+                                                              self.arch_lexic.get_block_idx_x())
+        self.name_threadIdx_y = self.arch_lexic.get_thread_idx_y()
+        self.name_threadIdx_x = self.arch_lexic.get_thread_idx_x()
 
-  def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
-    self.mat_a = mat_a
-    self.mat_a._set_name('A')
-    self.mat_a._set_mutability(False)
+    def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
+        self.mat_a = mat_a
+        self.mat_a._set_name('A')
+        self.mat_a._set_mutability(False)
 
-    self.mat_b = mat_b
-    self.mat_b._set_name('B')
-    self.mat_b._set_mutability(False)
+        self.mat_b = mat_b
+        self.mat_b._set_name('B')
+        self.mat_b._set_mutability(False)
 
-    self.mat_c = mat_c
-    self.mat_c._set_name('C')
-    self.mat_c._set_mutability(True)
-    self._matrices = [self.mat_a, self.mat_b, self.mat_c]
+        self.mat_c = mat_c
+        self.mat_c._set_name('C')
+        self.mat_c._set_mutability(True)
+        self._matrices = [self.mat_a, self.mat_b, self.mat_c]
 
-    self.alpha = alpha
-    self.beta = beta
+        self.alpha = alpha
+        self.beta = beta
 
-    self.base_name = base_name if base_name is not None else self._generate_base_name()
+        self.base_name = base_name if base_name is not None else self._generate_base_name()
 
-    self._check()
-    self._analyze()
+        self._check()
+        self._analyze()
 
-    self._generate_kernel()
-    self._generate_header()
-    self._generate_launcher()
+        self._generate_kernel()
+        self._generate_header()
+        self._generate_launcher()
 
-  def _generate_kernel(self):
-    glob_symbols = {}
-    for matrix in [self.mat_a, self.mat_b, self.mat_c]:
-      glob_symbols[matrix.name] = "GlobMat{}".format(matrix.name)
+    def _generate_kernel(self):
+        glob_symbols = {}
+        for matrix in [self.mat_a, self.mat_b, self.mat_c]:
+            glob_symbols[matrix.name] = "GlobMat{}".format(matrix.name)
 
-    current_symbols = {}
+        current_symbols = {}
 
-    src = StringIO()
-    with constructs.Cpp(src) as file:
+        src = StringIO()
+        with constructs.Cpp(src) as file:
 
-      max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
-      kernel_bounds = [max_num_threads_per_block]
-      with file.Kernel(self.base_name, self._get_func_params(), kernel_bounds):
-        with file.If("{} < {}".format(GemmGenerator.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
+            max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
+            kernel_bounds = [max_num_threads_per_block]
+            with file.Kernel(self.base_name, self._get_func_params(), kernel_bounds):
+                with file.If("{} < {}".format(self.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
 
-          # declare ptrs for correct matrices
-          file.VariableDeclaration("const {}*".format(self.precision),
-                                   glob_symbols[self.mat_a.name],
-                                   self._get_global_matrix_ptr(self.mat_a))
+                    # declare ptrs for correct matrices
+                    file.VariableDeclaration("const {}*".format(self.precision),
+                                             glob_symbols[self.mat_a.name],
+                                             self._get_global_matrix_ptr(self.mat_a))
 
-          file.VariableDeclaration("const {}*".format(self.precision),
-                                   glob_symbols[self.mat_b.name],
-                                   self._get_global_matrix_ptr(self.mat_b))
+                    file.VariableDeclaration("const {}*".format(self.precision),
+                                             glob_symbols[self.mat_b.name],
+                                             self._get_global_matrix_ptr(self.mat_b))
 
-          file.VariableDeclaration("{}*".format(self.precision),
-                                   glob_symbols[self.mat_c.name],
-                                   self._get_global_matrix_ptr(self.mat_c))
+                    file.VariableDeclaration("{}*".format(self.precision),
+                                             glob_symbols[self.mat_c.name],
+                                             self._get_global_matrix_ptr(self.mat_c))
 
-          # declare shared memory per kernel
-          file.Expression("__shared__ {} Scratch[{}]".format(self.precision,
-                                                             self._get_total_shared_mem_size()))
+                    # declare shared memory per kernel
+                    file.Expression("__shared__ {} Scratch[{}]".format(self.precision,
+                                                                       self._get_total_shared_mem_size()))
 
-          # find address of matrix B within block shared memory
-          shr_mem_address = "&Scratch[threadIdx.y * {}]".format(self.shr_mem_size_per_mult)
-          file.VariableDeclaration("{}*".format(self.precision),
-                                   self.mat_b_loader.get_output_symbol(),
-                                   shr_mem_address)
+                    # find address of matrix B within block shared memory
+                    shr_mem_address = "&Scratch[{} * {}]".format(self.name_threadIdx_y, self.shr_mem_size_per_mult)
+                    file.VariableDeclaration("{}*".format(self.precision),
+                                             self.mat_b_loader.get_output_symbol(),
+                                             shr_mem_address)
 
-          if self.mat_a.transpose:
-            # find address of matrix A within block shared memory
-            shr_mem_offset = self.mat_b_loader.compute_shared_mem_size()
-            shr_mem_address = "&Scratch[threadIdx.y * {} + {}]".format(self.shr_mem_size_per_mult,
-                                                                       shr_mem_offset)
-            file.VariableDeclaration("{}*".format(self.precision),
-                                     self.mat_a_loader.get_output_symbol(),
-                                     shr_mem_address)
+                    if self.mat_a.transpose:
+                        # find address of matrix A within block shared memory
+                        shr_mem_offset = self.mat_b_loader.compute_shared_mem_size()
+                        shr_mem_address = "&Scratch[{} * {} + {}]".format(self.name_threadIdx_y,
+                                                                          self.shr_mem_size_per_mult,
+                                                                          shr_mem_offset)
+                        file.VariableDeclaration("{}*".format(self.precision),
+                                                 self.mat_a_loader.get_output_symbol(),
+                                                 shr_mem_address)
 
-          # load matrices into shared memory
-          self.mat_b_loader.generate_scr(file, glob_symbols[self.mat_b.name])
-          self.mat_a_loader.generate_scr(file, glob_symbols[self.mat_a.name])
-          file.Expression("__syncthreads()")
+                    # load matrices into shared memory
+                    self.mat_b_loader.generate_scr(file, glob_symbols[self.mat_b.name])
+                    self.mat_a_loader.generate_scr(file, glob_symbols[self.mat_a.name])
+                    file.Expression("__syncthreads()")
 
-          # set up current compute symbols within the rest of the scope
-          current_symbols[self.mat_b.name] = self.mat_b_loader.get_output_symbol()
-          current_symbols[self.mat_a.name] = self.mat_a_loader.get_output_symbol()
-          file.Emptyline()
+                    # set up current compute symbols within the rest of the scope
+                    current_symbols[self.mat_b.name] = self.mat_b_loader.get_output_symbol()
+                    current_symbols[self.mat_a.name] = self.mat_a_loader.get_output_symbol()
+                    file.Emptyline()
 
-          with file.If("threadIdx.x < {}".format(self.num_compute_threads)):
-            # allocate a buffer for each cuda thread to hold computed results
-            file.Emptyline()
-            zero_fp_value = "0.0{}".format('f' if self.precision == "float" else '')
-            file.ArrayDeclaration(self.precision,
-                                  "Results",
-                                  [zero_fp_value] * self.mat_c.get_actual_num_cols())
+                    with file.If("{} < {}".format(self.name_threadIdx_x, self.num_compute_threads)):
+                        # allocate a buffer for each cuda thread to hold computed results
+                        file.Emptyline()
+                        zero_fp_value = "0.0{}".format('f' if self.precision == "float" else '')
+                        file.ArrayDeclaration(self.precision,
+                                              "Results",
+                                              [zero_fp_value] * self.mat_c.get_actual_num_cols())
 
-            file.VariableDeclaration(self.precision, "Value")
+                        file.VariableDeclaration(self.precision, "Value")
 
+                        # perform matrix multiplication
+                        # m, n, k - according to the BLAS documentation. Read BLAS spec.
+                        if self.mat_a.transpose:
+                            contraction_length = self.mat_a.get_actual_num_rows()
+                        else:
+                            contraction_length = self.mat_a.get_actual_num_cols()
 
-            # perform matrix multiplication
-            # m, n, k - according to the BLAS documentation. Read BLAS spec.
-            if self.mat_a.transpose:
-              contraction_length = self.mat_a.get_actual_num_rows()
-            else:
-              contraction_length = self.mat_a.get_actual_num_cols()
+                        file.Emptyline()
+                        with file.For("int k = 0; k < {}; ++k".format(contraction_length)):
+                            first_operand = "{}[{} + {} * k]".format(current_symbols[self.mat_a.name],
+                                                                     self.name_threadIdx_x,
+                                                                     self.mat_a_loader.get_lid_dim())
+                            file.Assignment("Value", "{}".format(first_operand))
 
-            file.Emptyline()
-            with file.For("int k = 0; k < {}; ++k".format(contraction_length)):
-              first_operand = "{}[threadIdx.x + {} * k]".format(current_symbols[self.mat_a.name],
-                                                                self.mat_a_loader.get_lid_dim())
-              file.Assignment("Value", "{}".format(first_operand))
-
-              """
+                            """
               # EXPEREMENTAL
               # perform prefetch if possible
               if self.mat_a.addressing != 'none' and isinstance(self.mat_a_loader, StubLoader):
@@ -136,38 +144,139 @@ class GemmGenerator(GemmLikeGenerator):
                 # AND
                 # it is going to reside on global memory without loading into the shared memory
                 # (in case of matrix 'a' is transposed)
-                next_addrs = "{} + threadIdx.x + {} * (k + 1)".format(current_symbols[self.mat_a.name],
-                                                                      self.mat_a_loader.get_lid_dim())
+                next_addrs = "{} + {} + {} * (k + 1)".format(current_symbols[self.mat_a.name],
+                                                             self.name_threadIdx_x,
+                                                            self.mat_a_loader.get_lid_dim())
                 file.Expression(f'asm(" prefetch.global.L2 [ %0 ];" : : "l"({next_addrs}))')
               """
 
-              file.Emptyline()
-              file.Pragma("unroll")
-              with file.For("int n = 0; n < {}; ++n".format(self.mat_c.get_actual_num_cols())):
+                            file.Emptyline()
+                            file.Pragma("unroll")
+                            with file.For("int n = 0; n < {}; ++n".format(self.mat_c.get_actual_num_cols())):
+                                if self.mat_b.transpose:
+                                    second_operand = "{}[n + {} * k]".format(current_symbols[self.mat_b.name],
+                                                                             self.mat_b_loader.get_lid_dim())
+                                else:
+                                    second_operand = "{}[k + {} * n]".format(current_symbols[self.mat_b.name],
+                                                                             self.mat_b_loader.get_lid_dim())
+
+                                file.Accumulate("Results[n]",
+                                                "Value * {}".format(second_operand))
+
+                        # write results back to memory
+                        file.Emptyline()
+                        file.Pragma("unroll")
+                        with file.For("int n = 0; n < {}; ++n".format(self.mat_c.get_actual_num_cols())):
+                            rhs = "{}[{} + {} * n]".format(glob_symbols[self.mat_c.name],
+                                                           self.name_threadIdx_x,
+                                                           self.mat_c.num_rows)
+
+                            if self.alpha == 1.0:
+                                lhs = "Results[n]"
+                            else:
+                                if self.precision == "float" and isinstance(self.alpha, float):
+                                    lhs = f'{self.alpha}f * Results[n]'
+                                else:
+                                    lhs = f'{self.alpha} * Results[n]'
+
+                            if self.beta != 0.0:
+                                if self.beta == 1.0:
+                                    lhs += " + {}".format(rhs)
+                                else:
+                                    lhs += " + {} * {}".format(
+                                        "{}{}".format(self.beta, 'f' if self.precision == "float" else ''),
+                                        rhs)
+
+                            file.Assignment(rhs, lhs)
+
+            self._kernel = src.getvalue()
+
+    def _generate_launcher(self):
+        src = StringIO()
+        with constructs.Cpp(src) as file:
+            with file.Function(self.base_name, self._get_func_params()):
+                file.VariableDeclaration("dim3", self._get_block_dim_spec())
+                file.VariableDeclaration("dim3", self._get_grid_dim_spec())
+                file.Expression(self.arch_lexic.get_launch_code(self.base_name,
+                                                                     "Grid", 
+                                                                     "Block",
+                                                                self._get_func_args()))
+
+                file.Expression("CHECK_ERR")
+            self._launcher = src.getvalue()
+
+    def _generate_header(self):
+        src = StringIO()
+        with constructs.Cpp(src) as file:
+            file.FunctionDeclaration(self.base_name, self._get_func_params())
+            content = src.getvalue()
+        self._header = content
+
+    def _check(self):
+        try:
+            # make sure that C is not transposed
+            if self.mat_c.transpose:
+                raise GenerationError("Cannot generate a matrix multiplication. "
+                                      "Matrix C is transposed")
+
+            # check whether C and A match each other
+            if self.mat_a.transpose:
+                if self.mat_c.get_actual_num_rows() != self.mat_a.get_actual_num_cols():
+                    raise GenerationError("Cannot generate a matrix multiplication "
+                                          "with given parameters. Matrix C and A (Trans) do not match")
+            else:
+                if self.mat_c.get_actual_num_rows() != self.mat_a.get_actual_num_rows():
+                    raise GenerationError("Cannot generate a matrix multiplication "
+                                          "with given parameters. Matrix C and A (NoTrans) do not match")
+
+            # check whether C and B match each other
+            if self.mat_b.transpose:
+                if self.mat_c.get_actual_num_cols() != self.mat_b.get_actual_num_rows():
+                    raise GenerationError("Cannot generate a matrix multiplication "
+                                          "with given parameters. Matrix C and B (Trans) do not match")
+            else:
+                if self.mat_c.get_actual_num_cols() != self.mat_b.get_actual_num_cols():
+                    raise GenerationError("Cannot generate a matrix multiplication "
+                                          "with given parameters. Matrix C and B (NoTrans) do not match")
+
+            # check whether A and B match each other
+            if self.mat_a.transpose:
                 if self.mat_b.transpose:
-                  second_operand = "{}[n + {} * k]".format(current_symbols[self.mat_b.name],
-                                                           self.mat_b_loader.get_lid_dim())
+                    if self.mat_a.get_actual_num_rows() != self.mat_b.get_actual_num_cols():
+                        raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
+                                              "Matrix A (Trans) and B (Trans) do not match")
                 else:
-                  second_operand = "{}[k + {} * n]".format(current_symbols[self.mat_b.name],
-                                                           self.mat_b_loader.get_lid_dim())
-
-                file.Accumulate("Results[n]",
-                                "Value * {}".format(second_operand))
-
-            # write results back to memory
-            file.Emptyline()
-            file.Pragma("unroll")
-            with file.For("int n = 0; n < {}; ++n".format(self.mat_c.get_actual_num_cols())):
-              rhs = "{}[threadIdx.x + {} * n]".format(glob_symbols[self.mat_c.name],
-                                                        self.mat_c.num_rows)
-
-              if self.alpha == 1.0:
-                lhs = "Results[n]"
-              else:
-                if self.precision == "float" and isinstance(self.alpha, float):
-                  lhs = f'{self.alpha}f * Results[n]'
+                    if self.mat_a.get_actual_num_rows() != self.mat_b.get_actual_num_rows():
+                        raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
+                                              "Matrix A (Trans) and B (NoTrans) do not match")
+            else:
+                if self.mat_b.transpose:
+                    if self.mat_a.get_actual_num_cols() != self.mat_b.get_actual_num_cols():
+                        raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
+                                              "Matrix A (NoTrans) and B (Trans) do not match")
                 else:
-                  lhs = f'{self.alpha} * Results[n]'
+                    if self.mat_a.get_actual_num_cols() != self.mat_b.get_actual_num_rows():
+                        raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
+                                              "Matrix A (NoTrans) and B (NoTrans) do not match")
+
+        except GenerationError as error:
+            matrices = {"A": self.mat_a, "B": self.mat_b, "C": self.mat_c}
+            for name in matrices:
+                print("Matrix {}:".format(name))
+                print(matrices[name])
+                print("=" * 80)
+
+            raise error
+
+    def _estimate_num_registers_per_mult(self, contraction_length):
+        factor = GemmGenerator.PRECISION_TO_BYTES[self.precision] / 4
+        return factor * (32 + contraction_length)
+
+    def _analyze(self):
+        if self.mat_a.transpose:
+            lid_dim_length = self.mat_a.get_actual_num_cols()
+        else:
+            lid_dim_length = self.mat_a.get_actual_num_rows()
 
               if self.beta != 0.0:
                 if self.beta == 1.0:
@@ -239,15 +348,13 @@ class GemmGenerator(GemmLikeGenerator):
             raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
                                   "Matrix A (Trans) and B (Trans) do not match")
         else:
-          if self.mat_a.get_actual_num_rows() != self.mat_b.get_actual_num_rows():
-            raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
-                                  "Matrix A (Trans) and B (NoTrans) do not match")
-      else:
+            dim1 = "m{}_{}".format(self.mat_a.get_actual_num_rows(), self.mat_a.num_rows)
+            dim3 = "k{}".format(self.mat_a.get_actual_num_cols())
+
         if self.mat_b.transpose:
-          if self.mat_a.get_actual_num_cols() != self.mat_b.get_actual_num_cols():
-            raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
-                                  "Matrix A (NoTrans) and B (Trans) do not match")
+            dim2 = "n{}_{}".format(self.mat_b.get_actual_num_rows(), self.mat_b.num_rows)
         else:
+
           if self.mat_a.get_actual_num_cols() != self.mat_b.get_actual_num_rows():
             raise GenerationError("Cannot generate a matrix multiplication with given parameters. "
                                   "Matrix A (NoTrans) and B (NoTrans) do not match")
