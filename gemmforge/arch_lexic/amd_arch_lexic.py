@@ -11,6 +11,7 @@ class AmdArchLexic(AbstractArchLexic):
         self.blockIdx_x = "hipBlockIdx_x"
         self.blockDim_y = "hipBlockDim_y"
         self.blockDim_z = "hipBlockDim_z"
+        self.stream_name = "hipStream_t"
 
-    def get_launch_code(self, func_name, grid, block, func_params):
-        return "hipLaunchKernelGGL(kernel_{}, {}, {}, 0, 0, {})".format(func_name, grid, block, func_params)
+    def get_launch_code(self, func_name, grid, block, stream, func_params):
+        return "hipLaunchKernelGGL(kernel_{}, {}, {}, 0, {}, {})".format(func_name, grid, block, stream, func_params)

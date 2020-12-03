@@ -14,6 +14,7 @@ class AbstractArchLexic(ABC):
         self.blockDim_y = None
         self.blockDim_z = None
         self.blockIdx_x = None
+        self.stream_name = None
 
     def get_tid_counter(self, thread_id, block_dim, block_id):
         return "(" + thread_id + " + " + block_dim + " * " + block_id + ")"
@@ -35,6 +36,9 @@ class AbstractArchLexic(ABC):
 
     def get_block_idx_x(self):
         return self.blockIdx_x
+
+    def get_stream_name(self):
+        return self.stream_name
 
     @abstractmethod
     def get_launch_code(self, func_name, grid, block, func_params):
