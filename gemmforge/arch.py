@@ -67,6 +67,8 @@ def produce(name, sub_name):
             max_vec_units_per_cu = 64
             # sharedMemPerBlock
             max_local_mem_size_per_workgroup = 64 * KB
+        else:
+            raise ValueError(f'Given amd CU model is not supported. Provided: {sub_name}')
 
         return Architecture(amd_wavefront,
                             max_local_mem_size_per_workgroup,
