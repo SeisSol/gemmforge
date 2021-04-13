@@ -1,6 +1,7 @@
 from .matrix import DenseMatrix
 from .arch import produce
 from .gemm_generator import GemmGenerator
+from .sycl_gemm_generator import SyclGemmGenerator
 from .csa_generator import CsaGenerator
 from .triad_generator import TriadGenerator
 from .interfaces import YatetoInterface

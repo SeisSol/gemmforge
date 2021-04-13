@@ -192,6 +192,13 @@ class Cpp:
         else:
             return Block(self, '__global__ void kernel_{}({})'.format(name, arguments))
 
+    def SyclKernel(self, name, arguments='', kernel_bounds=None):
+
+        l1 = "inline void kernel_{}(queue stream, range<3> group_count, range<3> group_size, {})".format(name, arguments)
+        l2 = "stream.submit([&](handler &cgh)"
+        l3 = "cgh.parallel_for(nd_range<3>{{group_count.x * group_size.x, group_count.y * group_size.y, group_count.z * group_size.z}, group_size}, [=](nd_item<3> item)"
+        return MultiBlock(self, [l1, l2, l3], ["", ");", ");"])
+
     def FunctionDeclaration(self, name, arguments=''):
         return self.__call__('void {}({});'.format(name, arguments))
 
@@ -205,7 +212,7 @@ class Cpp:
         return Block(self, 'TEST_F({},{})'.format(suite_name, test_name))
 
     def Pragma(self, name):
-        return  self.__call__("#pragma {}".format(name))
+        return self.__call__("#pragma {}".format(name))
 
     def ClassDeclaration(self, name):
         return self.__call__('class {};'.format(name))

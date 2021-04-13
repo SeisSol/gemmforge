@@ -89,5 +89,13 @@ def produce(name, sub_name):
                             max_workgroup_per_cu,
                             name)
 
+    elif name == "sycl":
+        return Architecture(32,
+                            64 * KB,
+                            1024,
+                            512 * KB,
+                            64,
+                            40,
+                            name)
     else:
         raise ValueError('Unknown gpu architecture')
