@@ -2,7 +2,7 @@ import os
 import yaml
 import argparse
 
-from gemmforge import DenseMatrix, GemmGenerator, GenerationError
+from gemmforge import DenseMatrix, GemmGenerator, GenerationError, SyclGemmGenerator
 from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
@@ -37,7 +37,11 @@ else:
         raise ValueError("Floating point size must be either 4 or 8")
 
 arch = arch.produce(args.manufacturer, args.sub_arch)
-generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
+if arch.manufacturer == "sycl":
+    generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
+else:
+    generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
+
 stream = open(args.specfile, 'r')
 suites = yaml.safe_load(stream)["test_suites"]
 
@@ -49,6 +53,8 @@ with constructs.Cpp(StringIO()) as file:
     file.Include("gemmgen_aux.h")
     if arch.manufacturer == "amd":
         file.Include("hip/hip_runtime.h")
+    elif arch.manufacturer == "sycl":
+        file.Include("CL/sycl.hpp")
     src.write(file.stream.getvalue())
 
 with constructs.Cpp(StringIO()) as file:
@@ -164,7 +170,7 @@ with open(path, 'w') as file:
 
 if arch.manufacturer == "nvidia":
     path = os.path.join(dir_name, "kernels.cu")
-elif arch.manufacturer == "amd":
+elif arch.manufacturer == "amd" or arch.manufacturer == "sycl":
     path = os.path.join(dir_name, "kernels.cpp")
 else:
     print("Manufacturer not supported, could not write kernel file")

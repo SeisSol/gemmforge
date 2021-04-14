@@ -140,11 +140,11 @@ class SyclGemmGenerator(GemmGenerator):
         src = StringIO()
         with constructs.Cpp(src) as file:
             with file.Function(self.base_name, self._get_launcher_params()):
-                file.VariableDeclaration("range<3>", self._get_block_dim_spec())
-                file.VariableDeclaration("range<3>", self._get_grid_dim_spec())
+                file.VariableDeclaration("cl::sycl::range<3>", self._get_block_dim_spec())
+                file.VariableDeclaration("cl::sycl::range<3>", self._get_grid_dim_spec())
 
-                stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()}>({Generator.STREAM_PTR_STR})'
-                file(f'{self.arch_lexic.get_stream_name()} stream = {stream_obj};')
+                stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()} *>({Generator.STREAM_PTR_STR})'
+                file(f'{self.arch_lexic.get_stream_name()} *stream = {stream_obj};')
 
                 file.Expression(self.arch_lexic.get_launch_code(self.base_name,
                                                                 "Grid",
