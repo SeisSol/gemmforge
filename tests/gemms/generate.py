@@ -38,7 +38,7 @@ else:
 
 arch = arch.produce(args.manufacturer, args.sub_arch)
 if arch.manufacturer == "sycl":
-    generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
+    generator = SyclGemmGenerator(arch, "float" if args.realsize == 4 else "double")
 else:
     generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
 
