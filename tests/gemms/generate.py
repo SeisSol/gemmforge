@@ -134,7 +134,6 @@ for suite in suites:
                     args = ", ".join(args)
                     file.Expression("{}({})".format(generator.get_base_name(), args))
 
-                    file.Expression("throw std::invalid_argument(\"here\");")
 
                     args = ["TransA", "TransB", "M", "N", "K"]
                     args.extend(["alpha", "&HostA[OffsetA], Lda"])

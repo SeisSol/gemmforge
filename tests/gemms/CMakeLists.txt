@@ -76,7 +76,7 @@ target_include_directories(gpu_part PRIVATE include
                                             common
                                             common/test_drivers)
 
-target_link_libraries(${CMAKE_PROJECT_NAME} gpu_part)
+target_link_libraries(${CMAKE_PROJECT_NAME} gpu_part -lpthread)
 
 if(${DEVICE_BACKEND} STREQUAL "CUDA")
   add_custom_target(gpu_generator ALL
