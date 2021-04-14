@@ -9,8 +9,8 @@ class SyclArchLexic(AbstractArchLexic):
         self.threadIdx_x = "item.get_local_id(0)"
         self.threadIdx_z = "item.get_local_id(2)"
         self.blockIdx_x = "item.get_group().get_id(0)"
-        self.blockDim_y = "item.get_group().get_id(1)"
-        self.blockDim_z = "item.get_group().get_id(2)"
+        self.blockDim_y = "item.get_group().get_local_range(1)"
+        self.blockDim_z = "item.get_group().get_local_range(2)"
         self.stream_name = "cl::sycl::queue"
 
     def get_launch_code(self, func_name, grid, block, stream, func_params):

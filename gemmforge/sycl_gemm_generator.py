@@ -25,7 +25,8 @@ class SyclGemmGenerator(GemmGenerator):
 
             max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
             kernel_bounds = [max_num_threads_per_block]
-            with file.SyclKernel(self.base_name, self._get_func_params(), kernel_bounds):
+            local_mem = "cl::sycl::accessor<{}, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> Scratch ({}, cgh);".format(self.precision, self._get_total_shared_mem_size())
+            with file.SyclKernel(self.base_name, self._get_func_params(), kernel_bounds, local_mem):
                 with file.If("{} < {}".format(self.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
 
                     # declare ptrs for correct matrices
@@ -40,11 +41,6 @@ class SyclGemmGenerator(GemmGenerator):
                     file.VariableDeclaration("{}*".format(self.precision),
                                              glob_symbols[self.mat_c.name],
                                              self._get_global_matrix_ptr(self.mat_c))
-
-                    # declare shared memory per kernel
-                    # ToDo: can shared memory be declared within the kernel or is it rather the blocks local memory?
-                    file.Expression("{} Scratch[{}]".format(self.precision,
-                                                                       self._get_total_shared_mem_size()))
 
                     # find address of matrix B within block shared memory
                     shr_mem_address = "&Scratch[{} * {}]".format(self.name_threadIdx_y, self.shr_mem_size_per_mult)
@@ -150,9 +146,19 @@ class SyclGemmGenerator(GemmGenerator):
                 file(f'{self.arch_lexic.get_stream_name()} *stream = {if_stream_exists} ? {stream_obj} : &defaultQueue;')
 
                 file.Expression(self.arch_lexic.get_launch_code(self.base_name,
-                                                                "Grid",
-                                                                "Block",
+                                                                "blocks",
+                                                                "threads",
                                                                 "stream",
                                                                 self._get_func_args()))
+                file.Expression("stream->wait()");
             self._launcher = src.getvalue()
 
+    def _get_block_dim_spec(self):
+        super(GemmGenerator, self)._get_block_dim_spec()
+        return f'threads{{{self.num_active_threads}, {self.num_mult_per_block}, 1}}'
+
+    def _get_grid_dim_spec(self):
+        super(GemmGenerator, self)._get_grid_dim_spec()
+        num_blocks = "({0} + {1} - 1) / {1}".format(Generator.NUM_ELEMENTS_STR,
+                                                    self.num_mult_per_block)
+        return f'blocks{{{num_blocks}, 1, 1}}'
