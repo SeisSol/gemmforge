@@ -143,8 +143,11 @@ class SyclGemmGenerator(GemmGenerator):
                 file.VariableDeclaration("cl::sycl::range<3>", self._get_block_dim_spec())
                 file.VariableDeclaration("cl::sycl::range<3>", self._get_grid_dim_spec())
 
+                file.Expression("cl::sycl::queue defaultQueue {cl::sycl::host_selector{}}")
+
+                if_stream_exists = f'({Generator.STREAM_PTR_STR} != nullptr)'
                 stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()} *>({Generator.STREAM_PTR_STR})'
-                file(f'{self.arch_lexic.get_stream_name()} *stream = {stream_obj};')
+                file(f'{self.arch_lexic.get_stream_name()} *stream = {if_stream_exists} ? {stream_obj} : &defaultQueue;')
 
                 file.Expression(self.arch_lexic.get_launch_code(self.base_name,
                                                                 "Grid",

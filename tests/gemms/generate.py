@@ -63,6 +63,7 @@ with constructs.Cpp(StringIO()) as file:
     file.Include("gemm_driver.h")
     file.Include("kernels.h")
     file.Include("gemm.h")
+    file.Include("iostream")
     file.Expression("using namespace gemmgen::reference")
     file.Emptyline()
     tests_code.write(file.stream.getvalue())
@@ -132,6 +133,8 @@ for suite in suites:
                     args.append("NumElements")
                     args = ", ".join(args)
                     file.Expression("{}({})".format(generator.get_base_name(), args))
+
+                    file.Expression("throw std::invalid_argument(\"here\");")
 
                     args = ["TransA", "TransB", "M", "N", "K"]
                     args.extend(["alpha", "&HostA[OffsetA], Lda"])
