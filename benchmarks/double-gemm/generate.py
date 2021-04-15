@@ -2,7 +2,7 @@ import os
 import yaml
 import argparse
 
-from gemmforge import DenseMatrix, GemmGenerator, GenerationError
+from gemmforge import DenseMatrix, GenerationError
 from gemmforge import arch
 
 parser = argparse.ArgumentParser()
@@ -53,7 +53,7 @@ try:
     launches = []
     headers = []
 
-    gen = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
+    gen = arch.get_gemm_generator_factory().create("float" if args.realsize == 4 else "double")
     gen.generate(mat_a, mat_b, tmp, 1.0, 0.0, base_name="callFirstGemm")
 
     kernels.append(gen.get_kernel())

@@ -1,10 +1,10 @@
-from . import constructs
+from gemmforge import constructs
 from io import StringIO
-from .exceptions import GenerationError
+from gemmforge.exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
-from .loaders import shm_mem_factory, StubLoader
-from .arch_lexic import arch_lexic_factory
+from gemmforge.loaders import shm_mem_factory, StubLoader
+from gemmforge.arch_lexic import arch_lexic_factory
 import math
 import hashlib
 

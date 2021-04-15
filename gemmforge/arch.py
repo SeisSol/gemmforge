@@ -1,3 +1,6 @@
+from gemmforge.generators import DefaultGemmGeneratorFactory, SyclGemmGeneratorFactory
+
+
 class Architecture:
     def __init__(self,
                  vec_unit_length,
@@ -14,6 +17,15 @@ class Architecture:
         self.max_threads_per_sm = max_threads_per_sm
         self.max_block_per_sm = max_block_per_sm
         self.manufacturer = name
+
+    def get_gemm_generator_factory(self):
+        return DefaultGemmGeneratorFactory(self)
+
+
+class SyclArchitecture(Architecture):
+    
+    def get_gemm_generator_factory(self):
+        return SyclGemmGeneratorFactory(self)
 
 
 def produce(name, sub_name):
@@ -49,9 +61,9 @@ def produce(name, sub_name):
                             name)
 
     elif name == "amd":
-        
+
         if sub_name in ['gfx906']:
-            #MI50
+            # MI50
             # warpSize equals a wavefront for AMD (Page 31 from
             # https://www.olcf.ornl.gov/wp-content/uploads/2019/10/ORNL_Application_Readiness_Workshop-AMD_GPU_Basics.pdf)
             amd_wavefront = 64
@@ -70,12 +82,12 @@ def produce(name, sub_name):
             # sharedMemPerBlock
             max_local_mem_size_per_workgroup = 64 * KB
         elif sub_name in ['gfx908']:
-            #MI100
+            # MI100
             amd_wavefront = 64
             max_reg_per_workgroup = 512 * KB
             max_num_threads = 1024
             max_workgroup_per_cu = 40
-            #Still 4 SIMD 16 Lanes Wide
+            # Still 4 SIMD 16 Lanes Wide
             max_vec_units_per_cu = 64
             max_local_mem_size_per_workgroup = 64 * KB
         else:
@@ -90,7 +102,7 @@ def produce(name, sub_name):
                             name)
 
     elif name == "sycl":
-        return Architecture(32,
+        return SyclArchitecture(32,
                             64 * KB,
                             1024,
                             512 * KB,

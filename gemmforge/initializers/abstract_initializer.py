@@ -1,4 +1,4 @@
-from ..abstract_generator import AbstractGenerator
+from gemmforge.generators.abstract_generator import AbstractGenerator
 from .. import constructs
 from io import StringIO
 import math

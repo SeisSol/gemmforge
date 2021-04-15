@@ -1,5 +1,5 @@
 from .abstract_initializer import ExactInitializer
-from ..abstract_generator import AbstractGenerator
+from gemmforge.generators.abstract_generator import AbstractGenerator
 
 
 class StubInitializer(AbstractGenerator):

@@ -1,4 +1,4 @@
-from gemmforge import DenseMatrix, GemmGenerator, GenerationError
+from gemmforge import DenseMatrix, GenerationError
 from gemmforge import arch
 import argparse
 
@@ -38,7 +38,7 @@ mat_c = DenseMatrix(num_rows=56,
                     transpose=False)
 
 try:
-    gen = GemmGenerator(arch, "float")
+    gen = arch.get_gemm_generator_factory().create("float")
     gen.generate(mat_a, mat_b, mat_c, alpha=1.1, beta=1.1)
     print(gen.get_kernel())
     print(gen.get_launcher())
