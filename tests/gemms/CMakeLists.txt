@@ -67,7 +67,7 @@ if(${DEVICE_BACKEND} STREQUAL "CUDA")
     include(nvidia.cmake)
 elseif(${DEVICE_BACKEND} STREQUAL "HIP")
     include(nvidia.cmake)
-elseif(${DEVICE_BACKEND} STREQUAL "ONEAPI")
+elseif((${DEVICE_BACKEND} STREQUAL "ONEAPI") OR (${DEVICE_BACKEND} STREQUAL "HIPSYCL"))
     include(sycl.cmake)
 endif()
 
@@ -90,7 +90,7 @@ if(${DEVICE_BACKEND} STREQUAL "CUDA")
                       "generating compute kernels"
                     WORKING_DIRECTORY
                       ${CMAKE_SOURCE_DIR})
-elseif((${DEVICE_BACKEND} STREQUAL "HIP") OR (${DEVICE_BACKEND} STREQUAL "ONEAPI"))
+elseif((${DEVICE_BACKEND} STREQUAL "HIP") OR (${DEVICE_BACKEND} STREQUAL "ONEAPI") OR (${DEVICE_BACKEND} STREQUAL "HIPSYCL"))
   add_custom_target(gpu_generator ALL
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate.py
                               --specfile=${CMAKE_BINARY_DIR}/${TEST_SUITE} --realsize=${REAL_SIZE} --manufacturer=${MANUFACTURER} --sub_arch=${SUB_ARCH}
