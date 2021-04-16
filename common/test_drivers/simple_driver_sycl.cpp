@@ -28,8 +28,8 @@ void TestDriver::SetUp() {
         testqueue = new cl::sycl::queue{cl::sycl::host_selector{}};
 
         this->m_DeviceMatA = (real *)cl::sycl::malloc_device(m_SizeMatA * m_NumElements * sizeof(real), *testqueue);
-        this->m_DeviceMatB = (real *)cl::sycl::malloc_device<real>(m_SizeMatB * m_NumElements * sizeof(real), *testqueue);
-        this->m_DeviceMatC = (real *)cl::sycl::malloc_device<real>(m_SizeMatC * m_NumElements * sizeof(real), *testqueue);
+        this->m_DeviceMatB = (real *)cl::sycl::malloc_device(m_SizeMatB * m_NumElements * sizeof(real), *testqueue);
+        this->m_DeviceMatC = (real *)cl::sycl::malloc_device(m_SizeMatC * m_NumElements * sizeof(real), *testqueue);
 
         testqueue->wait_and_throw();
 
@@ -51,8 +51,8 @@ void TestDriver::prepareData() {
         initMatrix(m_HostMatC, m_SizeMatC);
 
         testqueue->memcpy(m_DeviceMatA, m_HostMatA, m_SizeMatA * m_NumElements * sizeof(real));
-        testqueue->memcpy(m_DeviceMatB, m_HostMatB, m_SizeMatA * m_NumElements * sizeof(real));
-        testqueue->memcpy(m_DeviceMatC, m_HostMatC, m_SizeMatA * m_NumElements * sizeof(real));
+        testqueue->memcpy(m_DeviceMatB, m_HostMatB, m_SizeMatB * m_NumElements * sizeof(real));
+        testqueue->memcpy(m_DeviceMatC, m_HostMatC, m_SizeMatC * m_NumElements * sizeof(real));
         testqueue->wait_and_throw();
 
     } else {
