@@ -24,3 +24,6 @@ class SyclGemmGenerator(GemmGenerator):
 
     def synch_stream_pointer(self, stream):
         return f"{stream}->wait()"
+
+    def check_error(self):
+        return None
