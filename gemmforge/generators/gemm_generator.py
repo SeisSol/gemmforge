@@ -66,7 +66,7 @@ class GemmGenerator(GemmLikeGenerator):
 
             max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
             kernel_bounds = [max_num_threads_per_block]
-            with file.Kernel(self.base_name, self._get_func_params(), kernel_bounds):
+            with self.kernel_definition(file, kernel_bounds):
                 with file.If("{} < {}".format(self.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
 
                     # declare ptrs for correct matrices
@@ -83,8 +83,9 @@ class GemmGenerator(GemmLikeGenerator):
                                              self._get_global_matrix_ptr(self.mat_c))
 
                     # declare shared memory per kernel
-                    file.Expression("__shared__ {} Scratch[{}]".format(self.precision,
-                                                                       self._get_total_shared_mem_size()))
+                    mem = self.declare_shared_memory_inline("Scratch", self.precision, self._get_total_shared_mem_size())
+                    if mem is not None:
+                        file.Expression(mem)
 
                     # find address of matrix B within block shared memory
                     shr_mem_address = "&Scratch[{} * {}]".format(self.name_threadIdx_y, self.shr_mem_size_per_mult)
@@ -105,7 +106,8 @@ class GemmGenerator(GemmLikeGenerator):
                     # load matrices into shared memory
                     self.mat_b_loader.generate_scr(file, glob_symbols[self.mat_b.name])
                     self.mat_a_loader.generate_scr(file, glob_symbols[self.mat_a.name])
-                    file.Expression("__syncthreads()")
+                    file.Expression(self.sync_threads())
+
 
                     # set up current compute symbols within the rest of the scope
                     current_symbols[self.mat_b.name] = self.mat_b_loader.get_output_symbol()
@@ -135,20 +137,6 @@ class GemmGenerator(GemmLikeGenerator):
                                                                      self.name_threadIdx_x,
                                                                      self.mat_a_loader.get_lid_dim())
                             file.Assignment("Value", "{}".format(first_operand))
-
-                            """
-                            # EXPEREMENTAL
-                            # perform prefetch if possible
-                            if self.mat_a.addressing != 'none' and isinstance(self.mat_a_loader, StubLoader):
-                              # In other words, if matrix a is not going to be implicitly cached 
-                              # AND
-                              # it is going to reside on global memory without loading into the shared memory
-                              # (in case of matrix 'a' is transposed)
-                              next_addrs = "{} + threadIdx.x + {} * (k + 1)".format(current_symbols[self.mat_a.name],
-                                                                                    self.mat_a_loader.get_lid_dim())
-                              file.Expression(f'asm(" prefetch.global.L2 [ %0 ];" : : "l"({next_addrs}))')
-                            """
-
                             file.Emptyline()
                             file.Pragma("unroll")
                             with file.For("int n = 0; n < {}; ++n".format(self.mat_c.get_actual_num_cols())):
@@ -194,19 +182,23 @@ class GemmGenerator(GemmLikeGenerator):
         src = StringIO()
         with constructs.Cpp(src) as file:
             with file.Function(self.base_name, self._get_launcher_params()):
-                file.VariableDeclaration("dim3", self._get_block_dim_spec())
-                file.VariableDeclaration("dim3", self._get_grid_dim_spec())
+                file.VariableDeclaration(self.kernel_range_object(), self._get_block_dim_spec())
+                file.VariableDeclaration(self.kernel_range_object(), self._get_grid_dim_spec())
 
-                if_stream_exists = f'({Generator.STREAM_PTR_STR} != nullptr)'
-                stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()}>({Generator.STREAM_PTR_STR})'
-                file(f'{self.arch_lexic.get_stream_name()} stream = {if_stream_exists} ? {stream_obj} : 0;')
-
+                self.get_stream_via_pointer(file)
                 file.Expression(self.arch_lexic.get_launch_code(self.base_name,
                                                                 "Grid",
                                                                 "Block",
                                                                 "stream",
                                                                 self._get_func_args()))
-                file.Expression("CHECK_ERR")
+                sync = self.synch_stream_pointer("stream")
+                if sync is not None:
+                    file.Expression(sync)
+
+                err = self.check_error()
+                if err is not None:
+                    file.Expression(err)
+
             self._launcher = src.getvalue()
 
     def _generate_header(self):
@@ -411,3 +403,26 @@ class GemmGenerator(GemmLikeGenerator):
         else:
             sub_offset = matrix.get_offset_to_first_element()
             return "&{}[{} + {}]".format(matrix.name, sub_offset, extra_offset_symbol)
+
+    def declare_shared_memory_inline(self, name, precision, size):
+        return f"__shared__ {precision} {name}[{size}]"
+
+    def kernel_definition(self, file, kernel_bounds):
+        return file.Kernel(self.base_name, self._get_func_params(), kernel_bounds)
+
+    def sync_threads(self):
+        return "__syncthreads()"
+
+    def kernel_range_object(self):
+        return "dim3"
+
+    def get_stream_via_pointer(self, file):
+        if_stream_exists = f'({Generator.STREAM_PTR_STR} != nullptr)'
+        stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()}>({Generator.STREAM_PTR_STR})'
+        file(f'{self.arch_lexic.get_stream_name()} stream = {if_stream_exists} ? {stream_obj} : 0;')
+
+    def check_error(self):
+        return "CHECK_ERR"
+
+    def synch_stream_pointer(self, stream):
+        return None
