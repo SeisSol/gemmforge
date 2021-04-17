@@ -17,13 +17,11 @@ class SyclGemmGenerator(GemmGenerator):
         return "cl::sycl::range<3>"
 
     def get_stream_via_pointer(self, file):
-        file.Expression("cl::sycl::queue defaultQueue {cl::sycl::host_selector{}}")
-        if_stream_exists = f'({Generator.STREAM_PTR_STR} != nullptr)'
-        stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()} *>({Generator.STREAM_PTR_STR})'
-        file(f'{self.arch_lexic.get_stream_name()} *stream = {if_stream_exists} ? {stream_obj} : &defaultQueue;')
+        with file.If("streamPtr == nullptr"):
+            file.Expression("throw std::invalid_argument(\"stream may not be null!\")")
 
-    def synch_stream_pointer(self, stream):
-        return f"{stream}->wait()"
+        stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()} *>({Generator.STREAM_PTR_STR})'
+        file(f'{self.arch_lexic.get_stream_name()} *stream = {stream_obj};')
 
     def check_error(self):
         return None

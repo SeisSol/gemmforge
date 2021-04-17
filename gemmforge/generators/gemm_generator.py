@@ -191,10 +191,6 @@ class GemmGenerator(GemmLikeGenerator):
                                                                 "Block",
                                                                 "stream",
                                                                 self._get_func_args()))
-                sync = self.synch_stream_pointer("stream")
-                if sync is not None:
-                    file.Expression(sync)
-
                 err = self.check_error()
                 if err is not None:
                     file.Expression(err)
@@ -424,5 +420,3 @@ class GemmGenerator(GemmLikeGenerator):
     def check_error(self):
         return "CHECK_ERR"
 
-    def synch_stream_pointer(self, stream):
-        return None
