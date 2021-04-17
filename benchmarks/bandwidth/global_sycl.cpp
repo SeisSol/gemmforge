@@ -29,7 +29,7 @@ int main(int Argc, char *Argv[]) {
   float *To = nullptr;
   float *From = nullptr;
 
-  cl::sycl::queue q{cl::sycl::gpu_selector{}};
+  cl::sycl::queue q{cl::sycl::gpu_selector{}, cl::sycl::property::queue::in_order()};
 
   To = cl::sycl::malloc_device<float>(NumElements, q);
   From = cl::sycl::malloc_device<float>(NumElements, q);

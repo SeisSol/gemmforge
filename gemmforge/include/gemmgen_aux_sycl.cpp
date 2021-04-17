@@ -6,8 +6,11 @@ namespace gemmgen {
 
     }
 
-  void synchDevice() {
-    cl::sycl::queue{cl::sycl::host_selector{}}.wait_and_throw();
+  void synchDevice(void *stream) {
+      if(stream == nullptr)
+        throw std::invalid_argument("cant sync device without queue!");
+
+      ((cl::sycl::queue *)stream)->wait();
   }
 }
 
