@@ -25,7 +25,7 @@ void TestDriver::SetUp() {
         m_HostMatC = new real[m_SizeMatC * m_NumElements];
         m_ResultsFromDevice = new real[m_SizeMatC * m_NumElements];
 
-        testqueue = new cl::sycl::queue{cl::sycl::host_selector{}};
+        testqueue = new cl::sycl::queue{cl::sycl::gpu_selector{}, cl::sycl::property::queue::in_order()};
 
         this->m_DeviceMatA = (real *)cl::sycl::malloc_device(m_SizeMatA * m_NumElements * sizeof(real), *testqueue);
         this->m_DeviceMatB = (real *)cl::sycl::malloc_device(m_SizeMatB * m_NumElements * sizeof(real), *testqueue);
@@ -43,6 +43,9 @@ void TestDriver::SetUp() {
     }
 }
 
+void *TestDriver::getTestStream() {
+    return testqueue;
+}
 
 void TestDriver::prepareData() {
     if (m_IsSet) {

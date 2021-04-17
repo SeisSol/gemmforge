@@ -128,6 +128,8 @@ for suite in suites:
                     args.append("{}, 0".format("DeviceShuffledB" if mat_b.addressing == "pointer_based" else "DeviceB"))
                     args.append("{}, 0".format("DeviceShuffledC" if mat_c.addressing == "pointer_based" else "DeviceC"))
                     args.append("NumElements")
+                    args.append("Driver.getTestStream()")
+
                     args = ", ".join(args)
                     file.Expression("{}({})".format(generator.get_base_name(), args))
 
