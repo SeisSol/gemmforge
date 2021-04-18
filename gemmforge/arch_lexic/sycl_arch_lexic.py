@@ -20,7 +20,11 @@ class SyclArchLexic(AbstractArchLexic):
         return None
 
     def kernel_definition(self, file, kernel_bounds, base_name, params, precision=None, total_shared_mem_size=None):
-        localmem = "cl::sycl::accessor<{}, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> Scratch ({}, cgh);".format(precision, total_shared_mem_size)
+        localmem = None
+
+        if total_shared_mem_size is not None and precision is not None:
+            localmem = "cl::sycl::accessor<{}, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> Scratch ({}, cgh);".format(precision, total_shared_mem_size)
+
         return file.SyclKernel(base_name, params, kernel_bounds, localmem)
 
     def sync_threads(self):
