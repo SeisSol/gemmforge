@@ -182,7 +182,7 @@ class Cpp:
     def Function(self, name, arguments='', returnType='void', const=False):
         return Block(self, '{} {}({}){}'.format(returnType, name, arguments, ' const' if const else ''))
 
-    def Kernel(self, name, arguments='', kernel_bounds=None):
+    def CudaKernel(self, name, arguments='', kernel_bounds=None):
         if kernel_bounds:
             args = [str(item) for item in kernel_bounds]
             bounds = "\n__launch_bounds__({})\n".format(", ".join(args))

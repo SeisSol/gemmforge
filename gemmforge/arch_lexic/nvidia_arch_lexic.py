@@ -20,7 +20,7 @@ class NvidiaArchLexic(AbstractArchLexic):
         return f"__shared__ {precision} {name}[{size}]"
 
     def kernel_definition(self, file, kernel_bounds, base_name, params, precision=None, total_shared_mem_size=None):
-        return file.Kernel(base_name, params, kernel_bounds)
+        return file.CudaKernel(base_name, params, kernel_bounds)
 
     def sync_threads(self):
         return "__syncthreads()"
