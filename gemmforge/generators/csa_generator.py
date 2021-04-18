@@ -108,7 +108,7 @@ class CsaGenerator(GemmLikeGenerator):
             total_num_threas_per_op = self.num_active_threads * self.mat_a.get_actual_num_cols()
             max_num_threads_per_block = total_num_threas_per_op * self.num_mult_per_block
             kernel_bounds = [max_num_threads_per_block]
-            with self.arch_lexic.kernel_definition(file, kernel_bounds, self.base_name, self._get_func_params(), self.precision):
+            with self.arch_lexic.kernel_definition(file, kernel_bounds, self.base_name, self._get_func_params()):
                 with file.If("{} < {}".format(self.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
 
                     # declare ptrs for correct matrices
@@ -146,7 +146,7 @@ class CsaGenerator(GemmLikeGenerator):
                                   f'[{self.name_threadIdx_x}]' \
                                   f' + {self.beta}' \
                                   f' * {glob_symbols[self.mat_b.name]}[{self.name_threadIdx_x}] '
-                            file.Assignment(left=f'{glob_symbols[self.mat_b.name]}[threadIdx.x]', right=rhs)
+                            file.Assignment(left=f'{glob_symbols[self.mat_b.name]}[{self.name_threadIdx_x}]', right=rhs)
 
             self._kernel = src.getvalue()
             self._kernel += self._mat_b_initializer.get_kernel()
