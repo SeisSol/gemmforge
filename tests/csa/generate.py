@@ -6,7 +6,6 @@ from gemmforge import GenerationError
 from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
-
 from gemmforge.generators import CsaGenerator
 from tests.csa.test_loader import TestLoader
 

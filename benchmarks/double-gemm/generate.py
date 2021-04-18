@@ -4,6 +4,7 @@ import argparse
 
 from gemmforge import DenseMatrix, GenerationError
 from gemmforge import arch
+from gemmforge.generators import GemmGenerator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--realsize', type=int, action='store',
@@ -53,7 +54,7 @@ try:
     launches = []
     headers = []
 
-    gen = arch.get_gemm_generator_factory().create("float" if args.realsize == 4 else "double")
+    gen = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
     gen.generate(mat_a, mat_b, tmp, 1.0, 0.0, base_name="callFirstGemm")
 
     kernels.append(gen.get_kernel())

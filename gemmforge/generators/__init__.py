@@ -1,7 +1,3 @@
-from .abstract_gemmlike_generator_factory import AbstractGemmlikeGeneratorFactory
-from .default_gemm_generator_factory import DefaultGemmGeneratorFactory
-from .sycl_gemm_generator_factory import SyclGemmGeneratorFactory
-from .sycl_gemm_generator import SyclGemmGenerator
 from .csa_generator import CsaGenerator
 from .abstract_generator import AbstractGenerator
 from .gemm_generator import GemmGenerator

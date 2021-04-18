@@ -7,6 +7,7 @@ from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
 from test_loader import TestLoader
+from gemmforge.generators import GemmGenerator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--specfile', action='store', help="path to a yaml file with a test spec")
@@ -37,7 +38,7 @@ else:
         raise ValueError("Floating point size must be either 4 or 8")
 
 arch = arch.produce(args.manufacturer, args.sub_arch)
-generator = arch.get_gemm_generator_factory().create("float" if args.realsize == 4 else "double")
+generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
 
 stream = open(args.specfile, 'r')
 suites = yaml.safe_load(stream)["test_suites"]

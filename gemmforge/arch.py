@@ -1,5 +1,3 @@
-from gemmforge.generators import DefaultGemmGeneratorFactory, SyclGemmGeneratorFactory
-
 
 class Architecture:
     def __init__(self,
@@ -17,15 +15,6 @@ class Architecture:
         self.max_threads_per_sm = max_threads_per_sm
         self.max_block_per_sm = max_block_per_sm
         self.manufacturer = name
-
-    def get_gemm_generator_factory(self):
-        return DefaultGemmGeneratorFactory(self)
-
-
-class SyclArchitecture(Architecture):
-    
-    def get_gemm_generator_factory(self):
-        return SyclGemmGeneratorFactory(self)
 
 
 def produce(name, sub_name):
@@ -102,7 +91,7 @@ def produce(name, sub_name):
                             name)
 
     elif name == "sycl":
-        return SyclArchitecture(32,
+        return Architecture(32,
                             64 * KB,
                             1024,
                             512 * KB,

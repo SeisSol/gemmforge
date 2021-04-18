@@ -66,7 +66,7 @@ class GemmGenerator(GemmLikeGenerator):
 
             max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
             kernel_bounds = [max_num_threads_per_block]
-            with self.kernel_definition(file, kernel_bounds):
+            with self.arch_lexic.kernel_definition(file, kernel_bounds, self.base_name, self._get_func_params(), self.precision, self._get_total_shared_mem_size()):
                 with file.If("{} < {}".format(self.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
 
                     # declare ptrs for correct matrices
@@ -83,7 +83,7 @@ class GemmGenerator(GemmLikeGenerator):
                                              self._get_global_matrix_ptr(self.mat_c))
 
                     # declare shared memory per kernel
-                    mem = self.declare_shared_memory_inline("Scratch", self.precision, self._get_total_shared_mem_size())
+                    mem = self.arch_lexic.declare_shared_memory_inline("Scratch", self.precision, self._get_total_shared_mem_size())
                     if mem is not None:
                         file.Expression(mem)
 
@@ -106,7 +106,7 @@ class GemmGenerator(GemmLikeGenerator):
                     # load matrices into shared memory
                     self.mat_b_loader.generate_scr(file, glob_symbols[self.mat_b.name])
                     self.mat_a_loader.generate_scr(file, glob_symbols[self.mat_a.name])
-                    file.Expression(self.sync_threads())
+                    file.Expression(self.arch_lexic.sync_threads())
 
 
                     # set up current compute symbols within the rest of the scope
@@ -182,16 +182,16 @@ class GemmGenerator(GemmLikeGenerator):
         src = StringIO()
         with constructs.Cpp(src) as file:
             with file.Function(self.base_name, self._get_launcher_params()):
-                file.VariableDeclaration(self.kernel_range_object(), self._get_block_dim_spec())
-                file.VariableDeclaration(self.kernel_range_object(), self._get_grid_dim_spec())
+                file.VariableDeclaration(self.arch_lexic.kernel_range_object(), self._get_block_dim_spec())
+                file.VariableDeclaration(self.arch_lexic.kernel_range_object(), self._get_grid_dim_spec())
 
-                self.get_stream_via_pointer(file)
+                self.arch_lexic.get_stream_via_pointer(file, "stream", "streamPtr")
                 file.Expression(self.arch_lexic.get_launch_code(self.base_name,
                                                                 "Grid",
                                                                 "Block",
                                                                 "stream",
                                                                 self._get_func_args()))
-                err = self.check_error()
+                err = self.arch_lexic.check_error()
                 if err is not None:
                     file.Expression(err)
 
@@ -400,23 +400,5 @@ class GemmGenerator(GemmLikeGenerator):
             sub_offset = matrix.get_offset_to_first_element()
             return "&{}[{} + {}]".format(matrix.name, sub_offset, extra_offset_symbol)
 
-    def declare_shared_memory_inline(self, name, precision, size):
-        return f"__shared__ {precision} {name}[{size}]"
 
-    def kernel_definition(self, file, kernel_bounds):
-        return file.Kernel(self.base_name, self._get_func_params(), kernel_bounds)
-
-    def sync_threads(self):
-        return "__syncthreads()"
-
-    def kernel_range_object(self):
-        return "dim3"
-
-    def get_stream_via_pointer(self, file):
-        if_stream_exists = f'({Generator.STREAM_PTR_STR} != nullptr)'
-        stream_obj = f'static_cast<{self.arch_lexic.get_stream_name()}>({Generator.STREAM_PTR_STR})'
-        file(f'{self.arch_lexic.get_stream_name()} stream = {if_stream_exists} ? {stream_obj} : 0;')
-
-    def check_error(self):
-        return "CHECK_ERR"
 

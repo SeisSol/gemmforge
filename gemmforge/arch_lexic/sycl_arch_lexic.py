@@ -16,3 +16,25 @@ class SyclArchLexic(AbstractArchLexic):
     def get_launch_code(self, func_name, grid, block, stream, func_params):
         return f"kernel_{func_name}({stream}, {grid}, {block}, {func_params})";
 
+    def declare_shared_memory_inline(self, name, precision, size):
+        return None
+
+    def kernel_definition(self, file, kernel_bounds, base_name, params, precision=None, total_shared_mem_size=None):
+        localmem = "cl::sycl::accessor<{}, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> Scratch ({}, cgh);".format(precision, total_shared_mem_size)
+        return file.SyclKernel(base_name, params, kernel_bounds, localmem)
+
+    def sync_threads(self):
+        return "item.barrier()"
+
+    def kernel_range_object(self):
+        return "cl::sycl::range<3>"
+
+    def get_stream_via_pointer(self, file, stream_name, pointer_name):
+        with file.If(f"{pointer_name} == nullptr"):
+            file.Expression("throw std::invalid_argument(\"stream may not be null!\")")
+
+        stream_obj = f'static_cast<{self.get_stream_name()} *>({pointer_name})'
+        file(f'{self.get_stream_name()} *stream = {stream_obj};')
+
+    def check_error(self):
+        return None
