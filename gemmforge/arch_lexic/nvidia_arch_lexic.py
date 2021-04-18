@@ -29,7 +29,7 @@ class NvidiaArchLexic(AbstractArchLexic):
         return "dim3"
 
     def get_stream_via_pointer(self, file, stream_name, pointer_name):
-        if_stream_exists = f'({stream_name} != nullptr)'
+        if_stream_exists = f'({pointer_name} != nullptr)'
         stream_obj = f'static_cast<{self.get_stream_name()}>({pointer_name})'
         file(f'{self.get_stream_name()} stream = {if_stream_exists} ? {stream_obj} : 0;')
 
