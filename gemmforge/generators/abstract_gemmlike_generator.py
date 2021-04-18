@@ -11,7 +11,4 @@ class GemmLikeGenerator(AbstractGenerator, ABC):
         self.beta = None
         self.shr_mem_size_per_mult = None
 
-    @abstractmethod
-    def _get_total_shared_mem_size(self):
-        pass
 

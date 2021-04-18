@@ -185,7 +185,7 @@ class GemmGenerator(GemmLikeGenerator):
                 file.VariableDeclaration(self.arch_lexic.kernel_range_object(), self._get_block_dim_spec())
                 file.VariableDeclaration(self.arch_lexic.kernel_range_object(), self._get_grid_dim_spec())
 
-                self.arch_lexic.get_stream_via_pointer(file, "stream", "streamPtr")
+                self.arch_lexic.get_stream_via_pointer(file, "stream", Generator.STREAM_PTR_STR)
                 file.Expression(self.arch_lexic.get_launch_code(self.base_name,
                                                                 "Grid",
                                                                 "Block",
