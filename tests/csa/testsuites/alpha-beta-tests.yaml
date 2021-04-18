@@ -19,5 +19,5 @@ test_suites:
     beta: "beta_params"
     num_elements: 9
 
-    alpha_params: [1.0, 0.0, 2.0]
-    beta_params: [1.0, 0.0, 1.5]
+    alpha_params: [1.0]
+    beta_params: [1.5]
