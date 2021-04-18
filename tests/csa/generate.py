@@ -58,7 +58,7 @@ with constructs.Cpp(StringIO()) as file:
 with constructs.Cpp(StringIO()) as file:
     file.Include("gtest/gtest.h")
     file.Include("comparators.h")
-    file.Include("gemm_driver.h")
+    file.Include("csa_driver.h")
     file.Include("kernels.h")
     file.Include("gemm.h")
     file.Include("iostream")
@@ -116,10 +116,12 @@ for suite in suites:
                     file.VariableDeclaration("int", "NumElements", num_elements)
                     file.Emptyline()
 
-                    file.Expression("SetUp(SizeA, SizeB, SizeC, NumElements)")
+                    file.Expression("SetUp(SizeA, SizeB, SizeB, NumElements)")
                     file.Expression("Driver.prepareData()")
 
+                    file.VariableDeclaration("int", "scale", "1")
                     args = []
+                    args.append("scale")
                     args.append("{}, 0".format("DeviceShuffledA" if mat_a.addressing == "pointer_based" else "DeviceA"))
                     args.append("{}, 0".format("DeviceShuffledB" if mat_b.addressing == "pointer_based" else "DeviceB"))
                     args.append("NumElements")
@@ -132,13 +134,13 @@ for suite in suites:
                     args = ["TransA", "TransB", "M", "N", "K"]
                     args.extend(["alpha", "&HostA[OffsetA], Lda"])
                     args.extend(["&HostB[OffsetB]", "Ldb"])
-                    args.extend(["beta", "&HostC[OffsetC], Ldc"])
-                    args.extend(["NextA", "NextB", "NextC", "NumElements"])
+                    args.extend(["beta", "&HostC[OffsetB], Ldb"])
+                    args.extend(["NextA", "NextB", "NextB", "NumElements"])
 
                     args = ", ".join(args)
                     file.Expression("gemm({})".format(args))
 
-                    args = ["M", "Ldc", "N", "OffsetC", "SizeC", "NumElements"]
+                    args = ["M", "Ldb", "N", "OffsetB", "SizeB", "NumElements"]
                     file.Expression("Driver.packResults({})".format(", ".join(args)))
                     file.VariableDeclaration("bool", "Result")
                     file.Assignment("Result", "Driver.isTestPassed<L1NormComparator>()")
