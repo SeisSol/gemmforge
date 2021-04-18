@@ -2,6 +2,7 @@ from gemmforge import constructs
 from io import StringIO
 from gemmforge.exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
+from .abstract_generator import AbstractGenerator as Generator
 from gemmforge.initializers import initializer_factory, StubInitializer
 from gemmforge.arch_lexic import arch_lexic_factory
 import math
