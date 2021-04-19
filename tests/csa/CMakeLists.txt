@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(gemm-tests)
+project(csa-tests)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Og")
@@ -34,7 +34,7 @@ set_property(CACHE REFERENCE_IMPL PROPERTY STRINGS "GEMMGEN" "OPENBLAS")
 find_package(GTest REQUIRED)
 add_executable(${CMAKE_PROJECT_NAME} main.cpp
                                      common/aux.cpp
-                                     common/gemm.cpp
+                                     common/csa.cpp
                                      common/test_drivers/simple_comparator.cpp
                                      gen_code/test.cpp)
 

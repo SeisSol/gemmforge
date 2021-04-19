@@ -7,7 +7,7 @@
 #include <tuple>
 #include <vector>
 
-class DenseGemmTest : public ::testing::Test {
+class DenseCsaTest : public ::testing::Test {
 protected:
   void SetUp(int M, int N, int K, int NumElements) {
     Driver.setParams(M, N, K, NumElements);

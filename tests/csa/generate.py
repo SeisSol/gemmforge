@@ -60,7 +60,7 @@ with constructs.Cpp(StringIO()) as file:
     file.Include("comparators.h")
     file.Include("csa_driver.h")
     file.Include("kernels.h")
-    file.Include("gemm.h")
+    file.Include("csa.h")
     file.Include("iostream")
     file.Expression("using namespace gemmgen::reference")
     file.Emptyline()
@@ -77,7 +77,7 @@ for suite in suites:
             headers.write(generator.get_launcher_header())
 
             with constructs.Cpp(StringIO()) as file:
-                with file.GoogleTestSuit("DenseGemmTest", test_name):
+                with file.GoogleTestSuit("DenseCsaTest", test_name):
                     file.Expression("int SizeA = {} * {}".format(mat_a.num_rows, mat_a.num_cols))
                     file.Expression("int SizeB = {} * {}".format(mat_b.num_rows, mat_b.num_cols))
                     file.Emptyline()
@@ -134,11 +134,10 @@ for suite in suites:
                     args = ["TransA", "TransB", "M", "N", "K"]
                     args.extend(["alpha", "&HostA[OffsetA], Lda"])
                     args.extend(["&HostB[OffsetB]", "Ldb"])
-                    args.extend(["beta", "&HostC[OffsetB], Ldb"])
-                    args.extend(["NextA", "NextB", "NextB", "NumElements"])
+                    args.extend(["beta"])
 
                     args = ", ".join(args)
-                    file.Expression("gemm({})".format(args))
+                    file.Expression("singleCsa({})".format(args))
 
                     args = ["M", "Ldb", "N", "OffsetB", "SizeB", "NumElements"]
                     file.Expression("Driver.packResults({})".format(", ".join(args)))
