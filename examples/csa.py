@@ -34,7 +34,7 @@ mat_b = DenseMatrix(num_rows=9,
 
 try:
     gen = CsaGenerator(arch, "float")
-    gen.generate(mat_a, mat_b, alpha=1.1, beta=1.1)
+    gen.generate(mat_a, mat_b, alpha=13, beta=6)
     print(gen.get_kernel())
     print(gen.get_launcher())
     print(gen.get_launcher_header())
