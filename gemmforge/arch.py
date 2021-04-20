@@ -92,11 +92,11 @@ def produce(name, sub_name):
 
     elif name == "sycl":
         return Architecture(32,
-                            64 * KB,
+                            48 * KB,
                             1024,
-                            512 * KB,
-                            64,
-                            40,
+                            64 * KB,
+                            2048,
+                            32,
                             name)
     else:
         raise ValueError('Unknown gpu architecture')
