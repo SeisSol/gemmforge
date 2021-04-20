@@ -1,8 +1,6 @@
 from gemmforge import DenseMatrix, GenerationError
 from gemmforge import arch
 import argparse
-
-from gemmforge.generators import CsaGenerator
 from gemmforge.initializers import ExactInitializer
 
 parser = argparse.ArgumentParser(description="Specify Manufacturer and Sub_Arch of the GPU")

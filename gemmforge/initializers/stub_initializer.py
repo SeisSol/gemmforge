@@ -1,4 +1,4 @@
-from gemmforge.generators import AbstractGenerator
+from gemmforge.abstract_generator import AbstractGenerator
 
 
 class StubInitializer(AbstractGenerator):

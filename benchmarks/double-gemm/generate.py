@@ -2,9 +2,8 @@ import os
 import yaml
 import argparse
 
-from gemmforge import DenseMatrix, GenerationError
+from gemmforge import DenseMatrix, GenerationError, GemmGenerator
 from gemmforge import arch
-from gemmforge.generators import GemmGenerator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--realsize', type=int, action='store',

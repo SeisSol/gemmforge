@@ -1,5 +1,5 @@
-from .abstract_initializer import ExactInitializer
 from .stub_initializer import StubInitializer
+from .abstract_initializer import ExactInitializer
 
 
 def initializer_factory(init_value, matrix, arch, precision):

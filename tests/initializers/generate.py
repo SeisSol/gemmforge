@@ -2,11 +2,12 @@ import os
 import yaml
 import argparse
 
-from gemmforge import GenerationError, GemmGenerator
+from gemmforge import GenerationError
 from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
-from test_loader import TestLoader
+from gemmforge.initializers import ExactInitializer
+from tests.csa.test_loader import TestLoader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--specfile', action='store', help="path to a yaml file with a test spec")
@@ -37,8 +38,6 @@ else:
         raise ValueError("Floating point size must be either 4 or 8")
 
 arch = arch.produce(args.manufacturer, args.sub_arch)
-generator = GemmGenerator(arch, "float" if args.realsize == 4 else "double")
-
 stream = open(args.specfile, 'r')
 suites = yaml.safe_load(stream)["test_suites"]
 
@@ -57,93 +56,72 @@ with constructs.Cpp(StringIO()) as file:
 with constructs.Cpp(StringIO()) as file:
     file.Include("gtest/gtest.h")
     file.Include("comparators.h")
-    file.Include("gemm_driver.h")
+    file.Include("initializer_driver.h")
     file.Include("kernels.h")
-    file.Include("gemm.h")
+    file.Include("csa.h")
     file.Include("iostream")
-    file.Expression("using namespace gemmgen::reference")
+    file.Expression("using namespace csagen::reference")
     file.Emptyline()
     tests_code.write(file.stream.getvalue())
 
 for suite in suites:
     for test in TestLoader(suite):
-        mat_a, mat_b, mat_c, alpha, beta, num_elements, test_name = test
+        mat_a, alpha, num_elements, test_name = test
+        generator = ExactInitializer(alpha, mat_a, arch, "float" if args.realsize == 4 else "double")
 
         try:
-            generator.generate(mat_a, mat_b, mat_c, alpha, beta)
+            generator.generate()
             src.write(generator.get_kernel())
             src.write(generator.get_launcher())
             headers.write(generator.get_launcher_header())
 
             with constructs.Cpp(StringIO()) as file:
-                with file.GoogleTestSuit("DenseGemmTest", test_name):
-                    file.Expression("int SizeA = {} * {}".format(mat_a.num_rows, mat_a.num_cols))
-                    file.Expression("int SizeB = {} * {}".format(mat_b.num_rows, mat_b.num_cols))
-                    file.Expression("int SizeC = {} * {}".format(mat_c.num_rows, mat_c.num_cols))
-                    file.Emptyline()
-
+                with file.GoogleTestSuit("DenseInitializerTest", test_name):
+                    # A and B must be both MxN matrices (or NxM if transposed)
                     M = mat_a.get_actual_num_cols() if mat_a.transpose else mat_a.get_actual_num_rows()
-                    N = mat_b.get_actual_num_rows() if mat_b.transpose else mat_b.get_actual_num_cols()
-                    K = mat_a.get_actual_num_rows() if mat_a.transpose else mat_a.get_actual_num_cols()
+                    N = mat_a.get_actual_num_rows() if mat_a.transpose else mat_a.get_actual_num_cols()
 
                     file.VariableDeclaration("int", "M", M)
                     file.VariableDeclaration("int", "N", N)
-                    file.VariableDeclaration("int", "K", K)
                     file.Emptyline()
 
-                    file.VariableDeclaration("int", "Lda", mat_a.num_rows)
-                    file.VariableDeclaration("int", "Ldb", mat_b.num_rows)
-                    file.VariableDeclaration("int", "Ldc", mat_c.num_rows)
-                    file.Emptyline()
-
-                    file.VariableDeclaration("int", "NextA", "{}".format(0 if mat_a.addressing == "none" else "SizeA"))
-                    file.VariableDeclaration("int", "NextB", "{}".format(0 if mat_b.addressing == "none" else "SizeB"))
-                    file.VariableDeclaration("int", "NextC", "{}".format(0 if mat_c.addressing == "none" else "SizeC"))
+                    file.Expression("int Size = {} * {}".format(M, N))
+                    # count rows must be equal at A and B (matrices perform component-wise add!)
+                    file.VariableDeclaration("int", "Ld", mat_a.num_rows)
                     file.Emptyline()
 
                     file.VariableDeclaration("int", "OffsetA",
                                              "{} * {} + {}".format(mat_a.num_rows, mat_a.bbox[1], mat_a.bbox[0]))
-                    file.VariableDeclaration("int", "OffsetB",
-                                             "{} * {} + {}".format(mat_b.num_rows, mat_b.bbox[1], mat_b.bbox[0]))
-                    file.VariableDeclaration("int", "OffsetC",
-                                             "{} * {} + {}".format(mat_c.num_rows, mat_c.bbox[1], mat_c.bbox[0]))
-                    file.Emptyline()
-
-                    file.VariableDeclaration("LayoutType", "TransA",
-                                             "LayoutType::{}".format("Trans" if mat_a.transpose else "NoTrans"))
-                    file.VariableDeclaration("LayoutType", "TransB",
-                                             "LayoutType::{}".format("Trans" if mat_b.transpose else "NoTrans"))
                     file.Emptyline()
 
                     file.VariableDeclaration(generator.precision, "alpha", alpha)
-                    file.VariableDeclaration(generator.precision, "beta", beta)
                     file.VariableDeclaration("int", "NumElements", num_elements)
                     file.Emptyline()
 
-                    file.Expression("SetUp(SizeA, SizeB, SizeC, NumElements)")
+                    # test driver expects three matrices but it is ok for our use case to just not use the matrix C
+                    file.Expression("SetUp(Size, Size, Size, NumElements)")
+                    # this fills the matrices with random data (on host and device!)
                     file.Expression("Driver.prepareData()")
 
                     args = []
+                    args.append("alpha")
                     args.append("{}, 0".format("DeviceShuffledA" if mat_a.addressing == "pointer_based" else "DeviceA"))
-                    args.append("{}, 0".format("DeviceShuffledB" if mat_b.addressing == "pointer_based" else "DeviceB"))
-                    args.append("{}, 0".format("DeviceShuffledC" if mat_c.addressing == "pointer_based" else "DeviceC"))
                     args.append("NumElements")
                     args.append("Driver.getTestStream()")
 
                     args = ", ".join(args)
+                    # calls the kernel
                     file.Expression("{}({})".format(generator.get_base_name(), args))
 
-
-                    args = ["TransA", "TransB", "M", "N", "K"]
-                    args.extend(["alpha", "&HostA[OffsetA], Lda"])
-                    args.extend(["&HostB[OffsetB]", "Ldb"])
-                    args.extend(["beta", "&HostC[OffsetC], Ldc"])
-                    args.extend(["NextA", "NextB", "NextC", "NumElements"])
+                    args = ["M", "N", "alpha", "&HostA[OffsetA]", "beta", "&HostC[OffsetC]"]
+                    args.extend(["Ld", "Size", "NumElements"])
 
                     args = ", ".join(args)
-                    file.Expression("gemm({})".format(args))
+                    # calls the reference code
+                    file.Expression("csa({})".format(args))
 
-                    args = ["M", "Ldc", "N", "OffsetC", "SizeC", "NumElements"]
+                    args = ["M", "Ld", "N", "OffsetC", "Size", "NumElements"]
+                    # this copies the results into packed arrays (without offset)
                     file.Expression("Driver.packResults({})".format(", ".join(args)))
                     file.VariableDeclaration("bool", "Result")
                     file.Assignment("Result", "Driver.isTestPassed<L1NormComparator>()")

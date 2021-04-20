@@ -1,10 +1,10 @@
-from gemmforge.generators.abstract_generator import AbstractGenerator
 from .. import constructs
 from io import StringIO
 import math
 import hashlib
 
 from ..arch_lexic import arch_lexic_factory
+from gemmforge.abstract_generator import AbstractGenerator
 
 
 class ExactInitializer(AbstractGenerator):

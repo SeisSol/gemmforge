@@ -1,4 +1,4 @@
-from gemmforge.generators.abstract_generator import AbstractGenerator
+from gemmforge.abstract_generator import AbstractGenerator
 
 
 class AbstractInitializer(AbstractGenerator):

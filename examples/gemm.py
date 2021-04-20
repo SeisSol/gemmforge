@@ -1,6 +1,4 @@
-from gemmforge import DenseMatrix, GenerationError
-from gemmforge import arch
-from gemmforge.generators import GemmGenerator
+from gemmforge import DenseMatrix, GenerationError, GemmGenerator, arch
 import argparse
 
 parser = argparse.ArgumentParser(description="Specify Manufacturer and Sub_Arch of the GPU")

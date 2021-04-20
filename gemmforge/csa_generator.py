@@ -1,13 +1,14 @@
-from gemmforge import constructs
+from . import constructs
 from io import StringIO
-from gemmforge.exceptions import GenerationError
+from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
-from gemmforge.initializers import initializer_factory, StubInitializer
-from gemmforge.arch_lexic import arch_lexic_factory
+from .initializers import initializer_factory, StubInitializer
+from .arch_lexic import arch_lexic_factory
 import math
 import hashlib
 from copy import deepcopy
+
 
 
 class CsaGenerator(GemmLikeGenerator):

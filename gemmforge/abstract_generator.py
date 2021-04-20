@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from gemmforge.exceptions import InternalError
+from .exceptions import GenerationError, InternalError
 
 
 class AbstractGenerator(ABC):

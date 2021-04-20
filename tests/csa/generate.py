@@ -2,11 +2,10 @@ import os
 import yaml
 import argparse
 
-from gemmforge import GenerationError
+from gemmforge import GenerationError, CsaGenerator
 from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
-from gemmforge.generators import CsaGenerator
 from tests.csa.test_loader import TestLoader
 
 parser = argparse.ArgumentParser()
