@@ -97,12 +97,6 @@ for suite in suites:
                                              "{} * {} + {}".format(mat_c.num_rows, mat_c.bbox[1], mat_c.bbox[0]))
                     file.Emptyline()
 
-                    file.VariableDeclaration("LayoutType", "TransA",
-                                             "LayoutType::{}".format("Trans" if mat_a.transpose else "NoTrans"))
-                    file.VariableDeclaration("LayoutType", "TransC",
-                                             "LayoutType::{}".format("Trans" if mat_c.transpose else "NoTrans"))
-                    file.Emptyline()
-
                     file.VariableDeclaration(generator.precision, "alpha", alpha)
                     file.VariableDeclaration(generator.precision, "beta", beta)
                     file.VariableDeclaration("int", "NumElements", num_elements)
@@ -124,7 +118,7 @@ for suite in suites:
                     # calls the kernel
                     file.Expression("{}({})".format(generator.get_base_name(), args))
 
-                    args = ["TransA", "TransC", "M", "N", "alpha", "&HostA[OffsetA]", "beta", "&HostC[OffsetC]"]
+                    args = ["M", "N", "alpha", "&HostA[OffsetA]", "beta", "&HostC[OffsetC]"]
                     args.extend(["Ld", "Size", "NumElements"])
 
                     args = ", ".join(args)

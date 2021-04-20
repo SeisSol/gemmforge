@@ -34,8 +34,7 @@ class TestLoader:
         return DenseMatrix(num_rows=matrix_spec["rows"],
                            num_cols=matrix_spec["cols"],
                            addressing=matrix_spec["addressing"],
-                           bbox=matrix_spec["bbox"],
-                           transpose=matrix_spec["trans"])
+                           bbox=matrix_spec["bbox"])
 
     def is_param(self, param):
         if isinstance(param, str):

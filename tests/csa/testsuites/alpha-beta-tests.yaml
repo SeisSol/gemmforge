@@ -6,18 +6,16 @@ test_suites:
       cols: 10
       addressing: "strided"
       bbox: [0, 0, 8, 9]
-      trans:  no
 
     matrix_c:
       rows: 9
       cols: 10
       addressing: "strided"
       bbox: [0, 0, 8, 9]
-      trans:  no
 
     alpha: "alpha_params"
     beta: "beta_params"
-    num_elements: 1
+    num_elements: 3
 
     alpha_params: [0.5, 1.5]
     beta_params: [1.5, 12]
