@@ -7,7 +7,7 @@ from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
 from gemmforge.initializers import ExactInitializer
-from tests.csa.test_loader import TestLoader
+from tests.initializers.test_loader import TestLoader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--specfile', action='store', help="path to a yaml file with a test spec")
@@ -58,16 +58,16 @@ with constructs.Cpp(StringIO()) as file:
     file.Include("comparators.h")
     file.Include("initializer_driver.h")
     file.Include("kernels.h")
-    file.Include("csa.h")
+    file.Include("initialize.h")
     file.Include("iostream")
-    file.Expression("using namespace csagen::reference")
+    file.Expression("using namespace initgen::reference")
     file.Emptyline()
     tests_code.write(file.stream.getvalue())
 
 for suite in suites:
     for test in TestLoader(suite):
-        mat_a, alpha, num_elements, test_name = test
-        generator = ExactInitializer(alpha, mat_a, arch, "float" if args.realsize == 4 else "double")
+        mat_c, alpha, num_elements, test_name = test
+        generator = ExactInitializer(alpha, mat_c, arch, "double")
 
         try:
             generator.generate()
@@ -77,35 +77,29 @@ for suite in suites:
 
             with constructs.Cpp(StringIO()) as file:
                 with file.GoogleTestSuit("DenseInitializerTest", test_name):
-                    # A and B must be both MxN matrices (or NxM if transposed)
-                    M = mat_a.get_actual_num_cols() if mat_a.transpose else mat_a.get_actual_num_rows()
-                    N = mat_a.get_actual_num_rows() if mat_a.transpose else mat_a.get_actual_num_cols()
+                    M = mat_c.get_actual_num_cols() if mat_c.transpose else mat_c.get_actual_num_rows()
+                    N = mat_c.get_actual_num_rows() if mat_c.transpose else mat_c.get_actual_num_cols()
 
                     file.VariableDeclaration("int", "M", M)
                     file.VariableDeclaration("int", "N", N)
                     file.Emptyline()
 
                     file.Expression("int Size = {} * {}".format(M, N))
-                    # count rows must be equal at A and B (matrices perform component-wise add!)
-                    file.VariableDeclaration("int", "Ld", mat_a.num_rows)
+                    file.VariableDeclaration("int", "Ld", mat_c.num_rows)
                     file.Emptyline()
 
-                    file.VariableDeclaration("int", "OffsetA",
-                                             "{} * {} + {}".format(mat_a.num_rows, mat_a.bbox[1], mat_a.bbox[0]))
-                    file.Emptyline()
+                    file.VariableDeclaration("int", "OffsetC",
+                                             "{} * {} + {}".format(mat_c.num_rows, mat_c.bbox[1], mat_c.bbox[0]))
 
-                    file.VariableDeclaration(generator.precision, "alpha", alpha)
                     file.VariableDeclaration("int", "NumElements", num_elements)
                     file.Emptyline()
 
-                    # test driver expects three matrices but it is ok for our use case to just not use the matrix C
                     file.Expression("SetUp(Size, Size, Size, NumElements)")
-                    # this fills the matrices with random data (on host and device!)
                     file.Expression("Driver.prepareData()")
 
                     args = []
-                    args.append("alpha")
-                    args.append("{}, 0".format("DeviceShuffledA" if mat_a.addressing == "pointer_based" else "DeviceA"))
+                    args.append("DeviceC")
+                    args.append("OffsetC")
                     args.append("NumElements")
                     args.append("Driver.getTestStream()")
 
@@ -113,12 +107,11 @@ for suite in suites:
                     # calls the kernel
                     file.Expression("{}({})".format(generator.get_base_name(), args))
 
-                    args = ["M", "N", "alpha", "&HostA[OffsetA]", "beta", "&HostC[OffsetC]"]
-                    args.extend(["Ld", "Size", "NumElements"])
+                    args = ["M", "N", f"{alpha}", "&HostC[OffsetC]", "Ld", "Size", "NumElements"]
 
                     args = ", ".join(args)
                     # calls the reference code
-                    file.Expression("csa({})".format(args))
+                    file.Expression("initialize({})".format(args))
 
                     args = ["M", "Ld", "N", "OffsetC", "Size", "NumElements"]
                     # this copies the results into packed arrays (without offset)

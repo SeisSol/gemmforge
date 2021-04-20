@@ -23,7 +23,7 @@ class TestLoader:
         for param in test_params:
             _set_value(spec, param, test_params[param])
 
-        return (self._produce_matrix(spec["matrix_a"]),
+        return (self._produce_matrix(spec["matrix_c"]),
                 spec["alpha"],
                 spec["num_elements"],
                 self._gen_test_name(test_params))

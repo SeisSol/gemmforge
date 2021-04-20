@@ -93,7 +93,7 @@ class ExactInitializer(AbstractGenerator):
     def _generate_header(self):
         src = StringIO()
         with constructs.Cpp(src) as file:
-            file.FunctionDeclaration(self.base_name, self._get_func_params())
+            file.FunctionDeclaration(self.base_name,  self._get_launcher_params(with_defaults=True))
             content = src.getvalue()
         self._header = content
 

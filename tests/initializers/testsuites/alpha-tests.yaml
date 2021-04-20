@@ -1,7 +1,7 @@
 test_suites:
   -
     test_base_name: "AlphaTest"
-    matrix_a:
+    matrix_c:
       rows: 9
       cols: 10
       addressing: "strided"

@@ -34,7 +34,7 @@ set_property(CACHE REFERENCE_IMPL PROPERTY STRINGS "GEMMGEN" "OPENBLAS")
 find_package(GTest REQUIRED)
 add_executable(${CMAKE_PROJECT_NAME} main.cpp
                                      common/aux.cpp
-                                     common/csa.cpp
+                                     common/initialize.cpp
                                      common/test_drivers/simple_comparator.cpp
                                      gen_code/test.cpp)
 
