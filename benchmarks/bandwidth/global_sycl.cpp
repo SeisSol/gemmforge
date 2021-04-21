@@ -7,9 +7,9 @@
 
 using namespace gemmgen;
 
-void copyData(float *To, float *From, size_t size, cl::sycl::range<3> group_count, cl::sycl::range<3> group_size, cl::sycl::queue *stream) {
+void copyData(float *To, float *From, size_t size, cl::sycl::range<1> global, cl::sycl::range<1> local, cl::sycl::queue *stream) {
   stream->submit([&](cl::sycl::handler &cgh) {
-      cgh.parallel_for(cl::sycl::nd_range<3>{{group_count.get(0) * group_size.get(0), group_count.get(1) * group_size.get(1), group_count.get(2) * group_size.get(2)}, group_size}, [=](cl::sycl::nd_item<3> item) {
+      cgh.parallel_for(cl::sycl::nd_range<1>{global, local}, [=](cl::sycl::nd_item<1> item) {
           if (item.get_global_id(0) < size) {
             To[item.get_global_id(0)] = From[item.get_global_id(0)];
           }
@@ -34,13 +34,15 @@ int main(int Argc, char *Argv[]) {
   To = cl::sycl::malloc_device<float>(NumElements, q);
   From = cl::sycl::malloc_device<float>(NumElements, q);
 
-  cl::sycl::range<3> Block{1024, 1, 1};
-  cl::sycl::range<3> Grid{(NumElements + 1024 - 1) / 1024, 1, 1};
+  size_t workItemSize = q.get_device().get_info<cl::sycl::info::device::max_work_item_sizes>()[0];
+  std::cout << "NOTE: max work items per group is " << workItemSize << std::endl;
+  cl::sycl::range<1> global{((NumElements + 1024 - 1) / 1024 ) * 1024};
+  cl::sycl::range<1> local{workItemSize};
 
   utils::StopWatch<std::chrono::duration<double, std::chrono::nanoseconds::period>> Timer;
   Timer.start();
   for (int Repeat = 0; Repeat < NumRepeats; ++Repeat) {
-    copyData(To, From, NumElements, Block, Grid, &q);
+    copyData(To, From, NumElements, global, local, &q);
   }
   q.wait();
   Timer.stop();
