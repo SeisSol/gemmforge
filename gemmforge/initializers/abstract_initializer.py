@@ -5,13 +5,14 @@ import hashlib
 
 from ..arch_lexic import arch_lexic_factory
 from gemmforge.abstract_generator import AbstractGenerator
+from ..thread_policies import TheadPolicyFactory
+
 
 
 class ExactInitializer(AbstractGenerator):
 
     def team_index_str(self):
-        # return "(threadIdx.z + blockDim.z * blockIdx.x)"
-        return f"({self.arch_lexic.get_thread_idx_z()} + {self.arch_lexic.get_block_dim_z()} * {self.arch_lexic.get_block_idx_x()})"
+        return f'({self.arch_lexic.thread_idx_z} + {self.arch_lexic.block_dim_z} * {self.arch_lexic.block_idx_x})'
 
     def __init__(self, init_value, matrix, arch, precision):
         super(ExactInitializer, self).__init__(arch, precision)
@@ -43,11 +44,10 @@ class ExactInitializer(AbstractGenerator):
         self.num_compute_threads = lid_dim_length
         self.num_active_threads = num_vector_units_required * self.arch.vec_unit_length
 
-        total_num_threas_per_op = self.num_active_threads * self.matrix.get_actual_num_cols()
-
-        self.max_num_regs_per_thread = 10
-        mults_wrt_num_regs = self.arch.max_reg_per_block / (total_num_threas_per_op * self.max_num_regs_per_thread)
-        self.num_mult_per_block = max(int(mults_wrt_num_regs / self.arch.max_block_per_sm), 1)
+        thread_policy = TheadPolicyFactory.get_initializer_policy(arch=self.arch,
+                                                                  num_threads=self.num_active_threads,
+                                                                  op=self.matrix)
+        self.num_mult_per_block = thread_policy.get_num_ops_per_block()
 
     def _generate_kernel(self):
         global_symbols = {self.matrix.name: f'Glob{self.matrix.name}'}
@@ -65,8 +65,8 @@ class ExactInitializer(AbstractGenerator):
 
                     # assign initial value to a matrix element
                     with file.If(
-                            "{} < {}".format(self.arch_lexic.get_thread_idx_x(), self.matrix.get_actual_num_rows())):
-                        file.Assignment(f'{global_symbols[self.matrix.name]}[{self.arch_lexic.get_thread_idx_x()}]',
+                            "{} < {}".format(self.arch_lexic.thread_idx_x, self.matrix.get_actual_num_rows())):
+                        file.Assignment(f'{global_symbols[self.matrix.name]}[{self.arch_lexic.thread_idx_x}]',
                                         f'{self.init_value}')
 
             self._kernel = src.getvalue()
@@ -141,7 +141,7 @@ class ExactInitializer(AbstractGenerator):
 
     def _get_global_matrix_ptr(self, matrix):
         extra_offset_symbol = self._generate_extra_offset_symbol(matrix)
-        offset_to_row = f'{self.arch_lexic.get_thread_idx_y()} * {matrix.num_rows}'
+        offset_to_row = f'{self.arch_lexic.thread_idx_y} * {matrix.num_rows}'
 
         if matrix.addressing == "strided":
             main_offset = "{} * {}".format(self.team_index_str(), matrix.get_real_volume())

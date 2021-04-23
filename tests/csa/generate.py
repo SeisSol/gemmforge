@@ -6,7 +6,7 @@ from gemmforge import GenerationError, CsaGenerator
 from gemmforge import arch
 from gemmforge import constructs
 from io import StringIO
-from tests.csa.test_loader import TestLoader
+from test_loader import TestLoader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--specfile', action='store', help="path to a yaml file with a test spec")

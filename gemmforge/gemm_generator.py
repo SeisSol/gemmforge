@@ -5,6 +5,7 @@ from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .loaders import shm_mem_factory, StubLoader
 from .arch_lexic import arch_lexic_factory
+from .thread_policies import TheadPolicyFactory
 import math
 import hashlib
 
@@ -22,11 +23,11 @@ class GemmGenerator(GemmLikeGenerator):
         self.mat_b_loader = None
         self.arch_lexic = arch_lexic_factory(arch.manufacturer)
         # For better readability for the remaining code
-        self.TEAM_INDEX_STR = self.arch_lexic.get_tid_counter(self.arch_lexic.get_thread_idx_y(),
-                                                              self.arch_lexic.get_block_dim_y(),
-                                                              self.arch_lexic.get_block_idx_x())
-        self.name_threadIdx_y = self.arch_lexic.get_thread_idx_y()
-        self.name_threadIdx_x = self.arch_lexic.get_thread_idx_x()
+        self.team_index_str = self.arch_lexic.get_tid_counter(self.arch_lexic.thread_idx_y,
+                                                              self.arch_lexic.block_dim_y,
+                                                              self.arch_lexic.block_idx_x)
+        self.name_threadIdx_y = self.arch_lexic.thread_idx_y
+        self.name_threadIdx_x = self.arch_lexic.thread_idx_x
 
     def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
         self.mat_a = mat_a
@@ -66,8 +67,15 @@ class GemmGenerator(GemmLikeGenerator):
 
             max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
             kernel_bounds = [max_num_threads_per_block]
-            with self.arch_lexic.kernel_definition(file, kernel_bounds, self.base_name, self._get_func_params(), self.precision, self._get_total_shared_mem_size()):
-                with file.If("{} < {}".format(self.TEAM_INDEX_STR, Generator.NUM_ELEMENTS_STR)):
+
+            with self.arch_lexic.kernel_definition(file,
+                                                   kernel_bounds,
+                                                   self.base_name,
+                                                   self._get_func_params(),
+                                                   self.precision,
+                                                   self._get_total_shared_mem_size()):
+
+                with file.If("{} < {}".format(self.team_index_str, Generator.NUM_ELEMENTS_STR)):
 
                     # declare ptrs for correct matrices
                     file.VariableDeclaration("const {}*".format(self.precision),
@@ -260,10 +268,6 @@ class GemmGenerator(GemmLikeGenerator):
 
             raise error
 
-    def _estimate_num_registers_per_mult(self, accumulator_length):
-        factor = GemmGenerator.PRECISION_TO_BYTES[self.precision] / 4
-        return factor * (32 + accumulator_length)
-
     def _analyze(self):
         if self.mat_a.transpose:
             lid_dim_length = self.mat_a.get_actual_num_cols()
@@ -288,18 +292,20 @@ class GemmGenerator(GemmLikeGenerator):
                                             load_and_transpose=False,
                                             manufacturer=self.arch.manufacturer)
 
-        accumulator_length = self.mat_c.get_actual_num_cols()
-        self.max_num_regs_per_thread = self._estimate_num_registers_per_mult(accumulator_length)
 
         self.shr_mem_size_per_mult = self.mat_a_loader.compute_shared_mem_size() \
                                      + self.mat_b_loader.compute_shared_mem_size()
 
-        shr_mem_bytes = self.shr_mem_size_per_mult * Generator.PRECISION_TO_BYTES[self.precision]
-        mults_wrt_shr_mem = self.arch.max_local_mem_size_per_block / shr_mem_bytes
-        mults_wrt_num_regs = self.arch.max_reg_per_block / (self.num_active_threads * self.max_num_regs_per_thread)
-        self.mults_per_sm = int(min(mults_wrt_shr_mem, mults_wrt_num_regs))
+        bytes_per_real = GemmGenerator.PRECISION_TO_BYTES[self.precision]
+        thread_policy = TheadPolicyFactory.get_gemm_policy(arch=self.arch,
+                                                           reals_per_op=self.shr_mem_size_per_mult,
+                                                           num_threads=self.num_active_threads,
+                                                           bytes_per_real=bytes_per_real,
+                                                           op1=self.mat_a,
+                                                           op2=self.mat_b,
+                                                           res=self.mat_c)
 
-        self.num_mult_per_block = max(int(self.mults_per_sm / self.arch.max_block_per_sm), 1)
+        self.num_mult_per_block = thread_policy.get_num_ops_per_block()
 
     def _get_total_shared_mem_size(self):
         return self.shr_mem_size_per_mult * self.num_mult_per_block
@@ -381,7 +387,7 @@ class GemmGenerator(GemmLikeGenerator):
 
         extra_offset_symbol = self._generate_extra_offset_symbol(matrix)
         if matrix.addressing == "strided":
-            main_offset = "{} * {}".format(self.TEAM_INDEX_STR, matrix.get_real_volume())
+            main_offset = "{} * {}".format(self.team_index_str, matrix.get_real_volume())
             sub_offset = matrix.get_offset_to_first_element()
             return "&{}[{} + {} + {}]".format(matrix.name,
                                               main_offset,
@@ -389,7 +395,7 @@ class GemmGenerator(GemmLikeGenerator):
                                               extra_offset_symbol)
 
         elif matrix.addressing == "pointer_based":
-            main_offset = self.TEAM_INDEX_STR
+            main_offset = self.team_index_str
             sub_offset = matrix.get_offset_to_first_element()
             return "&{}[{}][{} + {}]".format(matrix.name,
                                              main_offset,

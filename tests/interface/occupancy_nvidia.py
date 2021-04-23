@@ -1,6 +1,6 @@
 import unittest
 from gemmforge import DenseMatrix
-from gemmforge import arch
+from gemmforge import GemmGenerator, arch
 
 class TestOccupancyNvidia(unittest.TestCase):
 
@@ -13,7 +13,7 @@ class TestOccupancyNvidia(unittest.TestCase):
     pass
 
   def setUp(self):
-    self.gen = arch.produce("nvidia", "sm_70").get_gemm_generator_factory().create("float")
+    self.gen = GemmGenerator(arch.produce("nvidia", "sm_70"), "float")
 
   def tearDown(self):
     pass

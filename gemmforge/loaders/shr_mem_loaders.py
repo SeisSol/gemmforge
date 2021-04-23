@@ -16,7 +16,7 @@ class ExtendedPatchLoader(AbstractShrMemLoader):
 
         self.lid_dim = self.matrix.num_rows
         # For better readability
-        self.name_treadIdx_x = self.arch_lexic.get_thread_idx_x()
+        self.name_treadIdx_x = self.arch_lexic.thread_idx_x
 
     def compute_shared_mem_size(self):
         return self.shm_volume
@@ -63,7 +63,7 @@ class ExactPatchLoader(AbstractShrMemLoader):
     def __init__(self, matrix, num_active_threads, load_and_transpose, manufacturer):
         super(ExactPatchLoader, self).__init__(matrix, num_active_threads, manufacturer, load_and_transpose)
         self.lid_dim = self.matrix.get_actual_num_rows()
-        self.name_treadIdx_x = self.arch_lexic.get_thread_idx_x()
+        self.name_treadIdx_x = self.arch_lexic.thread_idx_x
 
     def compute_shared_mem_size(self):
         return self.matrix.get_actual_volume()
