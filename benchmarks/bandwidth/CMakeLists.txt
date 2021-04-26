@@ -9,6 +9,10 @@ set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS "CUDA" "HIP")
 
 set(REAL_SIZE_IN_BYTES 4)
 
+if(NOT DEFINED PREFERRED_DEVICE_TYPE)
+    set(ENV{PREFERRED_DEVICE_TYPE} GPU)
+endif()
+
 add_subdirectory(../../submodules/Device build)
 
 if(${DEVICE_BACKEND} STREQUAL "CUDA")
