@@ -4,7 +4,7 @@ from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .loaders import shm_mem_factory, StubLoader
-from .arch_lexic import arch_lexic_factory
+from gemmforge.vm import VM
 from .thread_policies import TheadPolicyFactory
 import math
 import hashlib
@@ -14,20 +14,19 @@ class GemmGenerator(GemmLikeGenerator):
     """ Generates GEMM GPU kernels: C = alpha * A * B + beta * C
     """
 
-    def __init__(self, arch, precision):
-        super(GemmGenerator, self).__init__(arch, precision)
+    def __init__(self, vm: VM):
+        super(GemmGenerator, self).__init__(vm)
         self.mat_a = None
         self.mat_b = None
         self.mat_c = None
         self.mat_a_loader = None
         self.mat_b_loader = None
-        self.arch_lexic = arch_lexic_factory(arch.manufacturer)
         # For better readability for the remaining code
-        self.team_index_str = self.arch_lexic.get_tid_counter(self.arch_lexic.thread_idx_y,
-                                                              self.arch_lexic.block_dim_y,
-                                                              self.arch_lexic.block_idx_x)
-        self.name_threadIdx_y = self.arch_lexic.thread_idx_y
-        self.name_threadIdx_x = self.arch_lexic.thread_idx_x
+        self.team_index_str = self._lexic.get_tid_counter(self._lexic.thread_idx_y,
+                                                          self._lexic.block_dim_y,
+                                                          self._lexic.block_idx_x)
+        self.name_threadIdx_y = self._lexic.thread_idx_y
+        self.name_threadIdx_x = self._lexic.thread_idx_x
 
     def generate(self, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
         self.mat_a = mat_a
@@ -68,36 +67,36 @@ class GemmGenerator(GemmLikeGenerator):
             max_num_threads_per_block = self.num_active_threads * self.num_mult_per_block
             kernel_bounds = [max_num_threads_per_block]
 
-            with self.arch_lexic.kernel_definition(file,
-                                                   kernel_bounds,
-                                                   self.base_name,
-                                                   self._get_func_params(),
-                                                   self.precision,
-                                                   self._get_total_shared_mem_size()):
+            with self._lexic.kernel_definition(file,
+                                               kernel_bounds,
+                                               self.base_name,
+                                               self._get_func_params(),
+                                               self._precision,
+                                               self._get_total_shared_mem_size()):
 
                 with file.If("{} < {}".format(self.team_index_str, Generator.NUM_ELEMENTS_STR)):
 
                     # declare ptrs for correct matrices
-                    file.VariableDeclaration("const {}*".format(self.precision),
+                    file.VariableDeclaration("const {}*".format(self._precision),
                                              glob_symbols[self.mat_a.name],
                                              self._get_global_matrix_ptr(self.mat_a))
 
-                    file.VariableDeclaration("const {}*".format(self.precision),
+                    file.VariableDeclaration("const {}*".format(self._precision),
                                              glob_symbols[self.mat_b.name],
                                              self._get_global_matrix_ptr(self.mat_b))
 
-                    file.VariableDeclaration("{}*".format(self.precision),
+                    file.VariableDeclaration("{}*".format(self._precision),
                                              glob_symbols[self.mat_c.name],
                                              self._get_global_matrix_ptr(self.mat_c))
 
                     # declare shared memory per kernel
-                    mem = self.arch_lexic.declare_shared_memory_inline("Scratch", self.precision, self._get_total_shared_mem_size())
+                    mem = self._lexic.declare_shared_memory_inline("Scratch", self._precision, self._get_total_shared_mem_size())
                     if mem is not None:
                         file.Expression(mem)
 
                     # find address of matrix B within block shared memory
                     shr_mem_address = "&Scratch[{} * {}]".format(self.name_threadIdx_y, self.shr_mem_size_per_mult)
-                    file.VariableDeclaration("{}*".format(self.precision),
+                    file.VariableDeclaration("{}*".format(self._precision),
                                              self.mat_b_loader.get_output_symbol(),
                                              shr_mem_address)
 
@@ -107,14 +106,14 @@ class GemmGenerator(GemmLikeGenerator):
                         shr_mem_address = "&Scratch[{} * {} + {}]".format(self.name_threadIdx_y,
                                                                           self.shr_mem_size_per_mult,
                                                                           shr_mem_offset)
-                        file.VariableDeclaration("{}*".format(self.precision),
+                        file.VariableDeclaration("{}*".format(self._precision),
                                                  self.mat_a_loader.get_output_symbol(),
                                                  shr_mem_address)
 
                     # load matrices into shared memory
                     self.mat_b_loader.generate_scr(file, glob_symbols[self.mat_b.name])
                     self.mat_a_loader.generate_scr(file, glob_symbols[self.mat_a.name])
-                    file.Expression(self.arch_lexic.sync_threads())
+                    file.Expression(self._lexic.sync_threads())
 
 
                     # set up current compute symbols within the rest of the scope
@@ -125,12 +124,12 @@ class GemmGenerator(GemmLikeGenerator):
                     with file.If("{} < {}".format(self.name_threadIdx_x, self.num_compute_threads)):
                         # allocate a buffer for each cuda thread to hold computed results
                         file.Emptyline()
-                        zero_fp_value = "0.0{}".format('f' if self.precision == "float" else '')
-                        file.ArrayDeclaration(self.precision,
+                        zero_fp_value = "0.0{}".format('f' if self._precision == "float" else '')
+                        file.ArrayDeclaration(self._precision,
                                               "Results",
                                               [zero_fp_value] * self.mat_c.get_actual_num_cols())
 
-                        file.VariableDeclaration(self.precision, "Value")
+                        file.VariableDeclaration(self._precision, "Value")
 
                         # perform matrix multiplication
                         # m, n, k - according to the BLAS documentation. Read BLAS spec.
@@ -169,7 +168,7 @@ class GemmGenerator(GemmLikeGenerator):
                             if self.alpha == 1.0:
                                 lhs = "Results[n]"
                             else:
-                                if self.precision == "float" and isinstance(self.alpha, float):
+                                if self._precision == "float" and isinstance(self.alpha, float):
                                     lhs = f'{self.alpha}f * Results[n]'
                                 else:
                                     lhs = f'{self.alpha} * Results[n]'
@@ -179,7 +178,7 @@ class GemmGenerator(GemmLikeGenerator):
                                     lhs += " + {}".format(rhs)
                                 else:
                                     lhs += " + {} * {}".format(
-                                        "{}{}".format(self.beta, 'f' if self.precision == "float" else ''),
+                                        "{}{}".format(self.beta, 'f' if self._precision == "float" else ''),
                                         rhs)
 
                             file.Assignment(rhs, lhs)
@@ -190,16 +189,16 @@ class GemmGenerator(GemmLikeGenerator):
         src = StringIO()
         with constructs.Cpp(src) as file:
             with file.Function(self.base_name, self._get_launcher_params()):
-                file.VariableDeclaration(self.arch_lexic.kernel_range_object(), self._get_block_dim_spec())
-                file.VariableDeclaration(self.arch_lexic.kernel_range_object(), self._get_grid_dim_spec())
+                file.VariableDeclaration(self._lexic.kernel_range_object(), self._get_block_dim_spec())
+                file.VariableDeclaration(self._lexic.kernel_range_object(), self._get_grid_dim_spec())
 
-                self.arch_lexic.get_stream_via_pointer(file, "stream", Generator.STREAM_PTR_STR)
-                file.Expression(self.arch_lexic.get_launch_code(self.base_name,
-                                                                "Grid",
-                                                                "Block",
-                                                                "stream",
-                                                                self._get_func_args()))
-                err = self.arch_lexic.check_error()
+                self._lexic.get_stream_via_pointer(file, "stream", Generator.STREAM_PTR_STR)
+                file.Expression(self._lexic.get_launch_code(self.base_name,
+                                                            "Grid",
+                                                            "Block",
+                                                            "stream",
+                                                             self._get_func_args()))
+                err = self._lexic.check_error()
                 if err is not None:
                     file.Expression(err)
 
@@ -274,33 +273,31 @@ class GemmGenerator(GemmLikeGenerator):
         else:
             lid_dim_length = self.mat_a.get_actual_num_rows()
 
-        num_vector_units_required = math.ceil(lid_dim_length / self.arch.vec_unit_length)
+        num_vector_units_required = math.ceil(lid_dim_length / self._hw_descr.vec_unit_length)
         self.num_compute_threads = lid_dim_length
-        self.num_active_threads = num_vector_units_required * self.arch.vec_unit_length
+        self.num_active_threads = num_vector_units_required * self._hw_descr.vec_unit_length
 
         if self.mat_a.transpose:
-            self.mat_a_loader = shm_mem_factory(matrix=self.mat_a,
+            self.mat_a_loader = shm_mem_factory(vm=self._vm,
+                                                matrix=self.mat_a,
                                                 num_active_threads=self.num_active_threads,
-                                                load_and_transpose=True,
-                                                manufacturer=self.arch.manufacturer)
+                                                load_and_transpose=True)
 
         else:
-            self.mat_a_loader = StubLoader(self.mat_a, self.num_active_threads, self.arch.manufacturer)
+            self.mat_a_loader = StubLoader(self._vm, self.mat_a, self.num_active_threads)
 
-        self.mat_b_loader = shm_mem_factory(matrix=self.mat_b,
+        self.mat_b_loader = shm_mem_factory(vm=self._vm,
+                                            matrix=self.mat_b,
                                             num_active_threads=self.num_active_threads,
-                                            load_and_transpose=False,
-                                            manufacturer=self.arch.manufacturer)
+                                            load_and_transpose=False)
 
 
         self.shr_mem_size_per_mult = self.mat_a_loader.compute_shared_mem_size() \
                                      + self.mat_b_loader.compute_shared_mem_size()
 
-        bytes_per_real = GemmGenerator.PRECISION_TO_BYTES[self.precision]
-        thread_policy = TheadPolicyFactory.get_gemm_policy(arch=self.arch,
+        thread_policy = TheadPolicyFactory.get_gemm_policy(vm=self._vm,
                                                            reals_per_op=self.shr_mem_size_per_mult,
                                                            num_threads=self.num_active_threads,
-                                                           bytes_per_real=bytes_per_real,
                                                            op1=self.mat_a,
                                                            op2=self.mat_b,
                                                            res=self.mat_c)
@@ -339,7 +336,7 @@ class GemmGenerator(GemmLikeGenerator):
                                                  self.mat_b.__str__(),
                                                  self.mat_c.__str__()).encode()))
         md5encoding = result.hexdigest()
-        prefix = 's' if self.precision == "float" else "d"
+        prefix = 's' if self._precision == "float" else "d"
 
         gemm_dims = f'm{self.mat_a.get_actual_num_rows()}_n{self.mat_b.get_actual_num_cols()}_k{self.mat_a.get_actual_num_cols()}'
         ldas = f'lda{self.mat_a.num_rows}_ldb{self.mat_b.num_rows}_ldc{self.mat_c.num_rows}'
@@ -357,14 +354,14 @@ class GemmGenerator(GemmLikeGenerator):
         if isinstance(self.alpha, float):
             return base_params
         else:
-            return f'{self.precision} {self.alpha}, {base_params}'
+            return f'{self._precision} {self.alpha}, {base_params}'
 
     def _get_launcher_params(self, with_defaults=False):
         base_params = super(GemmGenerator, self)._get_launcher_params(with_defaults)
         if isinstance(self.alpha, float):
             return base_params
         else:
-            return f'{self.precision} {self.alpha}, {base_params}'
+            return f'{self._precision} {self.alpha}, {base_params}'
 
     def _get_func_args(self):
         base_args = super(GemmGenerator, self)._get_func_args()
