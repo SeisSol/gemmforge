@@ -21,3 +21,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE include
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(${CMAKE_PROJECT_NAME} ${YAML_CPP_LIBRARIES})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${YAML_CPP_INCLUDE_DIR})
+
+enable_testing()
+add_test(NAME test COMMAND ${CMAKE_PROJECT_NAME})
