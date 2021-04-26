@@ -25,9 +25,8 @@ int main(int Argc, char *Argv[]) {
     auto To = (float *) api->allocGlobMem(NumElements * sizeof(float));;
     auto From = (float *) api->allocGlobMem(NumElements * sizeof(float));;
 
-    long blocks = (NumElements + 1024 - 1) / 1024;
-    long threads = 256; //api->getMaxThreadBlockSize(); wait for fix
-
+    size_t blocks = (NumElements + 1024 - 1) / 1024;
+    size_t threads = 1024;
     api->synchDevice();
 
     utils::StopWatch <std::chrono::duration<double, std::chrono::nanoseconds::period>> Timer;
