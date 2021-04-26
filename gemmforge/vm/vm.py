@@ -1,6 +1,5 @@
 from .arch_lexic import AbstractArchLexic, lexic_factory
 from .hw_descr import HwDecription, hw_descr_factory
-from chainforge.common.basic_types import FloatingPointType
 from math import ceil
 from typing import Type
 
