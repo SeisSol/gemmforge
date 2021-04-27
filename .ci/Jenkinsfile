@@ -38,8 +38,9 @@ pipeline {
             steps {
                 echo "--- ${ref}"
                 script {
-                    filter = "${ref}" =~ '(?<=refs/heads/)(.+)'
-                    branch = filter[0][0]
+                    String reference = "${ref}"
+                    //filter = "${ref}" =~ '(?<=refs/heads/)(.+)'
+                    branch = reference.split('/')[2]
                 }
                 sh """
                 git clone --branch ${branch} --recurse-submodules ${clone_url} .
