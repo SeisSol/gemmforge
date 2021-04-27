@@ -36,8 +36,12 @@ pipeline {
             //    TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
             //}
             steps {
+                script {
+                    filter = ${ref} =~ '(?<=refs/heads/)(.+)'
+                    branch = filter[0][0]
+                }
                 sh """
-                git clone --recurse-submodules ${clone_url} .
+                git clone --branch ${branch} --recurse-submodules ${clone_url} .
                 git checkout ${ref}
                 """
                 //git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
