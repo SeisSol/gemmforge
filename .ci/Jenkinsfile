@@ -5,14 +5,25 @@ properties([
             description: 'agent name tells where to run a job', 
             name: 'AGENT',
             trim: true)
-    ])
+    ]),
+    pipelineTriggers([
+       [$class: 'GenericTrigger',
+        genericVariables: [
+         [key: 'ref', value: '$.ref'],
+         [key: 'before', value: '$.before'],
+         [key: 'clone_url', value: '$.repository.clone_url'],
+        ],
+        printContributedVariables: true,
+        printPostContent: true,
+       ]
+  ])
 ])
+
 
 pipeline {
     agent {label "${env.AGENT}"}
 
     stages {
-
         stage('CleanWorkspace') {
             steps {
                 deleteDir()
@@ -20,11 +31,14 @@ pipeline {
         }
 
         stage('Clone') {
-            environment {
-                TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
-            }
             steps {
-                git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
+                script {
+                    filter = "${ref}".split("refs/heads/")
+                    branch = filter[1]
+                }
+                sh """
+                git clone --branch ${branch} --recurse-submodules ${clone_url} .
+                """
             }
         }
         
@@ -78,6 +92,11 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post { 
+        always {
+            sh 'docker rmi -f $(docker images -f "dangling=true" -q)'
         }
     }
 }
