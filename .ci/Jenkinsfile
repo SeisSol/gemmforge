@@ -32,20 +32,14 @@ pipeline {
         }
 
         stage('Clone') {
-            //environment {
-            //    TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
-            //}
             steps {
-                echo "--- ${ref}"
                 script {
-                    String reference = "${ref}"
-                    //filter = "${ref}" =~ '(?<=refs/heads/)(.+)'
-                    branch = reference.split('/')[2]
+                    filter = "${ref}".split("refs/heads/")
+                    branch = filter[1]
                 }
                 sh """
                 git clone --branch ${branch} --recurse-submodules ${clone_url} .
                 """
-                //git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
             }
         }
         
