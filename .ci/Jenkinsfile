@@ -37,7 +37,7 @@ pipeline {
             //}
             steps {
                 sh """
-                git clone --recurse-submodules ${clone_url}
+                git clone --recurse-submodules ${clone_url} .
                 git checkout ${ref}
                 """
                 //git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
