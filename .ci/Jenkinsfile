@@ -19,7 +19,6 @@ properties([
   ])
 ])
 
-
 pipeline {
     agent {label "${env.AGENT}"}
 
