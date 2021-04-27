@@ -7,15 +7,15 @@ properties([
             trim: true)
     ]),
     pipelineTriggers([
-   [$class: 'GenericTrigger',
-    genericVariables: [
-     [key: 'ref', value: '$.ref'],
-     [key: 'before', value: '$.ref'],
-     [key: 'clone_url', value: '$.repository.clone_url'],
-    ],
-    printContributedVariables: true,
-    printPostContent: true,
-   ]
+       [$class: 'GenericTrigger',
+        genericVariables: [
+         [key: 'ref', value: '$.ref'],
+         [key: 'before', value: '$.ref'],
+         [key: 'clone_url', value: '$.repository.clone_url'],
+        ],
+        printContributedVariables: true,
+        printPostContent: true,
+       ]
   ])
 ])
 
@@ -24,7 +24,6 @@ pipeline {
     agent {label "${env.AGENT}"}
 
     stages {
-
         stage('CleanWorkspace') {
             steps {
                 deleteDir()
@@ -93,6 +92,13 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post { 
+        always {
+            sh """
+            docker rmi -f $(docker images -f "dangling=true" -q)
+            """
         }
     }
 }
