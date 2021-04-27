@@ -37,12 +37,11 @@ pipeline {
             //}
             steps {
                 script {
-                    filter = ${ref} =~ '(?<=refs/heads/)(.+)'
+                    filter = "${ref}" =~ '(?<=refs/heads/)(.+)'
                     branch = filter[0][0]
                 }
                 sh """
                 git clone --branch ${branch} --recurse-submodules ${clone_url} .
-                git checkout ${ref}
                 """
                 //git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
             }
