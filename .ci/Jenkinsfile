@@ -10,7 +10,7 @@ properties([
        [$class: 'GenericTrigger',
         genericVariables: [
          [key: 'ref', value: '$.ref'],
-         [key: 'before', value: '$.ref'],
+         [key: 'before', value: '$.before'],
          [key: 'clone_url', value: '$.repository.clone_url'],
         ],
         printContributedVariables: true,
