@@ -5,7 +5,18 @@ properties([
             description: 'agent name tells where to run a job', 
             name: 'AGENT',
             trim: true)
-    ])
+    ]),
+    pipelineTriggers([
+   [$class: 'GenericTrigger',
+    genericVariables: [
+     [key: 'ref', value: '$.ref'],
+     [key: 'before', value: '$.ref'],
+     [key: 'clone_url', value: '$.repository.clone_url'],
+    ],
+    printContributedVariables: true,
+    printPostContent: true,
+   ]
+  ])
 ])
 
 pipeline {
@@ -20,11 +31,15 @@ pipeline {
         }
 
         stage('Clone') {
-            environment {
-                TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
-            }
+            //environment {
+            //    TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
+            //}
             steps {
-                git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
+                sh """
+                git clone --recurse-submodules ${clone_url}
+                git checkout ${ref}
+                """
+                //git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
             }
         }
         
