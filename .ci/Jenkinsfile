@@ -36,6 +36,7 @@ pipeline {
             //    TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
             //}
             steps {
+                echo "--- ${ref}"
                 script {
                     filter = "${ref}" =~ '(?<=refs/heads/)(.+)'
                     branch = filter[0][0]
