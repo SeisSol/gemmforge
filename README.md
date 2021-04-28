@@ -1,5 +1,6 @@
 [![Build Status](http://vmbungartz10.informatik.tu-muenchen.de/seissol/view/Forge/job/gemmforge2/badge/icon)](http://vmbungartz10.informatik.tu-muenchen.de/seissol/view/Forge/job/gemmforge2/)
 
+
 ## GPU-GEMM generator for the Discontinuous Galerkin method
 
 ## Installation
