@@ -1,13 +1,12 @@
-
-#ifndef GEMMGEN_INTERNALS_H
-#define GEMMGEN_INTERNALS_H
+#ifndef GEMMFORGE_INTERNALS_H
+#define GEMMFORGE_INTERNALS_H
 
 #include <string>
 
-#define CHECK_ERR gemmgen::checkErr(__FILE__,__LINE__)
-namespace gemmgen {
+#define CHECK_ERR gemmforge::checkErr(__FILE__,__LINE__)
+namespace gemmforge {
   void checkErr(const std::string &file, int line);
   void synchDevice(void *stream = nullptr);
 }
 
-#endif  // GEMMGEN_INTERNALS_H
+#endif  // GEMMFORGE_INTERNALS_H
