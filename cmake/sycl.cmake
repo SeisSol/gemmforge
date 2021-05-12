@@ -1,7 +1,7 @@
 add_library(${GPU_TARGET} SHARED ${GPU_TARGET_SOURCE_FILES})
 
 if (${DEVICE_BACKEND} STREQUAL "HIPSYCL")
-    find_package(${GPU_TARGET} CONFIG REQUIRED)
+    find_package(hipSYCL CONFIG REQUIRED)
     add_sycl_to_target(TARGET ${GPU_TARGET} SOURCES ${GPU_TARGET_SOURCE_FILES})
 else()
     set(CMAKE_CXX_COMPILER dpcpp)
