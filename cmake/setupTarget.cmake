@@ -2,7 +2,9 @@ set(REAL_SIZE "4" CACHE STRING "size of the floating point data type")
 set_property(CACHE REAL_SIZE PROPERTY STRINGS "8" "4")
 
 set(SM_ARCH "sm_60" CACHE STRING "size of the floating point data type")
-set_property(CACHE SM_ARCH PROPERTY STRINGS "sm_60" "sm_61" "sm_70" "sm_71" "gfx906")
+set_property(CACHE SM_ARCH PROPERTY STRINGS "sm_60" "sm_61" "sm_70" "sm_71" "gfx906" "bdw"
+                            "skl" "kbl" "cfl" "bxt" "glk" "icllp" "lkf" "ehl" "tgllp"
+                            "rkl" "adls" "dg1" "Gen8" "Gen9" "Gen11" "Gen12LP")
 
 set(REFERENCE_IMPL "GEMMFORGE" CACHE STRING "size of the floating point data type")
 set_property(CACHE REFERENCE_IMPL PROPERTY STRINGS "GEMMFORGE" "OPENBLAS")
