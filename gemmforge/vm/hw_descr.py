@@ -89,7 +89,7 @@ def hw_descr_factory(name, sub_name):
                             max_workgroup_per_cu,
                             name)
 
-    elif name == "sycl":
+    elif name == "hipsycl" or name == "oneapi":
         if sub_name in ['dg1']:
             return HwDecription(64,
                                 64 * KB,
