@@ -5,7 +5,9 @@ execute_process(COMMAND realpath ${CMAKE_CURRENT_LIST_DIR}/../..
 string(REGEX REPLACE "\n$" "" GEMMFORGE_PATH "${GEMMFORGE_PATH}")
 
 set(GemmForge_INCLUDE_DIRS "${GEMMFORGE_PATH}/include")
-set(GemmForge_SOURCES "${GemmForge_INCLUDE_DIRS}/gemmforge_aux.cu")
+set(GemmForge_SOURCES "${GemmForge_INCLUDE_DIRS}/gemmforge_aux.cu"
+                      "${GemmForge_INCLUDE_DIRS}/gemmforge_aux.cpp"
+                      "${GemmForge_INCLUDE_DIRS}/gemmforge_aux_sycl.cpp")
 
 
 
