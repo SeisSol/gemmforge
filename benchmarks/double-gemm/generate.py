@@ -88,7 +88,7 @@ try:
         file.write("#include \"gemmforge_aux.h\"\n")
         if hw_descr.manufacturer == "amd":
             file.write("#include \"hip/hip_runtime.h\"\n")
-        elif hw_descr.manufacturer == "sycl":
+        elif hw_descr.manufacturer == "hipsycl" or hw_descr.manufacturer == "oneapi":
             file.write("#include <CL/sycl.hpp>\n")
 
         for kernel in kernels:
