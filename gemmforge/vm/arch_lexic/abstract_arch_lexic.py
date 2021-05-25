@@ -48,5 +48,14 @@ class AbstractArchLexic(ABC):
         pass
 
     @abstractmethod
-    def batch_indexer(self):
+    def batch_indexer_gemm(self):
         pass
+
+    @abstractmethod
+    def batch_indexer_csa(self):
+        pass
+
+    @abstractmethod
+    def batch_indexer_init(self):
+        pass
+

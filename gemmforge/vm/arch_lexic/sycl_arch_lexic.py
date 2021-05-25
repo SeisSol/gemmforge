@@ -45,5 +45,11 @@ class SyclArchLexic(AbstractArchLexic):
     def check_error(self):
         return None
 
-    def batch_indexer(self):
+    def batch_indexer_gemm(self):
         return self.get_tid_counter(self.thread_idx_y, self.block_dim_y, self.block_idx_z)
+
+    def batch_indexer_csa(self):
+        return self.get_tid_counter(self.thread_idx_z, self.block_dim_z, self.block_idx_z)
+
+    def batch_indexer_init(self):
+        return self.get_tid_counter(self.thread_idx_z, self.block_dim_z, self.block_idx_z)

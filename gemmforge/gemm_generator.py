@@ -22,7 +22,7 @@ class GemmGenerator(GemmLikeGenerator):
         self.mat_a_loader = None
         self.mat_b_loader = None
         # For better readability for the remaining code
-        self.team_index_str = self._lexic.batch_indexer()
+        self.team_index_str = self._lexic.batch_indexer_gemm()
         self.name_threadIdx_y = self._lexic.thread_idx_y
         self.name_threadIdx_x = self._lexic.thread_idx_x
 
