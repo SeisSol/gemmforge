@@ -35,3 +35,6 @@ class NvidiaArchLexic(AbstractArchLexic):
 
     def check_error(self):
         return "CHECK_ERR"
+
+    def batch_indexer(self):
+        return self.get_tid_counter(self.thread_idx_y, self.block_dim_y, self.block_idx_x)

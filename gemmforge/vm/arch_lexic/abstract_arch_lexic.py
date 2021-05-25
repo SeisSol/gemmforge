@@ -46,3 +46,7 @@ class AbstractArchLexic(ABC):
     @abstractmethod
     def check_error(self):
         pass
+
+    @abstractmethod
+    def batch_indexer(self):
+        pass
