@@ -91,20 +91,20 @@ def hw_descr_factory(name, sub_name):
 
     elif name == "hipsycl" or name == "oneapi":
         if sub_name in ['dg1']:
-            return HwDecription(64,
+            return HwDecription(6,
                                 64 * KB,
                                 512,
                                 64 * KB,
                                 512,
-                                64,
+                                16,
                                 name)
         else:
-            return HwDecription(32,
+            return HwDecription(8,
                                 48 * KB,
                                 1024,
                                 64 * KB,
                                 2048,
-                                32,
+                                8,
                                 name)
     else:
         raise ValueError('Unknown gpu architecture')
