@@ -17,15 +17,15 @@ parser.add_argument("-s",
 args = parser.parse_args()
 
 mat_a = DenseMatrix(num_rows=56,
+                    num_cols=56,
+                    addressing="none",
+                    bbox=[0, 0, 55, 55],
+                    transpose=False)
+
+mat_b = DenseMatrix(num_rows=56,
                     num_cols=9,
                     addressing="strided",
                     bbox=[0, 0, 55, 8],
-                    transpose=False)
-
-mat_b = DenseMatrix(num_rows=9,
-                    num_cols=9,
-                    addressing="strided",
-                    bbox=[0, 0, 8, 8],
                     transpose=False)
 
 

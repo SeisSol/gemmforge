@@ -126,47 +126,52 @@ class GemmGenerator(GemmLikeGenerator):
                     current_symbols[self.mat_a.name] = self.mat_a_loader.get_output_symbol()
                     file.Emptyline()
 
+                    # allocate a buffer for each cuda thread to hold computed results
+                    zero_fp_value = "0.0{}".format('f' if self._precision == 'float' else '')
+                    file.ArrayDeclaration(self._precision,
+                                          'Results',
+                                          [zero_fp_value] * self.mat_c.get_actual_num_cols())
+
+                    file.VariableDeclaration(self._precision, 'Value')
+                    file.VariableDeclaration(self._precision, 'Suffle')
+                    file(f'int WarpId = {self.name_threadIdx_x} % {self._vm.get_hw_descr().vec_unit_length};')
+
+                    file.Emptyline()
+
+
+                    # perform matrix multiplication
+                    # m, n, k - according to the BLAS documentation. Read BLAS spec.
+                    if self.mat_a.transpose:
+                        contraction_length = self.mat_a.get_actual_num_rows()
+                    else:
+                        contraction_length = self.mat_a.get_actual_num_cols()
+
+                    file.Emptyline()
+                    with file.For(f'long long k = 0; k < {contraction_length}ll; ++k'):
+                        mask_op1 = f'{self.name_threadIdx_x} < {self.num_compute_threads}'
+                        first_operand = "{}[{} + {}ll * k]".format(current_symbols[self.mat_a.name],
+                                                                   self.name_threadIdx_x,
+                                                                   self.mat_a_loader.get_lid_dim())
+                        file(f'Value = ({mask_op1}) ? {first_operand} : {zero_fp_value};')
+
+                        address = f'WarpId + k * {self.mat_b_loader.get_lid_dim()}ll'
+                        second_operand = f'{current_symbols[self.mat_b.name]}[{address}]'
+                        mask_op2 = f'WarpId < {self.mat_b.get_actual_num_cols()}'
+                        file(f'Suffle = ({mask_op2}) ? {second_operand} : {zero_fp_value};')
+
+                        file.Emptyline()
+                        file.Pragma('unroll')
+                        with file.For(f'long long n = 0; n < {self.mat_c.get_actual_num_cols()}ll; ++n'):
+                            broad_cast = f'__shfl_sync(0xffffffff, Suffle, n)'
+                            file.Accumulate("Results[n]", f'Value * {broad_cast}')
+
+                    file.Emptyline()
+                    # write results back to memory
+
                     with file.If(f'{self.name_threadIdx_x} < {self.num_compute_threads}'):
-                        # allocate a buffer for each cuda thread to hold computed results
-                        file.Emptyline()
-                        zero_fp_value = "0.0{}".format('f' if self._precision == 'float' else '')
-                        file.ArrayDeclaration(self._precision,
-                                              'Results',
-                                              [zero_fp_value] * self.mat_c.get_actual_num_cols())
-
-                        file.VariableDeclaration(self._precision, 'Value')
-
-                        # perform matrix multiplication
-                        # m, n, k - according to the BLAS documentation. Read BLAS spec.
-                        if self.mat_a.transpose:
-                            contraction_length = self.mat_a.get_actual_num_rows()
-                        else:
-                            contraction_length = self.mat_a.get_actual_num_cols()
-
-                        file.Emptyline()
-                        with file.For(f'int k = 0; k < {contraction_length}; ++k'):
-                            first_operand = "{}[{} + {} * k]".format(current_symbols[self.mat_a.name],
-                                                                     self.name_threadIdx_x,
-                                                                     self.mat_a_loader.get_lid_dim())
-                            file.Assignment('Value', f'{first_operand}')
-                            file.Emptyline()
-                            file.Pragma('unroll')
-                            with file.For(f'int n = 0; n < {self.mat_c.get_actual_num_cols()}; ++n'):
-                                if self.mat_b.transpose:
-                                    second_operand = "{}[n + {} * k]".format(current_symbols[self.mat_b.name],
-                                                                             self.mat_b_loader.get_lid_dim())
-                                else:
-                                    second_operand = "{}[k + {} * n]".format(current_symbols[self.mat_b.name],
-                                                                             self.mat_b_loader.get_lid_dim())
-
-                                file.Accumulate("Results[n]",
-                                                f'Value * {second_operand}')
-
-                        # write results back to memory
-                        file.Emptyline()
                         file.Pragma("unroll")
-                        with file.For(f'int n = 0; n < {self.mat_c.get_actual_num_cols()}; ++n'):
-                            rhs = "{}[{} + {} * n]".format(glob_symbols[self.mat_c.name],
+                        with file.For(f'long long n = 0; n < {self.mat_c.get_actual_num_cols()}ll; ++n'):
+                            rhs = "{}[{} + {}ll * n]".format(glob_symbols[self.mat_c.name],
                                                            self.name_threadIdx_x,
                                                            self.mat_c.num_rows)
 
@@ -291,10 +296,13 @@ class GemmGenerator(GemmLikeGenerator):
         else:
             self.mat_a_loader = StubLoader(self._vm, self.mat_a, self.num_active_threads)
 
+        # make sure that n-dimention of matrix B is the leading one.
+        # required for shuffle instructions
+        rotate = False if self.mat_b.transpose else True
         self.mat_b_loader = shm_mem_factory(vm=self._vm,
                                             matrix=self.mat_b,
                                             num_active_threads=self.num_active_threads,
-                                            load_and_transpose=False)
+                                            load_and_transpose=rotate)
 
         self.shr_mem_size_per_mult = \
             self.mat_a_loader.compute_shared_mem_size() + self.mat_b_loader.compute_shared_mem_size()
