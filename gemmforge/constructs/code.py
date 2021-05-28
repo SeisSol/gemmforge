@@ -139,6 +139,9 @@ class Cpp:
     def For(self, argument):
         return Block(self, 'for ({})'.format(argument))
 
+    def While(self, argument):
+        return Block(self, 'while ({})'.format(argument))
+
     def Namespace(self, name):
         if len(name) == 0:
             return NoScope()
