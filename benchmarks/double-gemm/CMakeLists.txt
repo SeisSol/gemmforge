@@ -33,7 +33,7 @@ endif()
 
 set(GEN_COPY_FILES ${CMAKE_SOURCE_DIR}/params.yaml ${CMAKE_SOURCE_DIR}/config.yaml)
 
-include(../../cmake/setupTarget.cmake)
+include(../../cmake/setupOptions.cmake)
 add_subdirectory(../../submodules/Device build)
 
 add_executable(${TARGET} ${TARGET_SOURCE_FILES})

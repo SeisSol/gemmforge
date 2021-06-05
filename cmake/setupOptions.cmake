@@ -9,8 +9,8 @@ set_property(CACHE SM_ARCH PROPERTY STRINGS "sm_60" "sm_61" "sm_70" "sm_71" "gfx
 set(REFERENCE_IMPL "GEMMFORGE" CACHE STRING "size of the floating point data type")
 set_property(CACHE REFERENCE_IMPL PROPERTY STRINGS "GEMMFORGE" "OPENBLAS")
 
-set(DEVICE_BACKEND "HIP" CACHE STRING "type of an interface")
-set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS "CUDA" "HIP")
+set(DEVICE_BACKEND "CUDA" CACHE STRING "type of an interface")
+set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS "CUDA" "HIP" "ONEAPI" "HIPSYCL")
 
 set(MANUFACTURER "")
 
