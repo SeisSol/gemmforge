@@ -109,7 +109,7 @@ pipeline {
         stage('TestSycl') {
             steps {
                 script {
-                    testImage = docker.build("gftest:sycl", ". -f ./.ci/docker/Dockerfile.spack")
+                    testImage = docker.build("gftest:sycl", ". -f ./.ci/docker/Dockerfile.hipsycl_base")
                     testImage.inside("--gpus all --env SM=${env.GPU_MODEL}") {
                       sh """
                         set -eu pipefail
