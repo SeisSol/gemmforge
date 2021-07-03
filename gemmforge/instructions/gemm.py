@@ -36,6 +36,7 @@ class GenericGemm(AbstractInstruction):
       writer(f'{self._vm.fp_as_str()} {value_var};')
       
       writer.Emptyline()
+      writer.Pragma('unroll')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
         writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
@@ -47,10 +48,8 @@ class GenericGemm(AbstractInstruction):
     op2_data_view = self._op2.data_view
     writer.Pragma('unroll')
     with writer.For(f'int n = 0; n < {self._dest.obj.size}; ++n'):
-      if self._trans_b:
-        op2_addr = f'n + {op2_data_view.lead_dim} * k'
-      else:
-        op2_addr = f'k + {op2_data_view.lead_dim} * n'
+      # Note: the second operand is always trasposed in the shared memory
+      op2_addr = f'n + {op2_data_view.lead_dim} * k'
 
       writer(f'{self._dest.name}[n] += {op1_value} * {self._op2.name}[{op2_addr}];')
 

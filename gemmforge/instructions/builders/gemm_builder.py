@@ -52,9 +52,11 @@ class GemmBuilder(AbstractBuilder):
     else:
       self._op1 = op1
     
-    # Note: we will handle transposition of the second operand during
-    # the matrix multiplication
-    self._op2 = self._make_loader_and_symbol(operand=op2, do_transpose=False)
+    # Note: we force matrix B to be traposed in the shared memory
+    if trans_b:
+      self._op2 = self._make_loader_and_symbol(operand=op2, do_transpose=False)
+    else:
+      self._op2 = self._make_loader_and_symbol(operand=op2, do_transpose=True)
     
     self._insert_sync_threads()
 

@@ -56,7 +56,7 @@ class ShrMemAlloc(AbstractInstruction):
     mem = lexic.declare_shared_memory_inline(name=common_shrmem,
                                              precision=self._vm.fp_as_str(),
                                              size=common_shrmem_size,
-                                             alignment=8)
+                                             alignment=16)
 
     writer(f'{mem};')
     address = f'{shrmem_obj.get_size_per_mult()} * {lexic.thread_idx_y}'
