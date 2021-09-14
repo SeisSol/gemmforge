@@ -33,7 +33,7 @@ examples:
   -  atsccs68-docker-executor
   parallel:
     matrix:
-      - BACKEND: [nvidia]
+      - BACKEND: [nvidia, hipsycl]
   script:
     - for example in ./examples/*.py; do
         python3 $example -m ${BACKEND} -s ${GPU_MODEL} ;
@@ -47,7 +47,8 @@ examples:
     - export CXX=g++
     - export root_dir=$PWD
 
-gemms:
+
+cuda_gemms:
   stage: test
   tags:
   -  atsccs68-docker-executor
@@ -57,6 +58,22 @@ gemms:
     - mkdir -p $curr_dir && cd $curr_dir
     - for test in ../testsuites/*.yaml; do
         cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=CUDA -DREAL_SIZE=4 -DTEST_SUITE=$test ;
+        make -j4 ;
+        ./gemm-tests ;
+        rm -rf ./* ;
+      done ;
+
+
+sycl_gemms:
+  stage: test
+  tags:
+  -  atsccs68-docker-executor
+  script:
+    - *commone_test_script_steps
+    - export curr_dir=./tests/gemms/build
+    - mkdir -p $curr_dir && cd $curr_dir
+    - for test in ../testsuites/*.yaml; do
+        CC=/usr/bin/gcc-9 CXX=/usr/bin/g++-9 cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=HIPSYCL -DREAL_SIZE=4 -DTEST_SUITE=$test ;
         make -j4 ;
         ./gemm-tests ;
         rm -rf ./* ;
