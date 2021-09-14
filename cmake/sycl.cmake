@@ -3,12 +3,6 @@ add_library(${GPU_TARGET} SHARED ${GPU_TARGET_SOURCE_FILES})
 if (${DEVICE_BACKEND} STREQUAL "HIPSYCL")
     set(HIPSYCL_TARGETS "cuda:${DEVICE_SUB_ARCH}")
 
-    # NOTE: we need to specify both ways to set up
-    # a platform and arch. It is probably a bug in
-    # hipsycl v0.9.1
-    set(HIPSYCL_PLATFORM "cuda")
-    set(HIPSYCL_GPU_ARCH "${DEVICE_SUB_ARCH}")
-
     find_package(hipSYCL CONFIG REQUIRED)
     add_sycl_to_target(TARGET ${GPU_TARGET}  SOURCES ${DEVICE_SOURCE_FILES})
 else()

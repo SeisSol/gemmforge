@@ -24,7 +24,10 @@ submodules:
     entrypoint: [""]
   script:
     - cat ./.gitmodules
-    - git submodule update --init --recursive 
+    - git submodule update --init --recursive
+  artifacts:
+    paths:
+      - submodules
 
 
 examples:
@@ -41,10 +44,17 @@ examples:
     - python3 ./tests/interface/test_loaders_factory.py
 
 
-.common_test_steps_template: &commone_test_script_steps
+.common_test_steps_template_gcc8: &common_test_script_steps_gcc8
     - export CTEST_OUTPUT_ON_FAILURE=1
-    - export CC=gcc
-    - export CXX=g++
+    - export CC=/usr/bin/gcc-8
+    - export CXX=/usr/bin/g++-8
+    - export root_dir=$PWD
+
+
+.common_test_steps_template_gcc9: &common_test_script_steps_gcc9
+    - export CTEST_OUTPUT_ON_FAILURE=1
+    - export CC=/usr/bin/gcc-9
+    - export CXX=/usr/bin/g++-9
     - export root_dir=$PWD
 
 
@@ -53,7 +63,7 @@ cuda_gemms:
   tags:
   -  atsccs68-docker-executor
   script:
-    - *commone_test_script_steps
+    - *common_test_script_steps_gcc8
     - export curr_dir=./tests/gemms/build
     - mkdir -p $curr_dir && cd $curr_dir
     - for test in ../testsuites/*.yaml; do
@@ -69,23 +79,23 @@ sycl_gemms:
   tags:
   -  atsccs68-docker-executor
   script:
-    - *commone_test_script_steps
+    - *common_test_script_steps_gcc9
     - export curr_dir=./tests/gemms/build
     - mkdir -p $curr_dir && cd $curr_dir
     - for test in ../testsuites/*.yaml; do
-        CC=/usr/bin/gcc-9 CXX=/usr/bin/g++-9 cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=HIPSYCL -DREAL_SIZE=4 -DTEST_SUITE=$test ;
+        cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=HIPSYCL -DREAL_SIZE=4 -DTEST_SUITE=$test ;
         make -j4 ;
         ./gemm-tests ;
         rm -rf ./* ;
       done ;
 
 
-csa:
+cuda_csa:
   stage: test
   tags:
   -  atsccs68-docker-executor
   script:
-    - *commone_test_script_steps
+    - *common_test_script_steps_gcc8
     - export curr_dir=./tests/csa/build
     - mkdir -p $curr_dir && cd $curr_dir
     - for test in ../testsuites/*.yaml; do
@@ -96,16 +106,48 @@ csa:
       done ;
 
 
-benchmarks:
+sycl_csa:
   stage: test
   tags:
   -  atsccs68-docker-executor
   script:
-    - *commone_test_script_steps
+    - *common_test_script_steps_gcc9
+    - export curr_dir=./tests/csa/build
+    - mkdir -p $curr_dir && cd $curr_dir
+    - for test in ../testsuites/*.yaml; do
+        cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=HIPSYCL -DREAL_SIZE=4 -DTEST_SUITE=$test ;
+        make -j4 ;
+        ./csa-tests ;
+        rm -rf ./* ;
+      done ;
+
+
+cuda_benchmarks:
+  stage: test
+  tags:
+  -  atsccs68-docker-executor
+  script:
+    - *common_test_script_steps_gcc8
     - for bench in ./benchmarks/*; do
         export curr_dir=$bench/build ;
         mkdir -p $curr_dir && cd $curr_dir ;
         cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=CUDA -DREAL_SIZE=4 ;
+        make -j4 ;
+        make test ARGS="-V" ;
+        cd $root_dir ;
+      done ;
+
+
+sycl_benchmarks:
+  stage: test
+  tags:
+  -  atsccs68-docker-executor
+  script:
+    - *common_test_script_steps_gcc9
+    - for bench in ./benchmarks/*; do
+        export curr_dir=$bench/build ;
+        mkdir -p $curr_dir && cd $curr_dir ;
+        cmake .. -DSM_ARCH=${GPU_MODEL} -DDEVICE_BACKEND=HIPSYCL -DREAL_SIZE=4 ;
         make -j4 ;
         make test ARGS="-V" ;
         cd $root_dir ;
@@ -134,6 +176,9 @@ install:
   stage: miscellaneous
   tags:
   -  atsccs68-docker-executor
+  parallel:
+    matrix:
+      - BACKEND: [nvidia, hipsycl]
   before_script:
   - pip3 install --user git+https://github.com/ravil-mobile/gemmforge.git@$CI_COMMIT_BRANCH
   script:
@@ -146,5 +191,5 @@ install:
     - make
     - mkdir $root_dir/localspace && cd $root_dir/localspace
     - for example in ../examples/*.py; do
-        python3 $example ;
+        python3 $example -m ${BACKEND} -s sm_60 ;
       done
