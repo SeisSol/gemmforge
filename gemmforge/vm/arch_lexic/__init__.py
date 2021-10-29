@@ -4,12 +4,12 @@ from .amd_arch_lexic import AmdArchLexic
 from .sycl_arch_lexic import SyclArchLexic
 
 
-def lexic_factory(arch_name):
-  if arch_name == "nvidia":
+def lexic_factory(backend):
+  if backend == "cuda":
     return NvidiaArchLexic()
-  elif arch_name == "amd":
+  elif backend == "hip":
     return AmdArchLexic()
-  elif arch_name == "hipsycl" or arch_name == "oneapi":
+  elif backend == "hipsycl" or backend == "oneapi":
     return SyclArchLexic()
   else:
-    raise ValueError('Unknown architecture')
+    raise ValueError(f'Unknown backend, given: {backend}')
