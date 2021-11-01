@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class AbstractArchLexic(ABC):
   """
-  You can use this abstract class to add a dictionary for any manufacturer for variables like e.g.
+  You can use this abstract class to add a dictionary for any backend for variables like e.g.
   threadIdx.x for CUDA that are used by the generators and loaders
   """
 
