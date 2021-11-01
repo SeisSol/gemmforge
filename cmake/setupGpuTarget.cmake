@@ -1,8 +1,8 @@
-if(${DEVICE_BACKEND} STREQUAL "CUDA")
+if(${DEVICE_BACKEND} STREQUAL "cuda")
     include(${CMAKE_CURRENT_LIST_DIR}/nvidia.cmake)
-elseif(${DEVICE_BACKEND} STREQUAL "HIP")
+elseif(${DEVICE_BACKEND} STREQUAL "hip")
     include(${CMAKE_CURRENT_LIST_DIR}/amd.cmake)
-elseif((${DEVICE_BACKEND} STREQUAL "ONEAPI") OR (${DEVICE_BACKEND} STREQUAL "HIPSYCL"))
+elseif((${DEVICE_BACKEND} STREQUAL "oneapi") OR (${DEVICE_BACKEND} STREQUAL "hipsycl"))
     include(${CMAKE_CURRENT_LIST_DIR}/sycl.cmake)
 endif()
 

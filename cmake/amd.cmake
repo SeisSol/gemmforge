@@ -26,7 +26,7 @@ set(HCC_FLAGS)
 # set up CUDA specific flag in case offloading to Nvidia GPUs
 if (DEFINED ENV{HIP_PLATFORM})
   if ($ENV{HIP_PLATFORM} STREQUAL "nvidia")
-    set(NVCC_FLAGS -arch=${DEVICE_SUB_ARCH};
+    set(NVCC_FLAGS -arch=${DEVICE_ARCH};
                    -dc;
                    --expt-relaxed-constexpr;
                    -DCUDA_UNDERHOOD)
@@ -60,7 +60,7 @@ set_property(TARGET ${GPU_TARGET} PROPERTY HIP_ARCHITECTURES OFF)
 if (DEFINED ENV{HIP_PLATFORM})
     if ($ENV{HIP_PLATFORM} STREQUAL "nvidia")
         set_target_properties(${GPU_TARGET} PROPERTIES LINKER_LANGUAGE HIP)
-        target_link_options(${GPU_TARGET} PRIVATE -arch=${DEVICE_SUB_ARCH})
+        target_link_options(${GPU_TARGET} PRIVATE -arch=${DEVICE_ARCH})
     else()
         target_link_libraries(${GPU_TARGET} PUBLIC ${HIP_PATH}/lib/libamdhip64.so)
     endif()
