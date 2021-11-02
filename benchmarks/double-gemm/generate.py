@@ -99,11 +99,8 @@ try:
         path = os.path.join(dir_name, 'kernels.cpp')
 
     with open(path, 'w') as file:
-        file.write('#include \"gemmforge_aux.h\"\n')
-        if hw_descr.backend == 'hip':
-            file.write('#include \"hip/hip_runtime.h\"\n')
-        elif hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
-            file.write('#include <CL/sycl.hpp>\n')
+        for header_file in vm.get_headers():
+          file.write(f'#include \"{header_file}\"\n')
 
         for kernel in kernels:
             file.write(kernel)

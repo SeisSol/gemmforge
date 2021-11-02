@@ -118,6 +118,14 @@ def get_known_arch():
     'name': 'intel',
   }
 
+  for intel_integrated_gpu in ['bdw', 'skl', 'Gen8', 'Gen9', 'Gen11', 'Gen12LP']:
+    arch[intel_integrated_gpu] = {'vec_unit_length': 32,
+                                  'max_local_mem_size_per_block': 48 * KB,
+                                  'max_num_threads': 256,
+                                  'max_reg_per_block': 64 * KB,
+                                  'max_threads_per_sm': 256,
+                                  'max_block_per_sm': 32,
+                                  'name': 'intel'}
   return arch
 
 

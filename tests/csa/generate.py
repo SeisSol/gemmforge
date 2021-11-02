@@ -51,11 +51,9 @@ tests_code = StringIO()
 hw_descr = vm.get_hw_descr()
 precision = vm.fp_as_str()
 with constructs.Cpp(StringIO()) as file:
-  file.Include("gemmforge_aux.h")
-  if hw_descr.backend == "hip":
-    file.Include("hip/hip_runtime.h")
-  elif hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
-    file.Include("CL/sycl.hpp")
+  for header_file in vm.get_headers():
+    file.Include(f'{header_file}')
+
   src.write(file.stream.getvalue())
 
 with constructs.Cpp(StringIO()) as file:
