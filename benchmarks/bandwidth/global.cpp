@@ -19,8 +19,8 @@ int main(int Argc, char *Argv[]) {
     constexpr long long FACTOR = 1024 * 1024 * 1024;
     size_t NumElements = (FACTOR * AllocatedMemGb) / sizeof(float);
 
-    auto To = (float *) device.api->allocGlobMem(NumElements * sizeof(float));;
-    auto From = (float *) device.api->allocGlobMem(NumElements * sizeof(float));;
+    auto To = (float *) device.api->allocGlobMem(NumElements * sizeof(float));
+    auto From = (float *) device.api->allocGlobMem(NumElements * sizeof(float));
 
     size_t blocks = (NumElements + 1024 - 1) / 1024;
     size_t threads = 1024;
