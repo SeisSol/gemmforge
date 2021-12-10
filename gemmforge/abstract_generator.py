@@ -106,11 +106,11 @@ class AbstractGenerator(ABC):
     params = [self._build_param(matrix) for matrix in self._matrices]
     params = ", ".join(params)
     nullptr = ' = nullptr' if with_defaults else ''
-    return "{}, unsigned {}, void* {}{}, unsigned* {}{}".format(params,
+    return "{}, unsigned {}, unsigned* {}{}, void* {}{}".format(params,
                                                                 GeneralLexicon.NUM_ELEMENTS,
-                                                                GeneralLexicon.STREAM_PTR_STR,
-                                                                nullptr,
                                                                 GeneralLexicon.FLAGS_ID,
+                                                                nullptr,
+                                                                GeneralLexicon.STREAM_PTR_STR,
                                                                 nullptr)
 
   @abstractmethod
