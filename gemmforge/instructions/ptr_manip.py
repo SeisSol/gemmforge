@@ -26,15 +26,10 @@ class GetElementPtr(AbstractInstruction):
 
     batch_obj = self._src.obj
     batch_addressing = batch_obj.addressing
-    if isinstance(batch_obj,DenseMatrix) :
-      print('it is dense Matrix')
-    elif isinstance(batch_obj,SparseMatrix) :
-      print('it is Sparse Matrix')
-    elif isinstance(batch_obj,MockMatrix) :
-      print('it is Mock Matrix')
+  
 
     if self._include_extra_offset:
-      extra_offset = f' ABCDE+ {get_extra_offset_name(self._src.name)} TEST ABCDE'
+      extra_offset = f' + {get_extra_offset_name(self._src.name)} '
     else:
       extra_offset = ''
 
