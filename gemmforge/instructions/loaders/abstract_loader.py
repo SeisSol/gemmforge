@@ -51,7 +51,7 @@ class AbstractShrMemLoader(AbstractShrMemWrite):
     if src_data_view.spp == None:
       lhs = f'{self._vm.fp_as_str()}* {self._dest.name}'
       rhs = f'{self._shr_mem.name}[{self._shr_mem_offset}]'
-      writer(f'{lhs} = &{rhs}; RIRI6')
+      writer(f'{lhs} = &{rhs}; ')
 
   def get_src(self) -> Symbol:
     return self._src
