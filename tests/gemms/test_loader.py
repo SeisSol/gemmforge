@@ -33,7 +33,8 @@ class TestLoader:
             spec["alpha"],
             spec["beta"],
             spec["num_elements"],
-            self._gen_test_name(test_params))
+            self._gen_test_name(test_params),
+            spec["spp"])
   
   def _produce_matrixMock(self, matrix_spec):
     return MockMatrix(num_rows=matrix_spec["rows"],
