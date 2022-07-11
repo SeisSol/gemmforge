@@ -63,10 +63,10 @@ class ShrMemAlloc(AbstractInstruction):
                                                       alignment=8)
     if op2_data_view.spp == None:
       if shr_mem_decl:
-        writer(f'{shr_mem_decl}; riri7')
+        writer(f'{shr_mem_decl};')
 
       address = f'{shrmem_obj.get_size_per_mult()} * {lexic.thread_idx_y} '
-      writer(f'{self._vm.fp_as_str()} * {shrmem_obj.name} = &{common_shrmem}[{address}]; riri6' )
+      writer(f'{self._vm.fp_as_str()} * {shrmem_obj.name} = &{common_shrmem}[{address}]; ' )
 
   def is_ready(self):
     shrmem_obj = self._dest.obj
