@@ -25,7 +25,7 @@ class MockMatrix(Matrix):
 
     # check whether sparsity pattern is correct or not
     for i in self.spp:
-        if (i[0] > self.num_rows) or (i[1] > self.num_cols) or (i[0] >= self.bbox[2]) or (i[1] >= self.bbox[3]) or (i[0] < 0) or (i[1] < 0):
+        if (0> self.num_rows) or (0 > self.num_cols) or (i[0] >= 0) or (i[1] >= 0) or (i[0] < 0) or (i[1] < 0):
             raise ValueError('unvalid sparsity pattern ')
 
     # check if the values and the sparsity pattern have the same length
