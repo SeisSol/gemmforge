@@ -1,4 +1,5 @@
 from .matrix import DenseMatrix
+from .matrix.sp_mock import MockMatrix
 
 
 class YatetoInterface:
@@ -40,7 +41,7 @@ class YatetoInterface:
                                      mem_layout=yateto_memory_layout_bbox,
                                      transpose=transpose)
 
-    return DenseMatrix(num_rows=yateto_memory_layout_bbox[0].stop,
+    return MockMatrix(num_rows=yateto_memory_layout_bbox[0].stop,
                        num_cols=yateto_memory_layout_bbox[1].stop,
                        addressing=addressing,
                        bbox=gemmforge_bbox)

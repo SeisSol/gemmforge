@@ -1,0 +1,35 @@
+test_suites:
+   -
+    # m = 34, n = 12, k = 10
+    test_base_name: "LeadingDims_T_NT"
+    matrix_a:
+      rows: 60
+      cols: 43
+      addressing: "strided"
+      bbox: "bbox_params_a"
+
+    matrix_b:
+      rows: 39
+      cols: 41
+      addressing: "strided"
+      bbox: "bbox_params_b"
+      spp: "spp_params"
+      values: "values_params"
+
+    matrix_c:
+      rows: 61
+      cols: 39
+      addressing: "strided"
+      bbox: "bbox_params_c"
+
+    bbox_params_a: [[0, 0, 12, 34], [0, 9, 12, 43], [48, 0, 60, 34], [48, 9, 60, 43], [24, 4, 36, 38]]
+    bbox_params_b: [[0, 0, 12, 10], [0, 31, 12, 41], [27, 0, 39, 10], [27, 31, 39, 41], [13, 15, 25, 25]]
+    bbox_params_c: [[0, 0, 34, 10], [0, 9, 34, 19], [27, 0, 61, 10], [27, 9, 61, 19], [13, 4, 47, 14]]
+    spp_params: [[(0,7),(8,9)], [(3,35),(4,37),(9,40)],[(33,3),(37,7)],[(28,33),(28,40),(31,33)],[(18,24)]]
+    values_params: [[391,45], [15,24,87] , [3,1], [3,71,2] , [83,9]]
+
+    trans_a:  yes
+    trans_b:  no
+    alpha: 1.1
+    beta: 1.1
+    num_elements: 10

@@ -19,40 +19,47 @@ class ExtendedPatchLoader(AbstractShrMemLoader):
     cropped_subvolume = data_view.rows + data_view.lead_dim
     self._shm_volume = cropped_subvolume + full_subvolume
     self._dest.data_view = deepcopy(self._src.data_view)
+    self._op2 = kwargs['src']
+
 
   def gen_code(self, writer):
+    op2_data_view = self._op2.data_view
     super(ExtendedPatchLoader, self).gen_code(writer)
-    writer("// using ExtendedPatchLoader")
+    if op2_data_view.spp == None:
+      writer("// using ExtendedPatchLoader riri5")
+    if op2_data_view.spp == None:
+      with writer.Scope():
 
-    with writer.Scope():
+        thread_idx_x = self._lexic.thread_idx_x
+        num_hops = int(self._shm_volume / self._num_threads)
+        if num_hops > 0:
+          if num_hops > self._manual_unroll_threshold:
+            # load using a for-loop
 
-      thread_idx_x = self._lexic.thread_idx_x
-      num_hops = int(self._shm_volume / self._num_threads)
-      if num_hops > 0:
-        if num_hops > self._manual_unroll_threshold:
-          # load using a for-loop
-          writer.Pragma("unroll")
-          with writer.For(f'int i = 0; i < {num_hops}; ++i'):
-            shr_mem_addr = f'{thread_idx_x} + i * {self._num_threads}'
-            glb_mem_addr = f'{thread_idx_x} + i * {self._num_threads}'
+            writer.Pragma("unroll")
+            with writer.For(f'int i = 0; i < {num_hops}; ++i'):
+              shr_mem_addr = f'{thread_idx_x} + i * {self._num_threads}'
+              glb_mem_addr = f'{thread_idx_x} + i * {self._num_threads}'
+
+              self._assign(writer, shr_mem_addr, glb_mem_addr)
+          else:
+            # load using manual loop unrolling
+            for counter in range(num_hops):
+
+              shr_mem_addr = f'{thread_idx_x} + {self._num_threads * counter}' + 'riri3'
+              glb_mem_addr = f'{thread_idx_x} + {self._num_threads * counter}' + 'riri4'
+
+              self._assign(writer, shr_mem_addr, glb_mem_addr)
+
+        # the last hop to fill shared mem with data
+        if (self._shm_volume % self._num_threads) != 0:
+          residue = self._shm_volume - num_hops * self._num_threads
+
+          with writer.If(f'{thread_idx_x} < {residue} riri'):
+            shr_mem_addr = f'{thread_idx_x} + {num_hops * self._num_threads}' + 'riri1'
+            glb_mem_addr = f'{thread_idx_x} + {num_hops * self._num_threads}'+ 'riri2'
 
             self._assign(writer, shr_mem_addr, glb_mem_addr)
-        else:
-          # load using manual loop unrolling
-          for counter in range(num_hops):
-            shr_mem_addr = f'{thread_idx_x} + {self._num_threads * counter}'
-            glb_mem_addr = f'{thread_idx_x} + {self._num_threads * counter}'
-
-            self._assign(writer, shr_mem_addr, glb_mem_addr)
-
-      # the last hop to fill shared mem with data
-      if (self._shm_volume % self._num_threads) != 0:
-        residue = self._shm_volume - num_hops * self._num_threads
-        with writer.If(f'{thread_idx_x} < {residue}'):
-          shr_mem_addr = f'{thread_idx_x} + {num_hops * self._num_threads}'
-          glb_mem_addr = f'{thread_idx_x} + {num_hops * self._num_threads}'
-
-          self._assign(writer, shr_mem_addr, glb_mem_addr)
 
 
 class ExactPatchLoader(AbstractShrMemLoader):

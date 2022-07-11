@@ -3,6 +3,9 @@ from io import StringIO
 from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .basic_types import GeneralLexicon, DataFlowDirection, RegMemObject
+from .matrix.DenseNew import DenseMatrix
+from .matrix.SparseNew import SparseMatrix
+from .matrix.sp_mock import MockMatrix
 from .symbol_table import Symbol, SymbolType
 from .abstract_generator import AbstractGenerator as Generator
 from .instructions.builders import GetElementPtrBuilder, RegistersAllocBuilder, ShrMemAllocBuilder
@@ -202,7 +205,7 @@ class GemmGenerator(GemmLikeGenerator):
 
     # create shared mem
     builder = ShrMemAllocBuilder(self._vm, self._symbol_table)
-    builder.build(size=None)
+    builder.build(size=None, op2=self._symbol_table[self._mat_b])
     self._instructions.extend(builder.get_instructions())
     self._shr_mem_obj = builder.get_resultant_obj()
 

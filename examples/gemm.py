@@ -1,4 +1,6 @@
 from gemmforge import DenseMatrix, GenerationError, GemmGenerator
+from gemmforge.matrix.SparseNew import SparseMatrix
+from gemmforge.matrix.sp_mock import MockMatrix
 from gemmforge.vm import vm_factory
 import argparse
 
@@ -20,18 +22,20 @@ args = parser.parse_args()
 
 mat_a = DenseMatrix(num_rows=56,
                     num_cols=9,
-                    addressing="strided",
+                    addressing="none",
                     bbox=[0, 0, 56, 9])
 
-mat_b = DenseMatrix(num_rows=9,
+mat_b = MockMatrix(num_rows=9,
                     num_cols=9,
-                    addressing="strided",
-                    bbox=[0, 0, 9, 9])
+                    addressing="none",
+                    bbox=[0, 0, 9, 9],
+                    spp=[(0,0),(2,3),(5,4),(8,8)],
+                    values=[3,2,5,8])
 
 mat_c = DenseMatrix(num_rows=56,
                     num_cols=9,
                     bbox=[0, 0, 56, 9],
-                    addressing="strided")
+                    addressing="strided",)
 
 try:
   vm = vm_factory(backend=args.backend,
@@ -44,6 +48,7 @@ try:
   print(gen.get_kernel())
   print(gen.get_launcher())
   print(gen.get_launcher_header())
+
 
 except GenerationError as err:
   print("ERROR: {}".format(err))

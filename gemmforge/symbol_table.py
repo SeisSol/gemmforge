@@ -10,11 +10,16 @@ class SymbolType(enum.Enum):
 
 
 class DataView:
-  def __init__(self, rows: int, columns: int, lead_dim: int, is_transposed: bool):
+
+  def __init__(self, rows: int, columns: int, lead_dim: int, spp, values, is_transposed: bool):
     self.rows = rows
     self.columns = columns
     self.lead_dim = lead_dim
     self.is_transposed: bool = is_transposed
+    self.spp=spp
+    self.values=values
+
+
 
   def __str__(self):
     return f'rows: {self.rows}, cols: {self.columns}, lid: {self.lead_dim}, trans: {self.is_transposed}'

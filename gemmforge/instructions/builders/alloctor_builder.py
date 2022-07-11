@@ -11,6 +11,9 @@ class AbstractAllocBuilder(AbstractBuilder):
     super(AbstractAllocBuilder, self).__init__(vm, symbol_table)
     self._obj = None
 
+
+
+
   @abstractmethod
   def _name_new_symbol(self):
     pass
@@ -26,16 +29,21 @@ class ShrMemAllocBuilder(AbstractAllocBuilder):
     super(ShrMemAllocBuilder, self).__init__(vm, symbol_table)
     self._counter = 0
 
-  def build(self, size=None):
+    self._op2 = None
+
+
+
+  def build(self, op2: Symbol, size=None):
     self._reset()
     name = self._name_new_symbol()
     self._obj = ShrMemObject(name, size)
     dest = Symbol(name=name,
                   stype=SymbolType.SharedMem,
                   obj=self._obj)
-
     self._symbol_table.add_symbol(dest)
-    self._instructions.append(ShrMemAlloc(self._vm, dest, size))
+    self._instructions.append(ShrMemAlloc(self._vm, dest, size, op2))
+
+
 
   def _name_new_symbol(self):
     name = f'{GeneralLexicon.LOCAL_SHR_MEM}{self._counter}'
@@ -49,6 +57,7 @@ class RegistersAllocBuilder(AbstractAllocBuilder):
     super(RegistersAllocBuilder, self).__init__(vm, symbol_table)
     self._counter = 0
 
+
   def build(self, size: int, init_value=None):
     self._reset()
     name = self._name_new_symbol()
@@ -56,7 +65,6 @@ class RegistersAllocBuilder(AbstractAllocBuilder):
     dest = Symbol(name,
                   SymbolType.Register,
                   self._obj)
-
     self._symbol_table.add_symbol(dest)
     self._instructions.append(RegisterAlloc(self._vm, dest, init_value))
 

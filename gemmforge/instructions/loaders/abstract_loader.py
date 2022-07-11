@@ -46,11 +46,12 @@ class AbstractShrMemLoader(AbstractShrMemWrite):
     writer(f'{lhs} = {rhs};')
 
   def gen_code(self, writer) -> None:
+    src_data_view = self._src.data_view
     writer.Emptyline()
-
-    lhs = f'{self._vm.fp_as_str()}* {self._dest.name}'
-    rhs = f'{self._shr_mem.name}[{self._shr_mem_offset}]'
-    writer(f'{lhs} = &{rhs};')
+    if src_data_view.spp == None:
+      lhs = f'{self._vm.fp_as_str()}* {self._dest.name}'
+      rhs = f'{self._shr_mem.name}[{self._shr_mem_offset}]'
+      writer(f'{lhs} = &{rhs}; RIRI6')
 
   def get_src(self) -> Symbol:
     return self._src

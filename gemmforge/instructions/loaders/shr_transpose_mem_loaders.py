@@ -103,6 +103,7 @@ class ExactTransposePatchLoader(AbstractShrMemLoader):
                                     columns=data_view.rows,
                                     lead_dim=optimal_num_cols,
                                     is_transposed=True)
+    self._op2 = kwargs['op2']
 
   def gen_code(self, writer):
     super(ExactTransposePatchLoader, self).gen_code(writer)

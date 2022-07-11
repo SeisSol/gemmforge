@@ -1,4 +1,5 @@
 from gemmforge import DenseMatrix, GenerationError, GemmGenerator
+from gemmforge.matrix.sp_mock import MockMatrix
 from gemmforge.vm import vm_factory
 import argparse
 
@@ -18,17 +19,17 @@ parser.add_argument("-b",
 
 args = parser.parse_args()
 
-mat_a = DenseMatrix(num_rows=56,
+mat_a = MockMatrix(num_rows=56,
                     num_cols=9,
                     addressing="strided",
                     bbox=[0, 0, 56, 9])
 
-mat_b = DenseMatrix(num_rows=9,
+mat_b = MockMatrix(num_rows=9,
                     num_cols=1,
                     addressing="strided",
                     bbox=[0, 0, 9, 1])
 
-mat_c = DenseMatrix(num_rows=56,
+mat_c = MockMatrix(num_rows=56,
                     num_cols=1,
                     bbox=[0, 0, 56, 1],
                     addressing="strided")

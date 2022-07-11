@@ -1,5 +1,6 @@
 import unittest
 from gemmforge import DenseMatrix
+from gemmforge.matrix.sp_mock import MockMatrix
 from gemmforge.vm import vm_factory
 from gemmforge.instructions.loaders import shm_mem_loader_factory
 from gemmforge.instructions.loaders import ExactPatchLoader, ExtendedPatchLoader
@@ -49,7 +50,7 @@ class TestLoaders(unittest.TestCase):
 
   def test_extended_loader(self):
     # load a column in one go
-    matrix = DenseMatrix(num_rows=31,
+    matrix = MockMatrix(num_rows=31,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 15, 20])
@@ -64,7 +65,7 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExtendedPatchLoader)
 
     # multiple hops to load a column
-    matrix = DenseMatrix(num_rows=63,
+    matrix = MockMatrix(num_rows=63,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 34, 20])
@@ -80,7 +81,7 @@ class TestLoaders(unittest.TestCase):
 
   def test_exact_loader(self):
     # load a column in one go
-    matrix = DenseMatrix(num_rows=33,
+    matrix = MockMatrix(num_rows=33,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 15, 20])
@@ -96,7 +97,7 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExactPatchLoader)
 
     # multiple hops to load a column
-    matrix = DenseMatrix(num_rows=65,
+    matrix = MockMatrix(num_rows=65,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 34, 20])
@@ -112,7 +113,7 @@ class TestLoaders(unittest.TestCase):
 
   def test_extended_transpose_loader(self):
     # load a column in one go
-    matrix = DenseMatrix(num_rows=31,
+    matrix = MockMatrix(num_rows=31,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 15, 20])
@@ -127,7 +128,7 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExtendedTransposePatchLoader)
 
     # multiple hops to load a column
-    matrix = DenseMatrix(num_rows=61,
+    matrix = MockMatrix(num_rows=61,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 34, 20])
@@ -143,7 +144,7 @@ class TestLoaders(unittest.TestCase):
 
   def test_exact_transpose_loader(self):
     # load a column in one go
-    matrix = DenseMatrix(num_rows=33,
+    matrix = MockMatrix(num_rows=33,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 15, 20])
@@ -158,7 +159,7 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExactTransposePatchLoader)
 
     # multiple hops to load a column
-    matrix = DenseMatrix(num_rows=65,
+    matrix = MockMatrix(num_rows=65,
                          num_cols=56,
                          addressing='none',
                          bbox=[0, 0, 34, 20])

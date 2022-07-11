@@ -1,13 +1,14 @@
 from ..abstract_thread_policy import AbstractBinaryOpThreadPolicy, DenseMatrix
 from gemmforge.vm import VM
+from ...matrix.sp_mock import MockMatrix
 
 
 class NvidiaCsaThreadPolicy(AbstractBinaryOpThreadPolicy):
   def __init__(self,
                vm: VM,
                num_threads: int,
-               op1: DenseMatrix,
-               op2: DenseMatrix):
+               op1: MockMatrix,
+               op2: MockMatrix):
     super().__init__(vm, num_threads, op1, op2)
 
   def get_num_ops_per_block(self):

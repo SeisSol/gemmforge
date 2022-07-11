@@ -2,6 +2,7 @@ from gemmforge.vm import VM
 from ..matrix import DenseMatrix
 from .gemm.nvidia import NvidiaGemmThreadPolicy
 from .csa.nvidia import NvidiaCsaThreadPolicy
+from ..matrix.sp_mock import MockMatrix
 
 
 class TheadPolicyFactory:
@@ -15,9 +16,9 @@ class TheadPolicyFactory:
                       vm: VM,
                       reals_per_op: int,
                       num_threads: int,
-                      op1: DenseMatrix,
-                      op2: DenseMatrix,
-                      res: DenseMatrix):
+                      op1: MockMatrix,
+                      op2: MockMatrix,
+                      res: MockMatrix):
     default_policy = NvidiaGemmThreadPolicy(vm,
                                             reals_per_op,
                                             num_threads,
@@ -34,8 +35,8 @@ class TheadPolicyFactory:
   def get_csa_policy(cls,
                      vm: VM,
                      num_threads: int,
-                     op1: DenseMatrix,
-                     op2: DenseMatrix):
+                     op1: MockMatrix,
+                     op2: MockMatrix):
     default_policy = NvidiaCsaThreadPolicy(vm, num_threads, op1, op2)
     hw_descr = vm.get_hw_descr()
     if hw_descr.manufacturer in TheadPolicyFactory.ALLOWED_MANUFACTURES:

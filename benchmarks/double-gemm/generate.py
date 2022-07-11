@@ -1,4 +1,5 @@
 from gemmforge import DenseMatrix, GenerationError, GemmGenerator
+from gemmforge.matrix.sp_mock import MockMatrix
 from gemmforge.vm import vm_factory
 import os
 import yaml
@@ -22,7 +23,7 @@ args = parser.parse_args()
 
 
 def produce_matrix(spec):
-    return DenseMatrix(num_rows=spec['num_rows'],
+    return MockMatrix(num_rows=spec['num_rows'],
                        num_cols=spec['num_cols'],
                        addressing=spec['addressing'],
                        bbox=spec['bbox'])

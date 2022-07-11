@@ -10,7 +10,7 @@ class SyncThreads(AbstractInstruction):
     self._is_ready = True
 
   def gen_code(self, writer):
-    writer(f'{self.__str__()}')
+    writer(f'{self.__str__()} riri10')
 
   def __str__(self) -> str:
     lexic = self._vm.get_lexic()

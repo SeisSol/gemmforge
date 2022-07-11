@@ -1,5 +1,6 @@
 from ..abstract_thread_policy import AbstractGemmLikeThreadPolicy, DenseMatrix
 from gemmforge.vm import VM
+from ...matrix.sp_mock import MockMatrix
 
 
 class NvidiaGemmThreadPolicy(AbstractGemmLikeThreadPolicy):
@@ -7,9 +8,9 @@ class NvidiaGemmThreadPolicy(AbstractGemmLikeThreadPolicy):
                vm: VM,
                reals_per_op: int,
                num_threads: int,
-               op1: DenseMatrix,
-               op2: DenseMatrix,
-               res: DenseMatrix):
+               op1: MockMatrix,
+               op2: MockMatrix,
+               res: MockMatrix):
     super().__init__(vm, reals_per_op, num_threads, op1, op2, res)
 
   def _estimate_num_registers_per_mult(self, accumulator_length):
