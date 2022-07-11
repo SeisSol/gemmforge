@@ -69,11 +69,11 @@ with constructs.Cpp(StringIO()) as file:
 
 for suite in suites:
   for test in TestLoader(suite):
-    trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, num_elements, test_name = test
+    trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, num_elements, spp, test_name = test
 
     try:
       generator = GemmGenerator(vm)
-      generator.set(trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta)
+      generator.set(trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, spp)
       generator.generate()
       src.write(generator.get_kernel())
       src.write(generator.get_launcher())
