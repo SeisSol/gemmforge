@@ -18,7 +18,7 @@ test_suites:
       cols: 56
       addressing: "strided"
       bbox: [0, 0, 31, 9]
-      spp: [(4,0),(7,2),(20,6)]
+      spp: [[4,0],[7,2],[20,6]]
 
     trans_a:  yes
     trans_b: no
