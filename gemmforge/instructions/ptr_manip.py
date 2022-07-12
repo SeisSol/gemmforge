@@ -29,7 +29,7 @@ class GetElementPtr(AbstractInstruction):
   
 
     if self._include_extra_offset:
-      extra_offset = f' + {get_extra_offset_name(self._src.name)} '
+      extra_offset = f' + {get_extra_offset_name(self._src.name)}'
     else:
       extra_offset = ''
 
