@@ -71,7 +71,7 @@ class GenericGemm(AbstractInstruction):
           i=i+1
       elif op2_data_view.values != None and op2_data_view.is_transposed==False:
         for x in op2_data_view.spp :
-          writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[0]}] * {op2_data_view.values[i]};')
+          writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[0]}];')
           i=i+1
       elif op2_data_view.values == None and op2_data_view.is_transposed==True:
         for x in op2_data_view.spp :
