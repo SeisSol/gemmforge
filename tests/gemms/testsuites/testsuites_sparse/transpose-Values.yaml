@@ -12,7 +12,7 @@ test_suites:
       cols: 56
       addressing: "strided"
       bbox: [0, 0, 33, 9]
-      spp: [ (4,0),(7,2),(20,6) ]
+      spp: [[4,0],[7,2],[20,6]]
       values: [ 56,23,1 ]
 
     matrix_c:
