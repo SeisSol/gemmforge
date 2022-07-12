@@ -35,7 +35,7 @@ class GenericGemm(AbstractInstruction):
     op2_data_view = self._op2.data_view
     thread_idx_x = self._vm.get_lexic().thread_idx_x
     if op2_data_view.spp == None:
-      with writer.If(f' {self.gen_mask_threads(op1_data_view.rows)}'):
+      with writer.If(f' riri11 {self.gen_mask_threads(op1_data_view.rows)}'):
         writer(f'{self._vm.fp_as_str()} {value_var}; ' )
 
         writer.Emptyline()
@@ -65,22 +65,40 @@ class GenericGemm(AbstractInstruction):
         writer(f'{self._dest.name}{res_access} += {op1_value} * {self._op2.name}[{op2_addr}];')
 
     else:
-      if op2_data_view.values == None and op2_data_view.is_transposed==False:
+      if op2_data_view.values == None and op2_data_view.is_transposed==False and op1_data_view.is_transposed==False:
         for x in op2_data_view.spp :
           writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[0]}] * values[{i}];')
           i=i+1
-      elif op2_data_view.values != None and op2_data_view.is_transposed==False:
+      elif op2_data_view.values != None and op2_data_view.is_transposed==False and op1_data_view.is_transposed==False:
         for x in op2_data_view.spp :
-          writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[0]}]* {op2_data_view.values[i]};')
+          writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[0]}] * {op2_data_view.values[i]};')
           i=i+1
-      elif op2_data_view.values == None and op2_data_view.is_transposed==True:
+      elif op2_data_view.values == None and op2_data_view.is_transposed==True and op1_data_view.is_transposed==False:
         for x in op2_data_view.spp :
           writer(f'{self._dest.name}{[x[0]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[1]}] * values[{i}];')
           i=i+1
-      elif op2_data_view.values != None and op2_data_view.is_transposed==True:
+      elif op2_data_view.values != None and op2_data_view.is_transposed==True and op1_data_view.is_transposed==False:
         for x in op2_data_view.spp :
           writer(f'{self._dest.name}{[x[0]]} += {self._op1.name}[{thread_idx_x} * {op1_data_view.lead_dim} + {x[1]}] * {op2_data_view.values[i]};')
           i=i+1
+      elif op2_data_view.values == None and op2_data_view.is_transposed==False and op1_data_view.is_transposed==True:
+        for x in op2_data_view.spp :
+          writer(f'{self._dest.name}{[x[0]]} += {self._op1.name}[{x[1]} * {op1_data_view.lead_dim} + {thread_idx_x}] * values[{i}];')
+          i=i+1
+      elif op2_data_view.values != None and op2_data_view.is_transposed==False and op1_data_view.is_transposed==True:
+        for x in op2_data_view.spp :
+          writer(f'{self._dest.name}{[x[0]]} += {self._op1.name}[{x[1]}  * {op1_data_view.lead_dim} + {thread_idx_x}] * {op2_data_view.values[i]};')
+          i=i+1
+      elif op2_data_view.values == None and op2_data_view.is_transposed==True and op1_data_view.is_transposed==True:
+        for x in op2_data_view.spp :
+          writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{x[0]} * {op1_data_view.lead_dim} + {thread_idx_x}] * values[{i}];')
+          i=i+1
+      elif op2_data_view.values != None and op2_data_view.is_transposed==True and op1_data_view.is_transposed==True:
+        for x in op2_data_view.spp :
+          writer(f'{self._dest.name}{[x[1]]} += {self._op1.name}[{x[0]}  * {op1_data_view.lead_dim} + {thread_idx_x}] * {op2_data_view.values[i]};')
+          i=i+1
+
+
 
   def __str__(self) -> str:
     return f'{self._dest.name} = gemm({self._op1.name}, {self._op2.name})'
