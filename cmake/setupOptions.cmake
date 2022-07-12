@@ -2,7 +2,7 @@ set(REAL_SIZE "4" CACHE STRING "size of the floating point data type")
 set_property(CACHE REAL_SIZE PROPERTY STRINGS "8" "4")
 
 set(SM_ARCH "sm_60" CACHE STRING "size of the floating point data type")
-set_property(CACHE SM_ARCH PROPERTY STRINGS sm_60 sm_61 sm_70 sm_71
+set_property(CACHE SM_ARCH PROPERTY STRINGS sm_60 sm_61 sm_70 sm_71 sm_86
     gfx906 gfx908
     dg1 bdw skl Gen8 Gen9 Gen11 Gen12LP)
 
