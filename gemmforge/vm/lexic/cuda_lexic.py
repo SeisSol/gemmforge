@@ -24,10 +24,10 @@ class CudaLexic(Lexic):
     return file.CudaKernel(base_name, params, kernel_bounds)
 
   def sync_threads(self):
-    return "__syncthreads() "
+    return "__syncthreads()"
 
   def sync_vec_unit(self):
-    return "__syncwarp()  "
+    return "__syncwarp()"
 
   def kernel_range_object(self):
     return "dim3 "
@@ -38,7 +38,7 @@ class CudaLexic(Lexic):
     file(f'{self.stream_name} stream = {if_stream_exists} ? {stream_obj} : 0;')
 
   def check_error(self):
-    return "CHECK_ERR "
+    return "CHECK_ERR"
 
   def batch_indexer_gemm(self):
     return self.get_tid_counter(self.thread_idx_y, self.block_dim_y, self.block_idx_x)
