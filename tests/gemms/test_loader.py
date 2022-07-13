@@ -67,10 +67,10 @@ class TestLoader:
         params[item] = self._test_spec[flatten_spec[item]]
 
     self._param_iterator = (dict(zip(params, x)) for x in product(*params.values()))
-
+  
   def _gen_test_name(self, params):
-    param_to_str = []
-    for item in params:
+      param_to_str = []
+      for item in params:
       item_str = "_".join(item)
       value_str = params[item]
       if isinstance(params[item], float):
@@ -78,6 +78,10 @@ class TestLoader:
       if isinstance(params[item], list):
         value_str = [str(item) for item in params[item]]
         value_str = "_".join(value_str)
+        value_str=value_str.replace(',','_')
+        value_str=value_str.replace('[','')
+        value_str=value_str.replace(']','')
+        value_str=value_str.replace(' ','')
       param_to_str.append("{}_{}".format(item_str, value_str))
 
     return "{}_{}".format(self._test_spec['test_base_name'], "_".join(param_to_str))
