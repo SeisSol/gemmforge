@@ -28,19 +28,14 @@ class TestLoader:
     return (spec["trans_a"],
             spec["trans_b"],
             self._produce_matrix(spec["matrix_a"]),
-            self._produce_matrixMock(spec["matrix_b"]),
+            self._produce_matrix(spec["matrix_b"]),
             self._produce_matrix(spec["matrix_c"]),
             spec["alpha"],
             spec["beta"],
             spec["num_elements"],
             self._gen_test_name(test_params))
 
-  def _produce_matrixMock(self, matrix_spec):
-    return MockMatrix(num_rows=matrix_spec["rows"],
-                       num_cols=matrix_spec["cols"],
-                       addressing=matrix_spec["addressing"],
-                       bbox=matrix_spec["bbox"],
-                       spp = matrix_spec["spp"])
+  
 
   def _produce_matrix(self, matrix_spec):
     return DenseMatrix(num_rows=matrix_spec["rows"],
