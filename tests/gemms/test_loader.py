@@ -28,7 +28,7 @@ class TestLoader:
     return (spec["trans_a"],
             spec["trans_b"],
             self._produce_matrix(spec["matrix_a"]),
-            self._produce_matrix(spec["matrix_b"]),
+            self._produce_matrixMock(spec["matrix_b"]),
             self._produce_matrix(spec["matrix_c"]),
             spec["alpha"],
             spec["beta"],
@@ -42,6 +42,13 @@ class TestLoader:
                       num_cols=matrix_spec["cols"],
                       addressing=matrix_spec["addressing"],
                       bbox=matrix_spec["bbox"])
+  
+  def _produce_matrixMock(self, matrix_spec):
+    return DenseMatrix(num_rows=matrix_spec["rows"],
+                      num_cols=matrix_spec["cols"],
+                      addressing=matrix_spec["addressing"],
+                      bbox=matrix_spec["bbox"],
+                      spp=matrix_spec["spp"])
 
   def is_param(self, param):
     if isinstance(param, str):
