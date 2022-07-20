@@ -44,7 +44,7 @@ class TestLoader:
                       bbox=matrix_spec["bbox"])
   
   def _produce_matrixMock(self, matrix_spec):
-    return DenseMatrix(num_rows=matrix_spec["rows"],
+    return MockMatrix(num_rows=matrix_spec["rows"],
                       num_cols=matrix_spec["cols"],
                       addressing=matrix_spec["addressing"],
                       bbox=matrix_spec["bbox"],
