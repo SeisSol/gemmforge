@@ -36,4 +36,5 @@ class MockMatrix(Matrix):
 
   def __str__(self):
    string = super().__str__()
+   string += "spp= {}\n".format(self.spp)
    return string
