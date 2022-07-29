@@ -29,3 +29,5 @@ test_suites:
 
     alpha_params: [1.0, 0.0, 2.0]
     beta_params: [1.0, 0.0, 1.5]
+    dense_a: yes
+    dense_b: no
