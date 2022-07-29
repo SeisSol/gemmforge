@@ -34,17 +34,17 @@ class GenericGemm(AbstractInstruction):
     op1_data_view = self._op1.data_view
     op2_data_view = self._op2.data_view
     thread_idx_x = self._vm.get_lexic().thread_idx_x
-    #if op2_data_view.spp == None:
-     # with writer.If(f' riri11 {self.gen_mask_threads(op1_data_view.rows)}'):
-      #  writer(f'{self._vm.fp_as_str()} {value_var}; ' )
+    if op2_data_view.spp == None:
+      with writer.If(f' riri11 {self.gen_mask_threads(op1_data_view.rows)}'):
+        writer(f'{self._vm.fp_as_str()} {value_var}; ' )
 
-        #writer.Emptyline()
+        writer.Emptyline()
 
-        #with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
-         # op1_addr = f'{thread_idx_x} + k * Test Rihab {op1_data_view.lead_dim}'
-          #writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
+        with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
+          op1_addr = f'{thread_idx_x} + k *  {op1_data_view.lead_dim}'
+          writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
 
- #         writer.Emptyline()
+          writer.Emptyline()
     self._get_inner_loop(writer, value_var)
 
   def _get_inner_loop(self, writer, op1_value):
