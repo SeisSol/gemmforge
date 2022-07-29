@@ -57,3 +57,5 @@ test_suites:
     alpha: 1.1
     beta: 1.1
     num_elements: 10
+    dense_a: yes
+    dense_b: no
