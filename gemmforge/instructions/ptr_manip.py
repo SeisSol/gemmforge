@@ -26,7 +26,7 @@ class GetElementPtr(AbstractInstruction):
 
     batch_obj = self._src.obj
     batch_addressing = batch_obj.addressing
-  
+
 
     if self._include_extra_offset:
       extra_offset = f' + {get_extra_offset_name(self._src.name)}'
@@ -55,9 +55,9 @@ class GetElementPtr(AbstractInstruction):
 
     if isinstance(batch_obj, DenseMatrix):
       writer(f'{lhs} = {rhs};')
-        
+
     if isinstance(batch_obj, MockMatrix) and batch_obj.values == None :
-      address = f'{main_offset} + {sub_offset} + values_extraOffset'
+      address = f'{batch_obj.get_offset_to_first_element()} + values_extraOffset'
       rhs = f'&values[{address}]'
 
       lhs = 'const ' if self._src.obj.direction == DataFlowDirection.SOURCE else ''
