@@ -35,6 +35,7 @@ class TestLoader:
             spec["num_elements"],
             self._gen_test_name(test_params))
 
+
  
 
   def _produce_matrixMock(self, matrix_spec):
@@ -48,6 +49,7 @@ class TestLoader:
                        num_cols=matrix_spec["cols"],
                        addressing=matrix_spec["addressing"],
                        bbox=matrix_spec["bbox"])
+
 
   def is_param(self, param):
     if isinstance(param, str):
@@ -68,10 +70,9 @@ class TestLoader:
         params[item] = self._test_spec[flatten_spec[item]]
 
     self._param_iterator = (dict(zip(params, x)) for x in product(*params.values()))
-
   def _gen_test_name(self, params):
-    param_to_str = []
-    for item in params:
+      param_to_str = []
+      for item in params:
       item_str = "_".join(item)
       value_str = params[item]
       if isinstance(params[item], float):
@@ -90,6 +91,8 @@ class TestLoader:
         value_str=value_str.replace(' ','') 
         
 
+        value_str=value_str.replace(' ','')
+      param_to_str.append("{}_{}".format(item_str, value_str))
 
       param_to_str.append("{}_{}".format(item_str, value_str))
  
