@@ -35,7 +35,7 @@ class GenericGemm(AbstractInstruction):
     op2_data_view = self._op2.data_view
     thread_idx_x = self._vm.get_lexic().thread_idx_x
     if op2_data_view.spp == None:
-      with writer.If(f' riri11 {self.gen_mask_threads(op1_data_view.rows)}'):
+      with writer.If(f'  {self.gen_mask_threads(op1_data_view.rows)}'):
         writer(f'{self._vm.fp_as_str()} {value_var}; ' )
 
         writer.Emptyline()
