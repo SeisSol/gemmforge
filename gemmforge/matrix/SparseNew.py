@@ -5,7 +5,7 @@ from gemmforge.exceptions import GenerationError
 
 from gemmforge.matrix.matrix import Matrix
 
-
+#the functioning SparseMatrix implementation is in the class MockMatrix
 class SparseMatrix(Matrix):
 
   def __init__(self, spp, values , bbox=None):
