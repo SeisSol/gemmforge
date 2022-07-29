@@ -69,7 +69,8 @@ with constructs.Cpp(StringIO()) as file:
 
 for suite in suites:
   for test in TestLoader(suite):
-    trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, num_elements,  test_name = test
+    print("Test:", test)
+    trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, num_elements,test_name = test
 
     try:
       generator = GemmGenerator(vm)
@@ -81,6 +82,7 @@ for suite in suites:
 
       with constructs.Cpp(StringIO()) as file:
         with file.GoogleTestSuit('DenseGemmTest', test_name):
+          file(f'')
           file(f'int sizeA = {mat_a.num_rows} * {mat_a.num_cols};')
           file(f'int sizeB = {mat_b.num_rows} * {mat_b.num_cols};')
           file(f'int sizeC = {mat_c.num_rows} * {mat_c.num_cols};')
@@ -114,6 +116,10 @@ for suite in suites:
           file(f'LayoutType transB = LayoutType::{"Trans" if trans_b else "NoTrans"};')
           file.Emptyline()
 
+          file(f'DensityType DensityA = DensityType::{"Dense" if dense_a else "Sparse"};')
+          file(f'DensityType DensityB = DensityType::{"Dense" if dense_b else "Sparse"};')
+          file.Emptyline()
+
           file(f'{precision} alpha = {alpha};')
           file(f'{precision} beta = {beta};')
           file(f'int numElements = {num_elements};')
@@ -137,7 +143,7 @@ for suite in suites:
           args = ', '.join(args)
           file(f'{generator.get_base_name()}({args});')
 
-          args = ['transA', 'transB', 'M', 'N', 'K']
+          args = ['transA', 'transB','DensityA','DensityB','M', 'N', 'K']
           args.extend(['alpha', '&HostA[offsetA]', 'lda'])
           args.extend(['&HostB[offsetB]', 'ldb'])
           args.extend(['beta', '&HostC[offsetC]', 'ldc'])
@@ -184,6 +190,7 @@ with open(path, 'w') as file:
 
 path = os.path.join(dir_name, 'kernels.h')
 with open(path, 'w') as file:
+  print(headers.getvalue())
   file.write(headers.getvalue())
 
 tests_code.close()

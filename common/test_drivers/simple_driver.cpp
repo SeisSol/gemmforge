@@ -125,22 +125,28 @@ void TestDriver::packResults(int NumRows,
         const int Size = NumRows * NumColumns;
         for (int Element = 0; Element < NumElements; ++Element) {
             std::vector<real> ElementFromHost(Size, 0.0);
-
+            std::cout << "Host Output: " << std::endl;
+            std::cout.precision(5);
             for (int Col = 0; Col < NumColumns; ++Col) {
                 for (int Row = 0; Row < NumRows; ++Row) {
                     const int Index = Row + Col * NumRows;
                     ElementFromHost[Index] = HostRawData[Row + Col * LeadDim + Stride * Element];
+                    std::cout << ElementFromHost[Index] << " "; 
                 }
+                std::cout << "\n";
             }
             m_PackedHostResults[Element] = std::move(ElementFromHost);
 
 
             std::vector<real> ElementFromDevice(Size, 0.0);
+            std::cout << "Device Output: " << std::endl;
             for (int Col = 0; Col < NumColumns; ++Col) {
                 for (int Row = 0; Row < NumRows; ++Row) {
                     const int Index = Row + Col * NumRows;
                     ElementFromDevice[Index] = DeviceRawData[Row + Col * LeadDim + Stride * Element];
+                    std::cout <<  ElementFromDevice[Index] << " "; 
                 }
+                std::cout << "\n";
             }
             m_PackedDeviceResults[Element] = std::move(ElementFromDevice);
         }

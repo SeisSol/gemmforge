@@ -57,6 +57,7 @@ try:
 
     print(krnl)
     print(lnch)
+    print("Simple GEMM")
 
     dir_name = './gen_code'
     if not os.path.exists(dir_name):

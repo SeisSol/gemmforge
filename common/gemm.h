@@ -18,9 +18,13 @@ namespace gemmforge {
     enum class LayoutType {
       Trans, NoTrans
     };
-
+    enum class DensityType {
+      Dense, Sparse
+    };
     void singleGemm(LayoutType TypeA,
                     LayoutType TypeB,
+                    DensityType Type1A,
+                    DensityType Type1B,
                     int M, int N, int K,
                     real Alpha, real *A, int Lda,
                     real *B, int Ldb,
@@ -33,6 +37,8 @@ namespace gemmforge {
     template<typename AT, typename BT, typename CT>
     void gemm(LayoutType TypeA,
               LayoutType TypeB,
+              DensityType Type1A,
+              DensityType Type1B,
               int M, int N, int K,
               real Alpha, AT A, int Lda,
               BT B, int Ldb,
@@ -44,14 +50,18 @@ namespace gemmforge {
 
       for (unsigned Index = 0; Index < NumElements; ++Index) {
         real *MatrixA = findData(A, OffsetA, Index);
-        real *MatrixB = findData(B, OffsetB, Index);
+      
+        //real *Values = findData(val, OffsetValues, Index);
         real *MatrixC = findData(C, OffsetC, Index);
+        real *MatrixB = findData(B, OffsetB, Index);
 
 #if CPU_BACKEND == GEMMFORGE
         singleGemm(TypeA, TypeB,
+                   Type1A, Type1B,
                    M, N, K,
                    Alpha, MatrixA, Lda,
-                   MatrixB, Ldb,
+                   MatrixB,
+                   Ldb,
                    Beta, MatrixC, Ldc);
 
 #elif CPU_BACKEND == OPENBLAS

@@ -77,6 +77,9 @@ int main(int Argc, char* Arcv[]) {
 
   LayoutType TransA = Params["trans_a"].as<bool>() ? LayoutType::Trans : LayoutType::NoTrans;
   LayoutType TransB = Params["trans_b"].as<bool>() ? LayoutType::Trans : LayoutType::NoTrans;
+  
+  DensityType DensityA = Params["dense_a"].as<bool>() ? LayoutType::Dense : LayoutType::Sparse;
+  DensityType DensityB = Params["dense_b"].as<bool>() ? LayoutType::Dense : LayoutType::Sparse;
 
   int Lda = MatrixASpec["num_rows"].as<int>();
   int Ldb = MatrixBSpec["num_rows"].as<int>();
@@ -91,6 +94,7 @@ int main(int Argc, char* Arcv[]) {
   int OffsetC = computeOffset(Ldc, BboxC);
 
   gemmforge::reference::gemm(TransA, TransB,
+                             DensityA,DensityB, 
                              M, N, K,
                              Alpha, &HostA[OffsetA], Lda,
                              &HostB[OffsetB], Ldb,

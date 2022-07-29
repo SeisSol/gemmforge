@@ -35,18 +35,19 @@ class TestLoader:
             spec["num_elements"],
             self._gen_test_name(test_params))
 
+ 
+
   def _produce_matrixMock(self, matrix_spec):
     return MockMatrix(num_rows=matrix_spec["rows"],
-                       num_cols=matrix_spec["cols"],
-                       addressing=matrix_spec["addressing"],
-                       bbox=matrix_spec["bbox"],
-                       spp = matrix_spec["spp"])
-
-  def _produce_matrix(self, matrix_spec):
-    return DenseMatrix(num_rows=matrix_spec["rows"],
                       num_cols=matrix_spec["cols"],
                       addressing=matrix_spec["addressing"],
-                      bbox=matrix_spec["bbox"])
+                      bbox=matrix_spec["bbox"],
+                      spp=matrix_spec["spp"])
+  def _produce_matrix(self, matrix_spec):
+    return DenseMatrix(num_rows=matrix_spec["rows"],
+                       num_cols=matrix_spec["cols"],
+                       addressing=matrix_spec["addressing"],
+                       bbox=matrix_spec["bbox"])
 
   def is_param(self, param):
     if isinstance(param, str):
@@ -76,10 +77,22 @@ class TestLoader:
       if isinstance(params[item], float):
         value_str = str(params[item]).replace('.', '_')
       if isinstance(params[item], list):
+        #for x in params[item]:
+         # if isinstance(x,list):
+          #  x=[str(y) for y in x]
+           # x="_".join(x)
+
         value_str = [str(item) for item in params[item]]
         value_str = "_".join(value_str)
-      param_to_str.append("{}_{}".format(item_str, value_str))
+        value_str=value_str.replace(',','_')
+        value_str=value_str.replace('[','')
+        value_str=value_str.replace(']','')
+        value_str=value_str.replace(' ','') 
+        
 
+
+      param_to_str.append("{}_{}".format(item_str, value_str))
+ 
     return "{}_{}".format(self._test_spec['test_base_name'], "_".join(param_to_str))
 
 

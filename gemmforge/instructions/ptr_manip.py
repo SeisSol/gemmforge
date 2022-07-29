@@ -57,7 +57,8 @@ class GetElementPtr(AbstractInstruction):
       writer(f'{lhs} = {rhs};')
         
     if isinstance(batch_obj, MockMatrix) and batch_obj.values == None :
-      rhs = f'&{self._src.name}[{address}]'
+      address = f'{main_offset} + {sub_offset} + values_extraOffset'
+      rhs = f'&values[{address}]'
 
       lhs = 'const ' if self._src.obj.direction == DataFlowDirection.SOURCE else ''
       lhs += f'{self._vm.fp_as_str()} * const __restrict__ values'

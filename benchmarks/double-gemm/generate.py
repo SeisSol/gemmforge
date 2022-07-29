@@ -23,11 +23,18 @@ args = parser.parse_args()
 
 
 def produce_matrix(spec):
-    return MockMatrix(num_rows=spec['num_rows'],
+    return DenseMatrix(num_rows=spec['num_rows'],
                        num_cols=spec['num_cols'],
                        addressing=spec['addressing'],
                        bbox=spec['bbox'])
 
+
+def produce_matrixMock(spec):
+    return MockMatrix(num_rows=spec['num_rows'],
+                      num_cols=spec['num_cols'],
+                      addressing=spec['addressing'],
+                      bbox=spec['bbox'],
+                      spp=spec['spp'])
 
 stream = open('params.yaml', 'r')
 config = yaml.safe_load(stream)
@@ -42,7 +49,8 @@ spec = {'num_rows': mat_a.get_actual_num_rows(),
         'num_cols': mat_b.get_actual_num_cols(),
         'addressing': 'strided',
         'bbox': None,
-        'trans': False}
+        'trans': False,
+        'spp':None}
 tmp = produce_matrix(spec)
 
 alpha = config['alpha']

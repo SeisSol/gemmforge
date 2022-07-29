@@ -9,6 +9,6 @@ int main(int Argc, char *Argv[]) {
   DeviceInstance &device = DeviceInstance::getInstance();
   device.api->setDevice(0);
   device.api->initialize();
-
+  std::cout << "Main\n"; 
   return RUN_ALL_TESTS();
 }

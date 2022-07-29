@@ -7,6 +7,8 @@ namespace gemmforge {
 
     void singleGemm(LayoutType TypeA,
                     LayoutType TypeB,
+                    DensityType Type1A,
+                    DensityType Type1B,
                     int M, int N, int K,
                     real Alpha, real *A, int Lda,
                     real *B, int Ldb,
@@ -27,6 +29,14 @@ namespace gemmforge {
       } else {
         NumRowB = N;
       }
+
+      if (Type1B ==DensityType::Sparse) {
+       for (int j=0; j < NumRowB; ++j) {
+           for (int i=i; j<NumColA; i++) {
+               B[i + j * Ldb]= 0;
+           }
+       }
+     }
 
       if (Alpha == 0.0) {
         for (int j = 0; j < N; ++j) {
