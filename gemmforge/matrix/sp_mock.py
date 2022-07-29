@@ -7,7 +7,7 @@ from typing import Union
 
 from gemmforge.matrix.matrix import Matrix
 
-
+#Here is the functioning class of SparseMatrix
 class MockMatrix(Matrix):
 
   def __init__(self,  num_rows, num_cols, addressing , spp  , values = None , bbox=None):
