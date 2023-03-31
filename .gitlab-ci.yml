@@ -64,7 +64,7 @@ gemms:
   -  atsccs68-docker-executor
   parallel:
     matrix:
-      - BACKEND: [cuda, hipsycl, hip]
+      - BACKEND: [cuda, opensycl, hip]
   script:
     - *common_test_script
     - export curr_dir=./tests/gemms/build
@@ -83,7 +83,7 @@ csa:
   -  atsccs68-docker-executor
   parallel:
     matrix:
-      - BACKEND: [cuda, hipsycl, hip]
+      - BACKEND: [cuda, opensycl, hip]
   script:
     - *common_test_script
     - export curr_dir=./tests/csa/build
@@ -102,7 +102,7 @@ benchmarks:
   -  atsccs68-docker-executor
   parallel:
     matrix:
-      - BACKEND: [cuda, hipsycl, hip]
+      - BACKEND: [cuda, opensycl, hip]
   script:
     - *common_test_script
     - for bench in "bandwidth" "double-gemm" "simple-gemm" ; do
@@ -139,7 +139,7 @@ install:
   -  atsccs68-docker-executor
   parallel:
     matrix:
-      - BACKEND: [cuda, hipsycl, hip]
+      - BACKEND: [cuda, opensycl, hip]
   before_script:
   - pip3 install --user git+https://github.com/ravil-mobile/gemmforge.git@$CI_COMMIT_SHA
   script:

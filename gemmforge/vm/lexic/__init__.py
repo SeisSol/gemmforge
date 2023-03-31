@@ -9,7 +9,7 @@ def lexic_factory(backend, underlying_hardware):
     return CudaLexic(underlying_hardware)
   elif backend == "hip":
     return HipLexic(underlying_hardware)
-  elif backend == "hipsycl" or backend == "oneapi":
+  elif backend == "opensycl" or backend == "oneapi":
     return SyclLexic(backend, underlying_hardware)
   else:
     raise ValueError(f'Unknown backend, given: {backend}')

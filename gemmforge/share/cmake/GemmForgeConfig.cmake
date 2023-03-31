@@ -6,7 +6,7 @@ string(REGEX REPLACE "\n$" "" GEMMFORGE_PATH "${GEMMFORGE_PATH}")
 
 set(GemmForge_INCLUDE_DIRS "${GEMMFORGE_PATH}/include")
 
-set(GemmForge_ALLOWED "cuda" "hip" "oneapi" "hipsycl")
+set(GemmForge_ALLOWED "cuda" "hip" "oneapi" "opensycl")
 if(NOT DEFINED DEVICE_BACKEND)
   set(DEVICE_BACKEND "cuda" CACHE STRING "type of an interface")
   set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS ${GemmForge_ALLOWED})

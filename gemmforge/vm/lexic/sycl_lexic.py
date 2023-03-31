@@ -23,7 +23,7 @@ class SyclLexic(Lexic):
 
   def kernel_definition(self, file, kernel_bounds, base_name, params, precision=None, total_shared_mem_size=None):
     if total_shared_mem_size is not None and precision is not None:
-      if self._backend == 'hipsycl':
+      if self._backend == 'opensycl':
         localmem = f'cl::sycl::accessor<{precision}, 1,'
         localmem += ' cl::sycl::access::mode::read_write,'
         localmem += f' cl::sycl::access::target::local> '

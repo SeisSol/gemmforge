@@ -2,7 +2,7 @@ if(${DEVICE_BACKEND} STREQUAL "cuda")
     include(${CMAKE_CURRENT_LIST_DIR}/cuda.cmake)
 elseif(${DEVICE_BACKEND} STREQUAL "hip")
     include(${CMAKE_CURRENT_LIST_DIR}/hip.cmake)
-elseif((${DEVICE_BACKEND} STREQUAL "oneapi") OR (${DEVICE_BACKEND} STREQUAL "hipsycl"))
+elseif((${DEVICE_BACKEND} STREQUAL "oneapi") OR (${DEVICE_BACKEND} STREQUAL "opensycl"))
     include(${CMAKE_CURRENT_LIST_DIR}/sycl.cmake)
 endif()
 

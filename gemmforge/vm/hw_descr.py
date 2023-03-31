@@ -36,7 +36,7 @@ def hw_descr_factory(arch, backend):
       return HwDecription(known_arch[arch], arch, backend)
     else:
       report_error(backend, arch)
-  elif backend == 'oneapi' or backend == 'hipsycl':
+  elif backend == 'oneapi' or backend == 'opensycl':
     if arch in nvidia_list or arch in intel_list:
       return HwDecription(known_arch[arch], arch, backend)
     else:

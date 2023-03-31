@@ -82,13 +82,13 @@ make install && \
 cd ../../ && rm -rf ./llvm-project
 
 
-# Install hipsycl
+# Install opensycl
 RUN apt install -yqq libomp-dev && \
-git clone --depth 1 --branch v0.9.1 https://github.com/illuhad/hipSYCL.git hipsycl && \
-cd hipsycl && \
+git clone --depth 1 https://github.com/OpenSYCL/OpenSYCL opensycl && \
+cd opensycl && \
 git submodule update --init --recursive && \
 mkdir build && cd build && \
-CC=/usr/bin/gcc-9 CXX=/usr/bin/g++-9 cmake .. \
+cmake .. \
 -DCMAKE_BUILD_TYPE:STRING=Release \
 -DCMAKE_INSTALL_PREFIX=/usr/local \
 -DWITH_CPU_BACKEND:Bool=TRUE \
@@ -97,8 +97,9 @@ CC=/usr/bin/gcc-9 CXX=/usr/bin/g++-9 cmake .. \
 -DLLVM_DIR:String=/usr/local/lib/cmake/llvm \
 -DCLANG_INCLUDE_PATH:String=/usr/local/lib/clang/11.0.1/include \
 -DCLANG_EXECUTABLE_PATH:String=/usr/local/bin/clang++ \
--DCUDA_TOOLKIT_ROOT_DIR:String=/usr/local/cuda && \
-make -j4 && make install && cd ../.. && rm -rf ./hipsycl
+-DCUDA_TOOLKIT_ROOT_DIR:String=/usr/local/cuda \
+-DWITH_SSCP_COMPILER=OFF && \
+make -j4 && make install && cd ../.. && rm -rf ./opensycl
 
 
 # Clean-up

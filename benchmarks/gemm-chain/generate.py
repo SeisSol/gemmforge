@@ -15,7 +15,7 @@ parser.add_argument('-a',
 parser.add_argument('-b',
                     '--backend',
                     action='store',
-                    help='Name of the Backend, currently cuda, hip, hipsycl and oneapi are supported',
+                    help='Name of the Backend, currently cuda, hip, opensycl and oneapi are supported',
                     default='cuda')
 parser.add_argument('-c',
                     '--config',
@@ -135,7 +135,7 @@ try:
     hw_descr = vm.get_hw_descr()
     if hw_descr.backend == 'cuda':
         path = os.path.join(dir_name, 'kernels.cu')
-    elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
+    elif hw_descr.backend == 'hip' or hw_descr.backend == 'opensycl' or hw_descr.backend == 'oneapi':
         path = os.path.join(dir_name, 'kernels.cpp')
 
     with open(path, 'w') as file:
@@ -207,7 +207,7 @@ bench_src = template.render(batchSize=config['num_elements'],
 dir_name = './gen_code'
 if args.backend == 'cuda':
   path = os.path.join(dir_name, 'main.cu')
-elif args.backend == 'hip' or args.backend == 'hipsycl' or args.backend == 'oneapi':
+elif args.backend == 'hip' or args.backend == 'opensycl' or args.backend == 'oneapi':
   path = os.path.join(dir_name, 'main.cpp')
 
 with open(path, 'w') as file:

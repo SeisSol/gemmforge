@@ -34,7 +34,7 @@ elseif(${DEVICE_BACKEND} STREQUAL "hip")
         include/gemmforge_aux.cpp)
     set(GEN_COPY_PRODUCTS ${CMAKE_SOURCE_DIR}/gen_code/kernels.cpp
         ${CMAKE_SOURCE_DIR}/gen_code/kernels.h)
-elseif((${DEVICE_BACKEND} STREQUAL "oneapi") OR (${DEVICE_BACKEND} STREQUAL "hipsycl"))
+elseif((${DEVICE_BACKEND} STREQUAL "oneapi") OR (${DEVICE_BACKEND} STREQUAL "opensycl"))
     set(GPU_TARGET_SOURCE_FILES common/test_drivers/simple_driver.cpp
         gen_code/kernels.cpp
         include/gemmforge_aux_sycl.cpp)
@@ -68,7 +68,7 @@ include(../../cmake/setupGpuTarget.cmake)
 target_link_libraries(${TARGET} PRIVATE ${GPU_TARGET} device -lpthread)
 include(../../cmake/generateCode.cmake)
 
-if (${DEVICE_BACKEND} STREQUAL "hipsycl")
+if (${DEVICE_BACKEND} STREQUAL "opensycl")
     find_package(OpenMP REQUIRED)
     target_link_libraries(${TARGET} PUBLIC OpenMP::OpenMP_CXX)
     target_link_libraries(${GPU_TARGET} PUBLIC OpenMP::OpenMP_CXX)

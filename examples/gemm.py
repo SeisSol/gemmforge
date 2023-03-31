@@ -12,7 +12,7 @@ parser.add_argument("-a",
 parser.add_argument("-b",
                     "--backend",
                     action="store",
-                    help="Name of the Backend, currently cuda, hip, hipsycl and oneapi are supported",
+                    help="Name of the Backend, currently cuda, hip, opensycl and oneapi are supported",
                     default="cuda")
 
 

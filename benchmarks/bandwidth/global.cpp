@@ -24,14 +24,14 @@ int main(int Argc, char *Argv[]) {
 
     size_t blocks = (NumElements + 1024 - 1) / 1024;
     size_t threads = 1024;
-    device.api->synchDevice();
+    device.api->syncDevice();
 
     utils::StopWatch <std::chrono::duration<double, std::chrono::nanoseconds::period>> Timer;
     Timer.start();
     for (int Repeat = 0; Repeat < NumRepeats; ++Repeat) {
         copyData(To, From, NumElements, blocks, threads, device.api->getDefaultStream());
     }
-    device.api->synchDevice();
+    device.api->syncDevice();
     Timer.stop();
 
     auto AverageTime = Timer.getTime() / NumRepeats;

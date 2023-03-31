@@ -20,7 +20,7 @@ parser.add_argument('-a',
 parser.add_argument('-b',
                     '--backend',
                     action='store',
-                    help='Name of the Backend, currently cuda, hip, hipsycl and oneapi are supported',
+                    help='Name of the Backend, currently cuda, hip, opensycl and oneapi are supported',
                     default='cuda')
 args = parser.parse_args()
 
@@ -175,7 +175,7 @@ with open(path, 'w') as file:
 
 if hw_descr.backend == 'cuda':
   path = os.path.join(dir_name, 'kernels.cu')
-elif hw_descr.backend== 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
+elif hw_descr.backend== 'hip' or hw_descr.backend == 'opensycl' or hw_descr.backend == 'oneapi':
   path = os.path.join(dir_name, 'kernels.cpp')
 else:
   print('Backend is not supported, could not write kernel file')

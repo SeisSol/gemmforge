@@ -10,7 +10,7 @@ set(REFERENCE_IMPL "GEMMFORGE" CACHE STRING "size of the floating point data typ
 set_property(CACHE REFERENCE_IMPL PROPERTY STRINGS "GEMMFORGE" "OPENBLAS")
 
 set(DEVICE_BACKEND "cuda" CACHE STRING "type of an interface")
-set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS "cuda" "hip" "oneapi" "hipsycl")
+set_property(CACHE DEVICE_BACKEND PROPERTY STRINGS "cuda" "hip" "oneapi" "opensycl")
 
 set(REAL_SIZE_IN_BYTES ${REAL_SIZE})
 set(DEVICE_ARCH ${SM_ARCH})
