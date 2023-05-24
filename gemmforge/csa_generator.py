@@ -128,6 +128,8 @@ class CsaGenerator(GemmLikeGenerator):
             op2 = self._symbol_table[self._mat_b]
 
             with file.If(f'{self._lexic.thread_idx_x} < {op1.data_view.rows}'):
+
+              file.Pragma('unroll')
               with file.For(f'int col = 0; col < {op1.data_view.columns}; ++col'):
                 addr_op1 = f'{self._lexic.thread_idx_x} + col * {op1.data_view.lead_dim}'
                 addr_op2 = f'{self._lexic.thread_idx_x} + col * {op2.data_view.lead_dim}'
@@ -158,6 +160,8 @@ class CsaGenerator(GemmLikeGenerator):
 
     real_literal = self._vm.get_real_literal()
     dest = self._symbol_table[matrix]
+
+    file.Pragma('unroll')
     with file.For(f'int cols = 0; cols < {matrix.num_cols}; ++cols'):
       num_hops = int(dest.data_view.lead_dim / self._num_active_threads)
       if num_hops > 0:

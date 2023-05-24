@@ -1,0 +1,15 @@
+---
+MatA:
+  num_rows: 64
+  num_cols: 9 
+  addressing: "strided"
+  bbox: [0, 0, 56, 9]
+
+MatB:
+  num_rows: 64
+  num_cols: 9 
+  addressing: "strided"
+  bbox: [0, 0, 56, 9]
+
+alpha: 1.1
+beta: 1.0
