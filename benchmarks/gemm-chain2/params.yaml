@@ -1,0 +1,36 @@
+---
+dofs:
+  num_rows: 64
+  num_cols: 9
+  addressing: "strided"
+  bbox: [0, 0, 56, 9]
+
+r_div_mat:
+  num_rows: 64
+  num_cols: 21
+  addressing: "none"
+  bbox: [0, 0, 56, 21]
+
+f_plus:
+  num_rows: 32
+  num_cols: 21
+  addressing: "none"
+  bbox: [0, 0, 21, 21]
+
+r_mat:
+  num_rows: 32
+  num_cols: 56
+  addressing: "none"
+  bbox: [0, 0, 21, 56]
+
+i_dofs:
+  num_rows: 64
+  num_cols: 9
+  addressing: "strided"
+  bbox: [0, 0, 56, 9]
+
+a_plus:
+  num_rows: 9
+  num_cols: 9
+  addressing: "strided"
+  bbox: [0, 0, 9, 9]
