@@ -37,8 +37,6 @@ params = yaml.safe_load(stream)
 stream = open(args.config, 'r')
 config = yaml.safe_load(stream)
 
-# dofs = dofs + r_div_mat * ((f_plus * (r_mat * i_dofs)) * a_plus) -> orig_ordering;
-
 dofs = produce_matrix(params['dofs'])
 r_div_mat = produce_matrix(params['r_div_mat'])
 f_plus = produce_matrix(params['f_plus'])
@@ -69,14 +67,6 @@ spec = {'num_rows': tmp2.get_actual_num_rows(),
         'bbox': None,
         'trans': False}
 tmp3 = produce_matrix(spec)
-
-# tmp4 = r_div_mat * tmp3
-spec = {'num_rows': r_div_mat.get_actual_num_rows(),
-        'num_cols': tmp3.get_actual_num_cols(),
-        'addressing': 'strided',
-        'bbox': None,
-        'trans': False}
-tmp4 = produce_matrix(spec)
 
 vm = None
 
@@ -216,13 +206,13 @@ def get_call_size(launcher_name, params):
 
 template.globals['get_call_size'] = get_call_size
 
-names = ['dofs', 'r_div_mat', 'f_plus', 'r_mat', 'i_dofs', 'a_plus', 'tmp1', 'tmp2', 'tmp3', 'tmp4']
-descriptions = [dofs, r_div_mat, f_plus, r_mat, i_dofs, a_plus, tmp1, tmp2, tmp3, tmp4]
+names = ['dofs', 'r_div_mat', 'f_plus', 'r_mat', 'i_dofs', 'a_plus', 'tmp1', 'tmp2', 'tmp3']
+descriptions = [dofs, r_div_mat, f_plus, r_mat, i_dofs, a_plus, tmp1, tmp2, tmp3]
 
 params = [['r_mat', 'i_dofs', 'tmp1'],
           ['f_plus', 'tmp1', 'tmp2'],
           ['tmp2', 'a_plus', 'tmp3'],
-          ['r_div_mat', 'tmp3', 'tmp4']]
+          ['r_div_mat', 'tmp3', 'dofs']]
 
 launcher_names = ['call_FirstGemm',
                   'call_SecondGemm',
