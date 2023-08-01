@@ -19,6 +19,7 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
     # We are dealing with a tensor slice that is not contigously stored,
     # In that case Extended doesn't really give any advantage
     if load_and_transpose:
+      # TODO: Implement loading of a transposed tensor slice later
       raise Exception("TODO: loading for transposed matrices")
     return ExactPatchLoader(**params)
   #else:
