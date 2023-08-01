@@ -150,3 +150,72 @@ class ExactTransposePatchLoader(AbstractShrMemLoader):
             glb_mem_index = f'{updated_thread_idx} + i * {src_data_view.lead_dim}'
 
             self._assign(writer, shr_mem_index, glb_mem_index)
+
+
+class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
+  """A strategy which loads only a necessary part of a matrix into shared memory.
+
+  """
+
+  def __init__(self, **kwargs):
+    super(ArbitraryLeadingDimensionExactTransposePatchLoader, self).__init__(**kwargs)
+
+    data_view = self._src.data_view
+    self._shm_volume = data_view.rows * data_view.columns
+
+    self._dest.data_view = DataView(rows=data_view.columns,
+                                    columns=data_view.rows,
+                                    lead_dim=data_view.lead_dim,
+                                    is_transposed=True)
+
+  def gen_code(self, writer):
+    super(ArbitraryLeadingDimensionExactTransposePatchLoader, self).gen_code(writer)
+    writer("// using ArbitraryLeadingDimensionExactTransposePatchLoader")
+
+    src_data_view = self._src.data_view
+    dest_data_view = self._dest.data_view
+    thread_idx_x = self._lexic.thread_idx_x
+    num_hops = int(self._shm_volume / self._num_threads)
+    index_var = 'index'
+    counter_var = 'counter'
+
+    assert(self._src.data_view.rows == self._dest.data_view.columns)
+    assert(self._src.data_view.columns == self._dest.data_view.rows)
+
+    with writer.Scope():
+
+      writer.Pragma('unroll')
+      # .format(self.matrix.get_actual_num_cols())
+      with writer.For(f'int i = 0; i < {src_data_view.columns}; ++i'):
+        num_hops = int(src_data_view.rows / self._num_threads)
+        if num_hops > 0:
+          # load using a for-loop
+          writer.Pragma('unroll')
+          with writer.For(f'int {counter_var} = 0; {counter_var} < {num_hops}; ++{counter_var}'):
+            shr_mem_addr = f'({thread_idx_x} + {counter_var} * {self._num_threads}) * {src_data_view.rows} + i'
+            glb_mem_addr = f'{thread_idx_x} + {counter_var} * {self._num_threads} + i * {src_data_view.lead_dim}'
+
+            self._assign(writer, shr_mem_addr, glb_mem_addr)
+
+          # the last hop to fill shared mem with data
+          if (src_data_view.rows % self._num_threads) != 0:
+            residue = src_data_view.rows - num_hops * self._num_threads
+            with writer.If(f'{thread_idx_x} < {residue}'):
+              shr_mem_addr = f'({thread_idx_x} + {num_hops} * {self._num_threads}) * {src_data_view.rows} + i'
+              glb_mem_addr = f'{thread_idx_x} + {num_hops} * {self._num_threads} + i * {src_data_view.lead_dim}'
+
+              self._assign(writer, shr_mem_addr, glb_mem_addr)
+        else:
+          residue = src_data_view.rows
+          with writer.If(f'{thread_idx_x} < {residue}'):
+            shr_mem_addr = f'{thread_idx_x} * {src_data_view.rows} + i'
+            glb_mem_addr = f'{thread_idx_x} + i * {src_data_view.lead_dim}'
+
+            self._assign(writer, shr_mem_addr, glb_mem_addr)
+
+    # Since we changed the structure of the dataview after loading it to the shared memory
+    # If lead_dim and num_rows are equal in a contigous matrix this is a no-op
+    tmp = self._dest.data_view.rows
+    self._dest.data_view.rows = self._dest.data_view.columns
+    self._dest.data_view.columns = tmp
+    self._dest.data_view.lead_dim = self._dest.data_view.rows
