@@ -9,11 +9,22 @@ class DenseMatrix:
                "strided": "*",
                "pointer_based": "**"}
 
-  def __init__(self, num_rows, num_cols, addressing, bbox=None):
+  def __init__(self, num_rows, num_cols, addressing, bbox=None, leading_dimension=None):
     self.name = None
     self.num_rows = num_rows
     self.num_cols = num_cols
     self.direction: Union[DataFlowDirection, None] = None
+
+    if leading_dimension == None:
+      # TODO: check if the assumption holds that a matrix will be always transposed,
+      # if not then we need to change the leading dimension when the matrix is 
+      # transposed on-the-fly when loaded into the shared memory
+      self.leading_dimension = self.num_rows
+    else:
+      self.leading_dimension = leading_dimension
+
+    # If leading_dimension = num_rows then we have a contiguously stored matrix
+    self.is_non_contiguous = self.leading_dimension != self.num_rows
 
     if bbox is not None:
       self.bbox = bbox
@@ -57,7 +68,7 @@ class DenseMatrix:
     return self.num_rows * self.num_cols
 
   def get_offset_to_first_element(self):
-    return self.num_rows * self.bbox[1] + self.bbox[0]
+    return self.leading_dimension * self.bbox[1] + self.bbox[0]
 
   def set_name(self, name):
     self.name = name
@@ -69,4 +80,5 @@ class DenseMatrix:
     string += "addressing = {}\n".format(self.addressing)
     string += "num. actual rows = {}\n".format(self.get_actual_num_rows())
     string += "num. actual cols = {}\n".format(self.get_actual_num_cols())
+    string += "leading dimension = {}\n".format(self.leading_dimension)
     return string

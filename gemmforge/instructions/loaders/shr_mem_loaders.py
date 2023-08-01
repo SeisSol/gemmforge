@@ -70,39 +70,49 @@ class ExactPatchLoader(AbstractShrMemLoader):
 
   def gen_code(self, writer):
     super(ExactPatchLoader, self).gen_code(writer)
-    writer("// using ExactPatchLoader")
+    # If leading dim != num rows then we have a source where the matrix is stored
+    # Non-contigously meaning space between columns. this would happen with tensor slices
+    src_data_view = self._src.data_view
+    dest_data_view = self._dest.data_view
+
+    print(src_data_view)
+    if src_data_view.lead_dim == src_data_view.rows:
+      writer("// using ExactPatchLoader for leading dimension != number of rows")
+    else:
+      writer("// using ExactPatchLoader")
 
     with writer.Scope():
-
-      src_data_view = self._src.data_view
-      dest_data_view = self._dest.data_view
       thread_idx_x = self._lexic.thread_idx_x
       writer.Pragma("unroll")
       with writer.For(f'int i = 0; i < {src_data_view.columns}; ++i'):
-        num_hops = int(dest_data_view.lead_dim / self._num_threads)
+        num_hops = int(dest_data_view.rows / self._num_threads)
         if num_hops > 0:
           if num_hops > self._manual_unroll_threshold:
             writer.Pragma("unroll")
             with writer.For(f'int counter = 0; counter < {num_hops}; ++counter'):
               shr_mem_addr = f'{thread_idx_x}'
-              shr_mem_addr += f' + counter * {self._num_threads} + i {dest_data_view.lead_dim}'
+              shr_mem_addr += f' + counter * {self._num_threads} + i * {dest_data_view.rows}'
 
               glb_mem_addr = f'{thread_idx_x}'
-              glb_mem_addr += f' + counter * {self._num_threads} + i {src_data_view.lead_dim}'
+              glb_mem_addr += f' + counter * {self._num_threads} + i * {src_data_view.lead_dim}'
 
               self._assign(writer, shr_mem_addr, glb_mem_addr)
           else:
             for counter in range(num_hops):
               offset = counter * self._num_threads
-              shr_mem_addr = f'{thread_idx_x} + {offset} + i * {dest_data_view.lead_dim}'
+              shr_mem_addr = f'{thread_idx_x} + {offset} + i * {dest_data_view.rows}'
               glb_mem_addr = f'{thread_idx_x} + {offset} + i * {src_data_view.lead_dim}'
               self._assign(writer, shr_mem_addr, glb_mem_addr)
 
         # the last hop to fill shared mem with data
-        if (dest_data_view.lead_dim % self._num_threads) != 0:
-          residue = dest_data_view.lead_dim - num_hops * self._num_threads
+        if (dest_data_view.rows % self._num_threads) != 0:
+          residue = dest_data_view.rows - num_hops * self._num_threads
           with writer.If(f'{thread_idx_x} < {residue}'):
             finial_offset = num_hops * self._num_threads
-            shr_mem_addr = f'{thread_idx_x} + {finial_offset} + i * {dest_data_view.lead_dim}'
+            shr_mem_addr = f'{thread_idx_x} + {finial_offset} + i * {dest_data_view.rows}'
             glb_mem_addr = f'{thread_idx_x} + {finial_offset} + i * {src_data_view.lead_dim}'
             self._assign(writer, shr_mem_addr, glb_mem_addr)
+
+    # Since we changed the structure of the dataview after loading it to the shared memory
+    # If lead_dim and num_rows are equal in a contigous matrix this is a no-op
+    self._dest.data_view.lead_dim = self._dest.data_view.rows

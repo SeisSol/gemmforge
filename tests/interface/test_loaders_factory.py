@@ -36,7 +36,7 @@ class TestLoaders(unittest.TestCase):
 
     src.data_view = DataView(rows=matrix.get_actual_num_rows(),
                              columns=matrix.get_actual_num_cols(),
-                             lead_dim=matrix.num_rows,
+                             lead_dim=matrix.leading_dimensions,
                              is_transposed=False)
     
     dest = Symbol(name='dest',

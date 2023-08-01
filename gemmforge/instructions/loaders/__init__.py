@@ -14,6 +14,16 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
             'load_and_transpose': load_and_transpose}
 
   num_loads_per_column = ceil(src.data_view.rows / num_threads) * num_threads
+
+  if src.data_view.lead_dim != src.data_view.rows:
+    # We are dealing with a tensor slice that is not contigously stored,
+    # In that case Extended doesn't really give any advantage
+    if load_and_transpose:
+      raise Exception("TODO: loading for transposed matrices")
+    return ExactPatchLoader(**params)
+  #else:
+  #  raise Exception(f"{src.data_view.lead_dim} == {src.data_view.rows}")
+
   if src.data_view.lead_dim > num_loads_per_column:
     if load_and_transpose:
       return ExactTransposePatchLoader(**params)

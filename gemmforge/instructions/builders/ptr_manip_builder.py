@@ -22,7 +22,7 @@ class GetElementPtrBuilder(AbstractBuilder):
     batched_matrix = src.obj
     dest.data_view = DataView(rows=batched_matrix.get_actual_num_rows(),
                               columns=batched_matrix.get_actual_num_cols(),
-                              lead_dim=batched_matrix.num_rows,
+                              lead_dim=batched_matrix.leading_dimension,
                               is_transposed=False)
 
     self._symbol_table.add_symbol(dest)
