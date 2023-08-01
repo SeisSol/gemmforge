@@ -38,7 +38,7 @@ class StoreRegToGlb(AbstractInstruction):
       with writer.For(f'int n = 0; n < {dest_matrix.get_actual_num_cols()}; ++n'):
         rhs = "{}[{} + {} * n]".format(dest_name,
                                        self._vm.get_lexic().thread_idx_x,
-                                       dest_matrix.num_rows)
+                                       dest_matrix.leading_dimension)
 
         real_suffix = 'f' if precision == "float" else ''
 
