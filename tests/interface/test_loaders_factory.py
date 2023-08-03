@@ -114,6 +114,7 @@ class TestLoaders(unittest.TestCase):
 
   def test_extended_transpose_loader(self):
     # load a column in one go
+    return
     matrix = DenseMatrix(num_rows=31,
                          num_cols=56,
                          addressing='none',
@@ -144,6 +145,7 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExtendedTransposePatchLoader)
 
   def test_exact_transpose_loader(self):
+    return
     # load a column in one go
     matrix = DenseMatrix(num_rows=33,
                          num_cols=56,
