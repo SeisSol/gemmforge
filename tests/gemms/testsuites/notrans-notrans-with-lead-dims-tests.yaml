@@ -1,0 +1,33 @@
+test_suites:
+   -
+    # m = 34, n = 12, k = 10
+    test_base_name: "LeadingDims_T_NT"
+    matrix_a:
+      rows: 256
+      cols: 32
+      addressing: "strided"
+      bbox: [192, 0, 256, 32]
+      leading_dimension: 256
+
+    matrix_b:
+      rows: 32
+      cols: 16
+      addressing: "strided"
+      bbox: [0, 0, 32, 16]
+      leading_dimension: 32
+
+    matrix_c:
+      rows: 64
+      cols: 16
+      addressing: "strided"
+      bbox: [0, 0, 64, 16]
+      leading_dimension: 64
+
+    trans_a:  no
+    trans_b:  no
+    alpha: 1.1
+    beta: 1.1
+    num_elements: 10
+
+    gemm_type: "params_gemm_type"
+    params_gemm_type: ["shr_mem", "register_only"]

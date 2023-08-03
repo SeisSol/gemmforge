@@ -9,7 +9,8 @@ from gemmforge.basic_types import ShrMemObject
 from gemmforge.symbol_table import Symbol, SymbolType, InverseSymbolTable
 from gemmforge.symbol_table import DataView
 
-
+# TODO: Test cases for ArbitraryLeadingDimensionsExactTranspsoePatchLoaders
+# and benchmarks for them
 class TestLoaders(unittest.TestCase):
 
   @classmethod
@@ -48,7 +49,6 @@ class TestLoaders(unittest.TestCase):
     pass
 
   def test_extended_loader(self):
-    return
     # load a column in one go
     matrix = DenseMatrix(num_rows=31,
                          num_cols=56,
@@ -80,7 +80,6 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExtendedPatchLoader)
 
   def test_exact_loader(self):
-    return
     # load a column in one go
     matrix = DenseMatrix(num_rows=33,
                          num_cols=56,
@@ -114,7 +113,6 @@ class TestLoaders(unittest.TestCase):
 
   def test_extended_transpose_loader(self):
     # load a column in one go
-    return
     matrix = DenseMatrix(num_rows=31,
                          num_cols=56,
                          addressing='none',
@@ -145,7 +143,6 @@ class TestLoaders(unittest.TestCase):
     self.assertIsInstance(loader, ExtendedTransposePatchLoader)
 
   def test_exact_transpose_loader(self):
-    return
     # load a column in one go
     matrix = DenseMatrix(num_rows=33,
                          num_cols=56,

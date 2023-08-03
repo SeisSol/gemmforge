@@ -41,10 +41,17 @@ class TestLoader:
             self._gen_test_name(test_params))
 
   def _produce_matrix(self, matrix_spec):
-    return DenseMatrix(num_rows=matrix_spec["rows"],
-                       num_cols=matrix_spec["cols"],
-                       addressing=matrix_spec["addressing"],
-                       bbox=matrix_spec["bbox"])
+    if "leading_dimension" in matrix_spec:
+      return DenseMatrix(num_rows=matrix_spec["rows"],
+                        num_cols=matrix_spec["cols"],
+                        addressing=matrix_spec["addressing"],
+                        bbox=matrix_spec["bbox"],
+                        leading_dimension=matrix_spec["leading_dimension"])
+    else:
+      return DenseMatrix(num_rows=matrix_spec["rows"],
+                        num_cols=matrix_spec["cols"],
+                        addressing=matrix_spec["addressing"],
+                        bbox=matrix_spec["bbox"])
 
   def is_param(self, param):
     if isinstance(param, str):

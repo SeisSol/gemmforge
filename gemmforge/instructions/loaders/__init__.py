@@ -15,25 +15,26 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
 
   num_loads_per_column = ceil(src.data_view.rows / num_threads) * num_threads
 
-  if src.data_view.lead_dim != src.data_view.rows:
-    # We are dealing with a tensor slice that is not contigously stored,
-    # In that case Extended doesn't really give any advantage
-    if load_and_transpose:
-      # TODO: Implement a better method of loading of a transposed tensor slice later
-      # possibly using the same prime number approach as Ravil's
-      return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
-    return ExactPatchLoader(**params)
-  #else:
-  #  raise Exception(f"{src.data_view.lead_dim} == {src.data_view.rows}")
+  if src.obj.leading_dimension_given:
+    if src.data_view.lead_dim != src.data_view.rows:
+      # We are dealing with a tensor slice that is not contigously stored,
+      # In that case Extended doesn't really give any advantage
+      if load_and_transpose:
+        # TODO: Implement a better method of loading of a transposed tensor slice later
+        # possibly using the same prime number approach as Ravil's
+        return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
+      return ExactPatchLoader(**params)
+    #else:
+    #  raise Exception(f"{src.data_view.lead_dim} == {src.data_view.rows}")
 
   if src.data_view.lead_dim > num_loads_per_column:
     if load_and_transpose:
       #return ExactTransposePatchLoader(**params)
-      return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
+      return ExactTransposePatchLoader(**params)
     else:
       return ExactPatchLoader(**params)
   else:
     if load_and_transpose:
-      return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
+      return ExtendedTransposePatchLoader(**params)
     else:
       return ExtendedPatchLoader(**params)

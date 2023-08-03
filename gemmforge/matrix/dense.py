@@ -14,6 +14,7 @@ class DenseMatrix:
     self.num_rows = num_rows
     self.num_cols = num_cols
     self.direction: Union[DataFlowDirection, None] = None
+    self.leading_dimension_given = False
 
     if leading_dimension == None:
       # TODO: check if the assumption holds that a matrix will be always transposed,
@@ -22,6 +23,7 @@ class DenseMatrix:
       self.leading_dimension = self.num_rows
     else:
       self.leading_dimension = leading_dimension
+      self.leading_dimension_given = True
 
     # If leading_dimension = num_rows then we have a contiguously stored matrix
     self.is_non_contiguous = self.leading_dimension != self.num_rows
