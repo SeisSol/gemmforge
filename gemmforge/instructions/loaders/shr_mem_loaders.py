@@ -115,4 +115,4 @@ class ExactPatchLoader(AbstractShrMemLoader):
 
     # Since we changed the structure of the dataview after loading it to the shared memory
     # If lead_dim and num_rows are equal in a contigous matrix this is a no-op
-    self._dest.data_view.lead_dim = self._dest.data_view.rows
+    self._dest.data_view.lead_dim = self._src.data_view.rows

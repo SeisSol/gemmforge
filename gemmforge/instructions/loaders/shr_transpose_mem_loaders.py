@@ -152,6 +152,10 @@ class ExactTransposePatchLoader(AbstractShrMemLoader):
             self._assign(writer, shr_mem_index, glb_mem_index)
 
 
+# TODO: This method can be generalized from the exact transpose patch loader, 
+# TODO: this method needs benchmarking to see the penalty compared to the previous methods,
+# The transposed load might be resulting with many bank conflicts in the first load
+# TODO: Specific tests for this strategy
 class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
   """A strategy which loads only a necessary part of a matrix into shared memory.
 
@@ -192,8 +196,17 @@ class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
           # load using a for-loop
           writer.Pragma('unroll')
           with writer.For(f'int {counter_var} = 0; {counter_var} < {num_hops}; ++{counter_var}'):
-            shr_mem_addr = f'({thread_idx_x} + {counter_var} * {self._num_threads}) * {src_data_view.rows} + i'
             glb_mem_addr = f'{thread_idx_x} + {counter_var} * {self._num_threads} + i * {src_data_view.lead_dim}'
+
+            # Change [i][j] -> [j][i]
+            glb_mem_row = f'{thread_idx_x} + {num_hops} * {self._num_threads}'
+            glb_mem_col = 'i'
+            shr_mem_row = glb_mem_col
+            shr_mem_col = glb_mem_row
+
+            writer(f'const int shrMemRow = {shr_mem_row};')
+            writer(f'const int shrMemCol = {shr_mem_col};')
+            shr_mem_addr = f'shrMemRow + (shrMemCol * {dest_data_view.rows})'
 
             self._assign(writer, shr_mem_addr, glb_mem_addr)
 
@@ -201,21 +214,38 @@ class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
           if (src_data_view.rows % self._num_threads) != 0:
             residue = src_data_view.rows - num_hops * self._num_threads
             with writer.If(f'{thread_idx_x} < {residue}'):
-              shr_mem_addr = f'({thread_idx_x} + {num_hops} * {self._num_threads}) * {src_data_view.rows} + i'
+              #shr_mem_addr = f'{thread_idx_x} * {src_data_view.rows} + i'
               glb_mem_addr = f'{thread_idx_x} + {num_hops} * {self._num_threads} + i * {src_data_view.lead_dim}'
+
+              # Change [i][j] -> [j][i]
+              glb_mem_row = f'{thread_idx_x} + {num_hops} * {self._num_threads}'
+              glb_mem_col = 'i'
+              shr_mem_row = glb_mem_col
+              shr_mem_col = glb_mem_row
+
+              writer(f'const int shrMemRow = {shr_mem_row};')
+              writer(f'const int shrMemCol = {shr_mem_col};')
+              shr_mem_addr = f'shrMemRow + (shrMemCol * {dest_data_view.rows})'
 
               self._assign(writer, shr_mem_addr, glb_mem_addr)
         else:
-          residue = src_data_view.rows
-          with writer.If(f'{thread_idx_x} < {residue}'):
-            shr_mem_addr = f'{thread_idx_x} * {src_data_view.rows} + i'
+          with writer.If(f'{thread_idx_x} < {src_data_view.rows}'):
             glb_mem_addr = f'{thread_idx_x} + i * {src_data_view.lead_dim}'
+
+            # Change [i][j] -> [j][i]
+            glb_mem_row = thread_idx_x
+            glb_mem_col = 'i'
+            shr_mem_row = glb_mem_col
+            shr_mem_col = glb_mem_row
+
+            writer(f'const int shrMemRow = {shr_mem_row};')
+            writer(f'const int shrMemCol = {shr_mem_col};')
+            shr_mem_addr = f'shrMemRow + (shrMemCol * {dest_data_view.rows})'
 
             self._assign(writer, shr_mem_addr, glb_mem_addr)
 
     # Since we changed the structure of the dataview after loading it to the shared memory
     # If lead_dim and num_rows are equal in a contigous matrix this is a no-op
-    tmp = self._dest.data_view.rows
-    self._dest.data_view.rows = self._dest.data_view.columns
-    self._dest.data_view.columns = tmp
+    self._dest.data_view.rows = self._src.data_view.columns
+    self._dest.data_view.columns = self._src.data_view.rows
     self._dest.data_view.lead_dim = self._dest.data_view.rows
