@@ -199,7 +199,7 @@ class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
             glb_mem_addr = f'{thread_idx_x} + {counter_var} * {self._num_threads} + i * {src_data_view.lead_dim}'
 
             # Change [i][j] -> [j][i]
-            glb_mem_row = f'{thread_idx_x} + {num_hops} * {self._num_threads}'
+            glb_mem_row = f'{thread_idx_x} + {counter_var} * {self._num_threads}'
             glb_mem_col = 'i'
             shr_mem_row = glb_mem_col
             shr_mem_col = glb_mem_row
