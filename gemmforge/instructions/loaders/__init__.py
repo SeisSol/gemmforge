@@ -34,6 +34,6 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
       return ExactPatchLoader(**params)
   else:
     if load_and_transpose:
-      return ExtendedTransposePatchLoader(**params)
+      return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
     else:
       return ExtendedPatchLoader(**params)
