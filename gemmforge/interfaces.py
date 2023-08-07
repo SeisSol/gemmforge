@@ -35,14 +35,14 @@ class YatetoInterface:
                            yateto_memory_layout_bbox,
                            addressing,
                            transpose,
-                           leading_dimension):
+                           leading_dimension=None):
 
     gemmforge_bbox = cls.deduce_bbox(yateto_ranges=yateto_ranges,
                                      mem_layout=yateto_memory_layout_bbox,
                                      transpose=transpose)
 
     return DenseMatrix(num_rows=yateto_memory_layout_bbox[0].stop,
-                       num_cols=yateto_memory_layout_bbox[1].stop,
-                       addressing=addressing,
-                       bbox=gemmforge_bbox,
-                       leading_dimension=leading_dimension)
+                      num_cols=yateto_memory_layout_bbox[1].stop,
+                      addressing=addressing,
+                      bbox=gemmforge_bbox,
+                      leading_dimension=leading_dimension)
