@@ -28,17 +28,37 @@ class GetElementPtr(AbstractInstruction):
     else:
       extra_offset = ''
 
+    loop_over_gemm_tokens = self._vm._log_tokens
+    print("E:", batch_obj)
+    print("EE:", self._src)
+    area = False
+    log_offset = ""
+    for token_group in loop_over_gemm_tokens:
+      if token_group[0] == "FOR_LOOPS":
+        area = True
+        continue
+      if token_group[0] == "CALL":
+        area = False
+        continue
+      if area:
+        if token_group[0] == "_POINTER":
+          print("CC:", token_group[1], "X:" ,f"_{self._src.name}", "XX:", f"{self._src.name}")
+          if token_group[1][2][1] == f"_{self._src.name}" or token_group[1][3][1] == f"{self._src.name}":
+            log_offset = token_group[1][4][1]
+            break
+    print("EEE:", log_offset)
+
     address = ''
     if batch_addressing == "strided":
       main_offset = f'{GeneralLexicon.BATCH_ID} * {batch_obj.get_real_volume()}'
       sub_offset = f'{batch_obj.get_offset_to_first_element()}'
-      address = f'{main_offset} + {sub_offset}{extra_offset}'
+      address = f'{main_offset} + {sub_offset}{extra_offset} {log_offset}'
     elif batch_addressing == "pointer_based":
       main_offset = f'{GeneralLexicon.BATCH_ID}'
-      sub_offset = f'{batch_obj.get_offset_to_first_element()}'
+      sub_offset = f'{batch_obj.get_offset_to_first_element()} {log_offset}'
       address = f'{main_offset}][{sub_offset}{extra_offset}'
     elif batch_addressing == "none":
-      address = f'{batch_obj.get_offset_to_first_element()}{extra_offset}'
+      address = f'{batch_obj.get_offset_to_first_element()}{extra_offset} {log_offset}'
     else:
       GenerationError(f'unknown addressing of {self._src.name}, given {batch_addressing}')
 

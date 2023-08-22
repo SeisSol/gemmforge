@@ -33,9 +33,9 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
     self._is_ready = True
 
   def gen_code(self, writer):
-    #writer("/*")
-    #writer(f"{self._log_tokens}")
-    #writer("*/")
+    writer("/*")
+    writer(f"{self._log_tokens}")
+    writer("*/")
 
     value_var = 'value'
     op1_data_view = self._op1.data_view
@@ -96,9 +96,9 @@ class RegisterOnlyDenseGemm(AbstractInstruction):
     self._is_ready = True
 
   def gen_code(self, writer):
-    #writer("/*")
-    #writer(f"{self._log_tokens}")
-    #writer("*/")
+    writer("/*")
+    writer(f"{self._log_tokens}")
+    writer("*/")
 
     op1_variable = 'value1'
     op2_variable = 'value2'
