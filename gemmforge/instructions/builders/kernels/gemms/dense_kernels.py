@@ -13,7 +13,6 @@ class ShrMemBasedDenseGemmKernelBuilder(BaseGemmKernelBuilder):
     super(ShrMemBasedDenseGemmKernelBuilder, self).__init__(**kwargs)
 
   def build_kernel(self):
-    # create shared mem
     builder = ShrMemAllocBuilder(self._vm, self._symbol_table)
     builder.build(size=None)
     self._instructions.extend(builder.get_instructions())

@@ -2,8 +2,9 @@ from . import constructs
 from io import StringIO
 from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
+from .abstract_generator import AbstractGenerator
 from .basic_types import GeneralLexicon, DataFlowDirection
-from .symbol_table import Symbol, SymbolType
+from .symbol_table import InverseSymbolTable, Symbol, SymbolType
 from .abstract_generator import AbstractGenerator as Generator
 from .instructions.builders.kernels import GemmKernelsFactory
 from .instructions.builders.kernels import GemmKernelType
@@ -13,12 +14,19 @@ import math
 import hashlib
 
 
-class GemmGenerator(GemmLikeGenerator):
-  """ Generates GEMM GPU kernels: C = alpha * A * B + beta * C
+class LoGGenerator(AbstractGenerator):
+  """ Generates GEMM GPU kernels from YaTeTo's generated contraction order
   """
 
   def __init__(self, vm: VM, kernel_type=GemmKernelType.AUTO):
-    super(GemmGenerator, self).__init__(vm)
+    super(LoGGenerator, self).__init__(vm)
+    self._tokens = self._vm._log_tokens
+    self._alpha = None
+    self._beta = None
+
+    self._symbol_table = InverseSymbolTable()
+    self._instructions = []
+
     self._kernel_type = kernel_type
     self._trans_a = None
     self._trans_b = None
@@ -104,7 +112,7 @@ class GemmGenerator(GemmLikeGenerator):
                                          self._shr_mem_obj.get_total_size()):
         with file.If(f'{self.get_element_size_guard(file)}'):
           with file.If(f'{self.get_flag_guard(file)}'):
-
+            file.Comment(str(self._vm._log_tokens))
             for instr in self._instructions:
               if instr.is_ready():
                 instr.gen_code(file)
@@ -140,56 +148,7 @@ class GemmGenerator(GemmLikeGenerator):
     self._header = content
 
   def _check(self):
-    try:
-
-      # check whether C and A match each other
-      if self._trans_a:
-        if self._mat_c.get_actual_num_rows() != self._mat_a.get_actual_num_cols():
-          raise GenerationError('Cannot generate a matrix multiplication '
-                                'with given parameters. Matrix C and A (Trans) do not match')
-      else:
-        if self._mat_c.get_actual_num_rows() != self._mat_a.get_actual_num_rows():
-          raise GenerationError('Cannot generate a matrix multiplication '
-                                'with given parameters. Matrix C and A (NoTrans) do not match')
-
-      # check whether C and B match each other
-      if self._trans_b:
-        if self._mat_c.get_actual_num_cols() != self._mat_b.get_actual_num_rows():
-          raise GenerationError('Cannot generate a matrix multiplication '
-                                'with given parameters. Matrix C and B (Trans) do not match')
-      else:
-        if self._mat_c.get_actual_num_cols() != self._mat_b.get_actual_num_cols():
-          raise GenerationError('Cannot generate a matrix multiplication '
-                                'with given parameters. Matrix C and B (NoTrans) do not match')
-
-      # check whether A and B match each other
-      if self._trans_a:
-        if self._trans_b:
-          if self._mat_a.get_actual_num_rows() != self._mat_b.get_actual_num_cols():
-            raise GenerationError('Cannot generate a matrix multiplication with given parameters. '
-                                  'Matrix A (Trans) and B (Trans) do not match')
-        else:
-          if self._mat_a.get_actual_num_rows() != self._mat_b.get_actual_num_rows():
-            raise GenerationError('Cannot generate a matrix multiplication with given parameters. '
-                                  'Matrix A (Trans) and B (NoTrans) do not match')
-      else:
-        if self._trans_b:
-          if self._mat_a.get_actual_num_cols() != self._mat_b.get_actual_num_cols():
-            raise GenerationError('Cannot generate a matrix multiplication with given parameters. '
-                                  'Matrix A (NoTrans) and B (Trans) do not match')
-        else:
-          if self._mat_a.get_actual_num_cols() != self._mat_b.get_actual_num_rows():
-            raise GenerationError('Cannot generate a matrix multiplication with given parameters. '
-                                  'Matrix A (NoTrans) and B (NoTrans) do not match')
-
-    except GenerationError as error:
-      matrices = {'A': self._mat_a, 'B': self._mat_b, 'C': self._mat_c}
-      for name in matrices:
-        print(f'matrix {name}:')
-        print(matrices[name])
-        print("=" * 80)
-
-      raise error
+    pass
 
   def _deduce_num_threads(self):
     if self._trans_a:
@@ -227,9 +186,6 @@ class GemmGenerator(GemmLikeGenerator):
 
     gemm_kernel_builder = kernel_factory.get_builder()
     gemm_kernel_builder.build()
-
-    #if self._vm._log_tokens != None:
-    #  log_builder.build()
 
     self._instructions = gemm_kernel_builder.get_instructions()
     self._reg_array_obj = gemm_kernel_builder.get_reg_array_obj()
@@ -290,7 +246,7 @@ class GemmGenerator(GemmLikeGenerator):
 
     ldas = f'lda{self._mat_a.num_rows}_ldb{self._mat_b.num_rows}_ldc{self._mat_c.num_rows}'
     consts = f'alpha_{int(self._alpha)}_beta_{int(self._beta)}'
-    return '{0}gemm_{1}_{2}_{3}_{4}_{5}_{6}'.format(prefix,
+    return '{0}log_{1}_{2}_{3}_{4}_{5}_{6}'.format(prefix,
                                                     traspose,
                                                     gemm_dims,
                                                     ldas,
@@ -299,32 +255,32 @@ class GemmGenerator(GemmLikeGenerator):
                                                     md5encoding[:Generator.ENCODING_LENGTH])
 
   def _get_func_params(self):
-    base_params = super(GemmGenerator, self)._get_func_params()
+    base_params = super(LoGGenerator, self)._get_func_params()
     if isinstance(self._alpha, float):
       return base_params
     else:
       return f'{self._precision} {self._alpha}, {base_params}'
 
   def _get_launcher_params(self, with_defaults=False):
-    base_params = super(GemmGenerator, self)._get_launcher_params(with_defaults)
+    base_params = super(LoGGenerator, self)._get_launcher_params(with_defaults)
     if isinstance(self._alpha, float):
       return base_params
     else:
       return f'{self._precision} {self._alpha}, {base_params}'
 
   def _get_func_args(self):
-    base_args = super(GemmGenerator, self)._get_func_args()
+    base_args = super(LoGGenerator, self)._get_func_args()
     if isinstance(self._alpha, float):
       return base_args
     else:
       return f'{self._alpha}, {base_args}'
 
   def _get_block_dim_spec(self):
-    super(GemmGenerator, self)._get_block_dim_spec()
+    super(LoGGenerator, self)._get_block_dim_spec()
     return f'block({self._num_active_threads}, {self._num_ops_per_block}, 1)'
 
   def _get_grid_dim_spec(self):
-    super(GemmGenerator, self)._get_grid_dim_spec()
+    super(LoGGenerator, self)._get_grid_dim_spec()
     num_blocks = "({0} + {1} - 1) / {1}".format(GeneralLexicon.NUM_ELEMENTS,
                                                 self._num_ops_per_block)
     return f'grid({num_blocks}, 1, 1)'

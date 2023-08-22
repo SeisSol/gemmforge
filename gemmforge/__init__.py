@@ -1,6 +1,7 @@
 from .matrix import DenseMatrix
 from gemmforge.vm import vm_factory
 from .gemm_generator import GemmGenerator
+from .log_generator import LoGGenerator
 from .gemm_generator import GemmKernelType
 from .csa_generator import CsaGenerator
 from .interfaces import YatetoInterface
