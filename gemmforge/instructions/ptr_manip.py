@@ -33,19 +33,20 @@ class GetElementPtr(AbstractInstruction):
     print("EE:", self._src)
     area = False
     log_offset = ""
-    for token_group in loop_over_gemm_tokens:
-      if token_group[0] == "FOR_LOOPS":
-        area = True
-        continue
-      if token_group[0] == "CALL":
-        area = False
-        continue
-      if area:
-        if token_group[0] == "_POINTER":
-          print("CC:", token_group[1], "X:" ,f"_{self._src.name}", "XX:", f"{self._src.name}")
-          if token_group[1][2][1] == f"_{self._src.name}" or token_group[1][3][1] == f"{self._src.name}":
-            log_offset = token_group[1][4][1]
-            break
+    if loop_over_gemm_tokens != None and loop_over_gemm_tokens != []:
+      for token_group in loop_over_gemm_tokens:
+        if token_group[0] == "FOR_LOOPS":
+          area = True
+          continue
+        if token_group[0] == "CALL":
+          area = False
+          continue
+        if area:
+          if token_group[0] == "_POINTER":
+            print("CC:", token_group[1], "X:" ,f"_{self._src.name}", "XX:", f"{self._src.name}")
+            if token_group[1][2][1] == f"_{self._src.name}" or token_group[1][3][1] == f"{self._src.name}":
+              log_offset = token_group[1][4][1]
+              break
     print("EEE:", log_offset)
 
     address = ''
