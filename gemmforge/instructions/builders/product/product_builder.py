@@ -44,10 +44,11 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     # transposing it on the fly. In, short, the loader guaranties to deliver
     # an operand as (MxK) to shr. mem.
     self._symbol_table.add_scope()
-    if trans_a:
+
+    if trans_a or trans_b:
       raise Exception("No Transposed Tensor Allowed Currently in Product Kernel")
-    else:
-      self._op1 = op1
+
+    self._op1 = op1
 
     # Note: we will handle transposition of the second operand during
     # the matrix multiplication
@@ -57,7 +58,7 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
 
     gemm_params = {'vm': self._vm,
                    'trans_a': False,
-                   'trans_b': trans_b,
+                   'trans_b': False,
                    'op1': self._op1,
                    'op2': self._op2,
                    'dest': dest,

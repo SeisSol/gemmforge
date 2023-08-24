@@ -1,6 +1,6 @@
 from .exceptions import InternalError
 import enum
-
+from typing import List
 
 class SymbolType(enum.Enum):
   Batch = 1
@@ -18,6 +18,15 @@ class DataView:
 
   def __str__(self):
     return f'rows: {self.rows}, cols: {self.columns}, lid: {self.lead_dim}, trans: {self.is_transposed}'
+
+class TensorDataView:
+  def __init__(self, dimensions: List[int], is_transposed: bool):
+    self.dimensions = dimensions
+    self.is_transposed: bool = is_transposed
+
+  def __str__(self):
+    return f'dimensions: {self.dimensions}, trans: {self.is_transposed}'
+
 
 
 class Symbol:

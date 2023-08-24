@@ -6,6 +6,7 @@ from gemmforge.instructions.builders import GetElementPtrBuilder
 from gemmforge.instructions.builders import RegistersAllocBuilder
 from gemmforge.instructions import StoreRegToGlb
 from gemmforge.instructions.builders.product.product_builder import ShrMemBasedProductBuilder
+from gemmforge.instructions.store import StoreRegToGlbTensor
 
 class ShrMemBasedProductKernelBuilder(AbstractBuilder):
   """ This is the base class for building complete gemm kernels."""
@@ -14,11 +15,10 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     super(ShrMemBasedProductKernelBuilder, self).__init__(kwargs['vm'], kwargs['symbol_table'])
     self._trans_a = kwargs['trans_a']
     self._trans_b = kwargs['trans_b']
-    self._mat_a = kwargs['mat_a']
-    self._mat_b = kwargs['mat_b']
-    self._mat_c = kwargs['mat_c']
+    self._tensor_a = kwargs['tensor_a']
+    self._tensor_b = kwargs['tensor_b']
+    self._tensor_c = kwargs['tensor_c']
     self._alpha = kwargs['alpha']
-    self._beta = kwargs['beta']
     self._num_compute_threads = kwargs['num_compute_threads']
     self._num_active_threads = kwargs['num_active_threads']
 
@@ -43,7 +43,8 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
 
     # create an array of registers
     builder = RegistersAllocBuilder(self._vm, self._symbol_table)
-    builder.build(self._mat_c.get_actual_num_cols(), 0.0)
+    print("WARNING: TODO: FIND A BETTER THREAD DISTRIBUTION FOR SUM OPERATOR")
+    builder.build(self._tensor_c.get_size() / self._tensor_c.get_dimensions()[0], 0.0)
     self._instructions.extend(builder.get_instructions())
     self._reg_array_obj = builder.get_resultant_obj()
 
@@ -62,17 +63,20 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
 
     builder.build(trans_a=self._trans_a,
                   trans_b=self._trans_b,
-                  op1=self._symbol_table[self._mat_a],
-                  op2=self._symbol_table[self._mat_b],
+                  op1=self._symbol_table[self._tensor_a],
+                  op2=self._symbol_table[self._tensor_b],
                   dest=self._symbol_table[self._reg_array_obj])
 
+    self._shr_mem_loads = builder.get_srh_mem_loads()
+    self._instructions.extend(builder.get_instructions())
+
   def build_epilogue(self):
-    store = StoreRegToGlb(self._vm,
-                          self._symbol_table[self._mat_c],
-                          self._symbol_table[self._reg_array_obj],
-                          self._alpha,
-                          self._beta,
-                          self._num_compute_threads)
+    store = StoreRegToGlbTensor(self._vm,
+                                self._symbol_table[self._tensor_c],
+                                self._symbol_table[self._reg_array_obj],
+                                self._alpha,
+                                1.0,
+                                self._num_compute_threads)
     self._instructions.append(store)
 
 

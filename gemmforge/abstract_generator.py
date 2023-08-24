@@ -26,6 +26,8 @@ class AbstractGenerator(ABC):
     self._launcher = None
     self._header = None
 
+    self._generate_launcher_code = True
+
     @abstractmethod
     def generate(self):
       pass
@@ -96,14 +98,18 @@ class AbstractGenerator(ABC):
     return 'allowed'
 
   @abstractmethod
-  def _get_func_params(self):
-    params = [self._build_param(matrix) for matrix in self._matrices]
+  def _get_func_params(self, matrices=None):
+    if matrices == None:
+      matrices = self._matrices
+    params = [self._build_param(matrix) for matrix in matrices]
     params = ", ".join(params)
     return f'{params}, unsigned {GeneralLexicon.NUM_ELEMENTS}, unsigned* {GeneralLexicon.FLAGS_ID}'
 
   @abstractmethod
-  def _get_launcher_params(self, with_defaults):
-    params = [self._build_param(matrix) for matrix in self._matrices]
+  def _get_launcher_params(self, with_defaults, matrices=None):
+    if matrices == None:
+      matrices = self._matrices
+    params = [self._build_param(matrix) for matrix in matrices]
     params = ", ".join(params)
     nullptr = ' = nullptr' if with_defaults else ''
     return "{}, unsigned {}, unsigned* {}{}, void* {}{}".format(params,
@@ -114,8 +120,10 @@ class AbstractGenerator(ABC):
                                                                 nullptr)
 
   @abstractmethod
-  def _get_func_args(self):
-    names = [f'{matrix.name}, {self._generate_extra_offset_symbol(matrix)}' for matrix in self._matrices]
+  def _get_func_args(self, matrices=None):
+    if matrices == None:
+      matrices = self._matrices
+    names = [f'{matrix.name}, {self._generate_extra_offset_symbol(matrix)}' for matrix in matrices]
     names = ", ".join(names)
     return f'{names}, {GeneralLexicon.NUM_ELEMENTS}, {GeneralLexicon.FLAGS_ID}'
 
@@ -143,3 +151,6 @@ class AbstractGenerator(ABC):
   def _generate_extra_offset_symbol(self, matrix):
     # TODO: remove this
     return get_extra_offset_name(matrix.name)
+
+  def set_generate_launcher(self, generate_launcher):
+    self._generate_launcher_code = generate_launcher

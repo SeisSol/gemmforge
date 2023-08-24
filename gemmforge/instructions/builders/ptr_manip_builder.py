@@ -1,6 +1,8 @@
+from gemmforge.matrix.dense import DenseMatrix
+from gemmforge.tensor.dense import DenseTensor
 from .abstract_builder import AbstractBuilder
 from gemmforge.symbol_table import SymbolType, Symbol
-from gemmforge.symbol_table import DataView
+from gemmforge.symbol_table import DataView, TensorDataView
 from gemmforge.instructions import GetElementPtr
 from gemmforge.basic_types import GeneralLexicon
 from gemmforge.exceptions import InternalError
@@ -19,11 +21,15 @@ class GetElementPtrBuilder(AbstractBuilder):
                   stype=SymbolType.Global,
                   obj=src.obj)
 
-    batched_matrix = src.obj
-    dest.data_view = DataView(rows=batched_matrix.get_actual_num_rows(),
-                              columns=batched_matrix.get_actual_num_cols(),
-                              lead_dim=batched_matrix.leading_dimension,
-                              is_transposed=False)
+    obj = src.obj
+    if isinstance(obj, DenseMatrix):
+      dest.data_view = DataView(rows=obj.get_actual_num_rows(),
+                                columns=obj.get_actual_num_cols(),
+                                lead_dim=obj.leading_dimension,
+                                is_transposed=False)
+    else:
+      assert(isinstance(obj, DenseTensor))
+      dest.data_view = TensorDataView(dimensions=obj.get_dimensions(), is_transposed=False)
 
     self._symbol_table.add_symbol(dest)
     self._instructions.append(GetElementPtr(self._vm, src, dest, include_extra_offset))

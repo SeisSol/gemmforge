@@ -19,6 +19,10 @@ class RegisterAlloc(AbstractInstruction):
     if self._dest.obj.size < 1:
       raise InternalError('size of reg. obj must be at least 1')
 
+    if isinstance(self._dest.obj.size, float):
+      assert self._dest.obj.size == int(self._dest.obj.size)
+      self._dest.obj.size = int(self._dest.obj.size)
+
     if self._dest.obj.size == 1:
       init_value = ''
       if isinstance(self._init_value, float):
@@ -28,8 +32,12 @@ class RegisterAlloc(AbstractInstruction):
       init_values_list = ''
       if isinstance(self._init_value, float):
         real_literal = self._vm.get_real_literal()
-        init_values = ', '.join([f'{str(self._init_value)}{real_literal}'] * self._dest.obj.size)
-        init_values_list = f' = {{{init_values}}}'
+        init_values = ', '.join([f'{str(self._init_value)}{real_literal}'] * int(self._dest.obj.size))
+        if self._init_value != 0.0:
+          init_values_list = f'{str(self._init_value)}{real_literal},'
+        else:
+          init_values_list = f' = {{{init_values}}}'
+      assert self._dest.obj.size == int(self._dest.obj.size)
       result = f'{self._vm.fp_as_str()} {self._dest.obj.name}[{self._dest.obj.size}]{init_values_list};'
     writer(result)
 

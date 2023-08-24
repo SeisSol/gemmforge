@@ -1,3 +1,5 @@
+from gemmforge.tensor.dense import DenseTensor
+from gemmforge.thread_policies.product.generic import GenericProductThreadPolicy
 from gemmforge.vm import VM
 from ..matrix import DenseMatrix
 from .gemm.generic import GenericGemmThreadPolicy
@@ -45,6 +47,26 @@ class TheadPolicyFactory:
                      op1: DenseMatrix,
                      op2: DenseMatrix):
     default_policy = GenericCsaThreadPolicy(vm, num_threads, op1, op2)
+    hw_descr = vm.get_hw_descr()
+    if hw_descr.manufacturer in TheadPolicyFactory.ALLOWED_MANUFACTURES:
+      return default_policy
+    else:
+      raise RuntimeError('unknown manufacturer')
+
+  @classmethod
+  def get_product_policy(cls,
+               vm: VM,
+               shr_mem_per_op: int,
+               num_threads: int,
+               op1: DenseTensor,
+               op2: DenseTensor,
+               res: DenseTensor):
+    default_policy = GenericProductThreadPolicy(vm,
+                                       shr_mem_per_op,
+                                       num_threads,
+                                       op1,
+                                       op2,
+                                       res)
     hw_descr = vm.get_hw_descr()
     if hw_descr.manufacturer in TheadPolicyFactory.ALLOWED_MANUFACTURES:
       return default_policy

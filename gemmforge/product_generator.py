@@ -28,18 +28,18 @@ class ProductGenerator(GemmLikeGenerator):
     self._shr_mem_obj = None
     self._shr_mem_loads = []
 
-  def set(self, trans_a, trans_b, tensor_a, tensor_b, tensor_c, alpha, beta, base_name=None):
-    if trans_a or trans_b:
-        raise Exception("TODO: Tensor Product in gemmforge does not support transposed a or b currently")
+  def set(self, tensor_a, tensor_b, tensor_c, alpha, base_name=None, generate_launcher=True):
+    #if trans_a or trans_b:
+    #    raise Exception("TODO: Tensor Product in gemmforge does not support transposed a or b currently")
     self._instructions = []
 
     self._tensor_a = tensor_a
-    self._trans_a = trans_a
+    self._trans_a = False
     self._tensor_a.set_name('A')
     self._tensor_a.set_data_flow_direction(DataFlowDirection.SOURCE)
 
     self._tensor_b = tensor_b
-    self._trans_b = trans_b
+    self._trans_b = False
     self._tensor_b.set_name('B')
     self._tensor_b.set_data_flow_direction(DataFlowDirection.SOURCE)
 
@@ -49,10 +49,11 @@ class ProductGenerator(GemmLikeGenerator):
     self._tensors = [self._tensor_a, self._tensor_b, self._tensor_c]
 
     self._alpha = alpha
-    self._beta = beta
 
     self._base_name = base_name if base_name is not None else self._generate_base_name()
     self._is_set = True
+
+    #self.set_generate_launcher(generate_launcher)
 
   def generate(self):
     self._check_if_set()
@@ -70,7 +71,7 @@ class ProductGenerator(GemmLikeGenerator):
 
   def get_flops(self):
     print("WARNING GEMMFORGE: TODO: FLOPS")
-    return 0
+    return 1
 
   def _generate_kernel(self):
     print("WARNING: TODO: A LOT OF STUFF HERE")
@@ -91,40 +92,23 @@ class ProductGenerator(GemmLikeGenerator):
         with file.If(f'{self.get_element_size_guard(file)}'):
           with file.If(f'{self.get_flag_guard(file)}'):
             needed_exit_calls = []
-            for token_group in loop_over_product_tokens:
-              if token_group[0] == "FOR_LOOPS":
-                file.Pragma("unroll")
-                f = file.For(f'{token_group[1][0][1]}; {token_group[1][1][1]}; {token_group[1][2][1]}')
-                f.__enter__()
-                needed_exit_calls.insert(0, f)
+            if loop_over_product_tokens != None:
+                for token_group in loop_over_product_tokens:
+                    if token_group[0] == "FOR_LOOPS":
+                        file.Pragma("unroll")
+                        f = file.For(f'{token_group[1][0][1]}; {token_group[1][1][1]}; {token_group[1][2][1]}')
+                        f.__enter__()
+                        needed_exit_calls.insert(0, f)
             for instr in self._instructions:
               if instr.is_ready():
                 instr.gen_code(file)
               else:
-                raise GenerationError("product_generator: requested instr is not ready")
+                raise GenerationError("product_generator: requested instr is not ready: ", instr)
             for f in needed_exit_calls:
               f.__exit__(None, None, None)
 
       self._kernel = src.getvalue()
 
-  def _generate_launcher(self):
-    src = StringIO()
-    with constructs.Cpp(src) as file:
-      with file.Function(self._base_name, self._get_launcher_params()):
-        file(f'{self._lexic.kernel_range_object()} {self._get_block_dim_spec()};')
-        file(f'{self._lexic.kernel_range_object()} {self._get_grid_dim_spec()};')
-
-        self._lexic.get_stream_via_pointer(file, 'stream', GeneralLexicon.STREAM_PTR_STR)
-        file.Expression(self._lexic.get_launch_code(self._base_name,
-                                                    'grid',
-                                                    'block',
-                                                    'stream',
-                                                    self._get_func_args()))
-        err = self._lexic.check_error()
-        if err is not None:
-          file.Expression(err)
-
-      self._launcher = src.getvalue()
   def _generate_launcher(self):
     src = StringIO()
     with constructs.Cpp(src) as file:
@@ -155,10 +139,7 @@ class ProductGenerator(GemmLikeGenerator):
     return
 
   def _deduce_num_threads(self):
-    if self._trans_a:
-      lead_dim_length = self._tensor_a.get_actual_num_cols()
-    else:
-      lead_dim_length = self._tensor_a.get_actual_num_rows()
+    lead_dim_length = self._tensor_a.get_dimensions()[0]
 
     num_vector_units_required = math.ceil(lead_dim_length / self._hw_descr.vec_unit_length)
     self._num_compute_threads = lead_dim_length
@@ -181,7 +162,6 @@ class ProductGenerator(GemmLikeGenerator):
               'tensor_b': self._tensor_b,
               'tensor_c': self._tensor_c,
               'alpha': self._alpha,
-              'beta': self._beta,
               'num_compute_threads': self._num_compute_threads,
               'num_active_threads': self._num_active_threads}
 
@@ -190,9 +170,6 @@ class ProductGenerator(GemmLikeGenerator):
 
     product_kernel_builder = kernel_factory.get_builder()
     product_kernel_builder.build()
-
-    #if self._vm._log_tokens != None:
-    #  log_builder.build()
 
     self._instructions = product_kernel_builder.get_instructions()
     self._reg_array_obj = product_kernel_builder.get_reg_array_obj()
@@ -220,23 +197,9 @@ class ProductGenerator(GemmLikeGenerator):
     self._shr_mem_obj.set_mults_per_block(self._num_ops_per_block)
 
   def _generate_base_name(self):
-    if self._trans_a:
-      dim1 = f'm{self._tensor_a.get_actual_num_cols()}_{self._tensor_a.num_rows}'
-      dim3 = f'k{self._tensor_a.get_actual_num_rows()}'
-    else:
-      dim1 = f'm{self._tensor_a.get_actual_num_rows()}_{self._tensor_a.num_rows}'
-      dim3 = f'k{self._tensor_a.get_actual_num_cols()}'
-
-    if self._trans_b:
-      dim2 = f'n{self._tensor_b.get_actual_num_rows()}_{self._tensor_b.num_rows}'
-    else:
-      dim2 = f'n{self._tensor_b.get_actual_num_cols()}_{self._tensor_b.num_rows}'
-
-    dims = f'{dim1}_{dim2}_{dim3}'
-
     addresses = f'{self._tensor_a.addressing[0]}{self._tensor_b.addressing[0]}{self._tensor_c.addressing[0]}'
     traspose = f'{"T" if self._trans_a else "NT"}_{"T" if self._trans_b else "NT"}'
-    constants = f'{self._alpha}_{self._beta}'
+    constants = f'{self._alpha}'
 
     result = hashlib.md5(('{}_{}{}{}_{}'.format(
       constants,
@@ -251,9 +214,9 @@ class ProductGenerator(GemmLikeGenerator):
     product_dims = ""
     for d in self._tensor_a.get_dimensions():
         product_dims += f'_{char}{d}'
-        char += 1
+        char = chr(ord(char) + 1)
 
-    consts = f'alpha_{int(self._alpha)}_beta_{int(self._beta)}'
+    consts = f'alpha_{int(self._alpha)}'
     return '{0}product_{1}_{2}_{3}_{4}_{5}'.format(prefix,
                                                     traspose,
                                                     product_dims,
@@ -262,21 +225,21 @@ class ProductGenerator(GemmLikeGenerator):
                                                     md5encoding[:Generator.ENCODING_LENGTH])
 
   def _get_func_params(self):
-    base_params = super(ProductGenerator, self)._get_func_params()
+    base_params = super(ProductGenerator, self)._get_func_params(matrices=self._tensors)
     if isinstance(self._alpha, float):
       return base_params
     else:
       return f'{self._precision} {self._alpha}, {base_params}'
 
   def _get_launcher_params(self, with_defaults=False):
-    base_params = super(ProductGenerator, self)._get_launcher_params(with_defaults)
+    base_params = super(ProductGenerator, self)._get_launcher_params(with_defaults, matrices=self._tensors)
     if isinstance(self._alpha, float):
       return base_params
     else:
       return f'{self._precision} {self._alpha}, {base_params}'
 
   def _get_func_args(self):
-    base_args = super(ProductGenerator, self)._get_func_args()
+    base_args = super(ProductGenerator, self)._get_func_args(matrices=self._tensors)
     if isinstance(self._alpha, float):
       return base_args
     else:

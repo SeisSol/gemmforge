@@ -14,6 +14,7 @@ class DenseTensor:
     self.name = None
     self.dimensions = dimensions
     self.direction: Union[DataFlowDirection, None] = None
+    self._real_dimensions = None
 
     if bbox is not None:
       self.bbox = bbox
@@ -41,41 +42,55 @@ class DenseTensor:
     self.direction = direction
 
   def get_actual_num_dimensions(self):
+    if self._real_dimensions != None:
+        return self._real_dimensions
     realDimensions = list()
     for i in range(len(self.dimensions)):
       realDimensions.append(self.bbox[i + len(self.dimensions)] - self.bbox[i])
-    return realDimensions
+    self._real_dimensions = realDimensions
+    return self._real_dimensions
+
+  def get_size(self):
+    return self.get_actual_volume()
+
+  def get_dimensions(self):
+    return self.get_actual_num_dimensions()
+
+  def get_padded_dimensions(self):
+    return self.dimensions
 
   def get_actual_volume(self):
     realDimensions = self.get_actual_num_dimensions()
     actualVolume = reduce(mul, realDimensions)
-    return actualVolume
+    assert int(actualVolume) == actualVolume
+    return int(actualVolume)
 
-  def get_real_volume(self):
+  def get_volume(self):
     actualVolume = reduce(mul, self.dimensions)
-    return actualVolume
+    assert actualVolume == int(actualVolume)
+    return int(actualVolume)
 
   def get_offset_to_first_element(self):
     partiallyReducedDimensions = [1]
     for i in range(1, len(self.dimensions)):
       reducedOffset = partiallyReducedDimensions[i - 1] * self.dimensions[i - 1]
-      partiallyReducedDimensions.append(reducedOffset)
+      assert reducedOffset == int(reducedOffset)
+      partiallyReducedDimensions.append(int(reducedOffset))
     print("PRD: ", partiallyReducedDimensions)
 
     totalOffset  = 0
-    totalOffset += [1 * self.bbox[0]]
-    for i in range(1, len(self.bbox)):
+    totalOffset += 1 * self.bbox[0]
+    for i in range(1, len(self.dimensions)):
       totalOffset += partiallyReducedDimensions[i - 1] * self.bbox[i - 1]
     print("TOTALOFFSET: ", totalOffset)
 
-    return totalOffset
+    return int(totalOffset)
 
   def set_name(self, name):
     self.name = name
 
   def __str__(self):
-    string = "num. rows = {}\n".format(self.num_rows)
-    string += "num. columns = {}\n".format(self.num_cols)
+    string = ""
     string += "bounding box = {}\n".format(self.bbox)
     string += "addressing = {}\n".format(self.addressing)
     string += "dimensions = {}\n".format(self.dimensions)

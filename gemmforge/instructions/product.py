@@ -21,8 +21,15 @@ class ShrMemBasedProduct(AbstractInstruction):
     self._num_threads = kwargs['num_threads']
     self._log_tokens = self._vm._log_tokens
 
-    raise Exception("TODO")
+    self._is_ready = True
 
+  def gen_code(self, writer):
+    writer("/*")
+    writer(f"{self._log_tokens}")
+    writer("*/")
+
+  def __str__(self) -> str:
+    return f'{self._dest.name} = product({self._op1.name}, {self._op2.name})'
 
 class RegisterOnlyProduct(AbstractInstruction):
   def __init__(self, **kwargs):
