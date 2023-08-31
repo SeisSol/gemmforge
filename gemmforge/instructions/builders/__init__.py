@@ -1,5 +1,5 @@
 from .ptr_manip_builder import GetElementPtrBuilder
-from .alloctor_builder import RegistersAllocBuilder, ShrMemAllocBuilder
+from .alloctor_builder import RegistersAllocBuilder, ShrMemAllocBuilder, ShrMemNewAllocBuilder
 from gemmforge.instructions.builders.gemms.gemm_builder import ShrMemBasedDenseGemmBuilder
 from gemmforge.instructions.builders.gemms.gemm_builder import RegisterOnlyDenseGemmBuilder
 from gemmforge.instructions.builders.product.product_builder import ShrMemBasedProductBuilder

@@ -13,23 +13,19 @@ class ShrMemBasedProduct(AbstractInstruction):
 
   def __init__(self, **kwargs):
     super(ShrMemBasedProduct, self).__init__(kwargs['vm'])
-    self._trans_a = kwargs['trans_a']
-    self._trans_b = kwargs['trans_b']
-    self._op1 = kwargs['op1']
-    self._op2 = kwargs['op2']
+    self._ops = kwargs['ops']
     self._dest = kwargs['dest']
     self._num_threads = kwargs['num_threads']
-    self._log_tokens = self._vm._log_tokens
 
     self._is_ready = True
 
   def gen_code(self, writer):
     writer("/*")
-    writer(f"{self._log_tokens}")
+    writer(f"TODO")
     writer("*/")
 
   def __str__(self) -> str:
-    return f'{self._dest.name} = product({self._op1.name}, {self._op2.name})'
+    return f'{self._dest.name} = product(TODO...)'
 
 class RegisterOnlyProduct(AbstractInstruction):
   def __init__(self, **kwargs):

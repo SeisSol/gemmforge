@@ -1,3 +1,5 @@
+from copy import deepcopy
+from gemmforge.instructions.allocate import ShrMemNewAlloc
 from gemmforge.instructions.builders.kernels.product.factory import ProductKernelsFactory
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from . import constructs
@@ -18,42 +20,73 @@ class ProductGenerator(GemmLikeGenerator):
   def __init__(self, vm: VM, kernel_type=GemmKernelType.AUTO):
     super(ProductGenerator, self).__init__(vm)
     self._kernel_type = kernel_type
-    self._trans_a = None
-    self._trans_b = None
-    self._tensor_a = None
-    self._tensor_b = None
-    self._tensor_c = None
+    # Kernel Type is ignored right now prob.
+    # Currently no transposed tensors are supported
 
     self._reg_array_obj = None
     self._shr_mem_obj = None
-    self._shr_mem_loads = []
+    self._shr_mem_loads = list()
 
-  def set(self, tensor_a, tensor_b, tensor_c, alpha, base_name=None, generate_launcher=True):
+    self._tensors = list()
+    self._alpha = 1.0
+    self._operation_descriptions = list()
+    # No beta supported for this operation
+    # self._betas = list()
+
+  # complete_operation_descriptions = List[self._descr, tensor_a, tensor_b, tensor_c, alpha, args]
+  def set(self, complete_operation_descriptions):
     #if trans_a or trans_b:
     #    raise Exception("TODO: Tensor Product in gemmforge does not support transposed a or b currently")
-    self._instructions = []
+    self._tensors = set()
+    for operation_description in complete_operation_descriptions:
+      #print(operation_description)
+      # If a tensor appears both as sink and source we will change to sourcesink
+      tensor_x = operation_description[1]
+      tensor_x.set_name(operation_description[0].leftTerm.name)
+      tensor_x.set_data_flow_direction(DataFlowDirection.SOURCE)
+      tensor_x_as_sink = deepcopy(tensor_x)
+      tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
+      if any(tensor.name == tensor_x.name for tensor in self._tensors):
+        # Remove the tensor with the same name
+        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_x.name}
+        tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+        self._tensors.add(tensor_x_as_sink)
+      else:
+        self._tensors.add(tensor_x)
 
-    self._tensor_a = tensor_a
-    self._trans_a = False
-    self._tensor_a.set_name('A')
-    self._tensor_a.set_data_flow_direction(DataFlowDirection.SOURCE)
+      tensor_x = operation_description[2]
+      tensor_x.set_name(operation_description[0].rightTerm.name)
+      tensor_x.set_data_flow_direction(DataFlowDirection.SOURCE)
+      tensor_x_as_sink = deepcopy(tensor_x)
+      tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
+      if any(tensor.name == tensor_x.name for tensor in self._tensors):
+        # Remove the tensor with the same name
+        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_x.name}
+        tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+        self._tensors.add(tensor_x_as_sink)
+      else:
+        self._tensors.add(tensor_x)
 
-    self._tensor_b = tensor_b
-    self._trans_b = False
-    self._tensor_b.set_name('B')
-    self._tensor_b.set_data_flow_direction(DataFlowDirection.SOURCE)
+      tensor_x = operation_description[3]
+      tensor_x.set_name(operation_description[0].result.name)
+      tensor_x.set_data_flow_direction(DataFlowDirection.SINK)
+      tensor_x_as_source = deepcopy(tensor_x)
+      tensor_x_as_source.set_data_flow_direction(DataFlowDirection.SOURCE)
+      if any(tensor.name == tensor_x.name for tensor in self._tensors):
+        # Remove the tensor with the same name
+        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_x.name}
+        tensor_x_as_source.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+        self._tensors.add(tensor_x_as_source)
+      else:
+        self._tensors.add(tensor_x)
 
-    self._tensor_c = tensor_c
-    self._tensor_c.set_name('C')
-    self._tensor_c.set_data_flow_direction(DataFlowDirection.SINK)
-    self._tensors = [self._tensor_a, self._tensor_b, self._tensor_c]
+      self._alpha = operation_description[4]
+      self._operation_descriptions.append(operation_description[0])
 
-    self._alpha = alpha
+    print(self._tensors)
 
-    self._base_name = base_name if base_name is not None else self._generate_base_name()
+    self._base_name = self._generate_base_name()
     self._is_set = True
-
-    #self.set_generate_launcher(generate_launcher)
 
   def generate(self):
     self._check_if_set()
@@ -91,21 +124,11 @@ class ProductGenerator(GemmLikeGenerator):
                                          self._shr_mem_obj.get_total_size()):
         with file.If(f'{self.get_element_size_guard(file)}'):
           with file.If(f'{self.get_flag_guard(file)}'):
-            needed_exit_calls = []
-            if loop_over_product_tokens != None:
-                for token_group in loop_over_product_tokens:
-                    if token_group[0] == "FOR_LOOPS":
-                        file.Pragma("unroll")
-                        f = file.For(f'{token_group[1][0][1]}; {token_group[1][1][1]}; {token_group[1][2][1]}')
-                        f.__enter__()
-                        needed_exit_calls.insert(0, f)
             for instr in self._instructions:
               if instr.is_ready():
                 instr.gen_code(file)
               else:
                 raise GenerationError("product_generator: requested instr is not ready: ", instr)
-            for f in needed_exit_calls:
-              f.__exit__(None, None, None)
 
       self._kernel = src.getvalue()
 
@@ -139,29 +162,36 @@ class ProductGenerator(GemmLikeGenerator):
     return
 
   def _deduce_num_threads(self):
-    lead_dim_length = self._tensor_a.get_dimensions()[0]
+    max_thread_count = 0
 
-    num_vector_units_required = math.ceil(lead_dim_length / self._hw_descr.vec_unit_length)
-    self._num_compute_threads = lead_dim_length
+    for tensor in self._tensors:
+      if tensor.direction == DataFlowDirection.SOURCE:
+        total_cells = tensor.get_actual_volume()
+        # Every thread gets a line, because only the first dimension is contiguously stored
+        thread_count = total_cells / tensor.get_actual_num_dimensions()[0]
+
+        if thread_count > max_thread_count:
+          max_thread_count = thread_count
+
+    num_vector_units_required = math.ceil(thread_count / self._hw_descr.vec_unit_length)
+    self._num_compute_threads = thread_count
     self._num_active_threads = num_vector_units_required * self._hw_descr.vec_unit_length
 
   def _populate_global_scope(self):
     for tensor in self._tensors:
-      self._symbol_table.add_symbol(Symbol(obj=tensor,
-                                           name=tensor.name,
-                                           stype=SymbolType.Batch))
+      if tensor.direction == DataFlowDirection.SOURCE or tensor.direction == DataFlowDirection.SINK:
+        self._symbol_table.add_symbol(Symbol(obj=tensor,
+                                              name=tensor.name,
+                                              stype=SymbolType.Batch))
     self._symbol_table.add_scope()
 
   def _emit_instructions(self):
     params = {'vm': self._vm,
               'product_kernel_type': self._kernel_type,
               'symbol_table': self._symbol_table,
-              'trans_a': self._trans_a,
-              'trans_b': self._trans_b,
-              'tensor_a': self._tensor_a,
-              'tensor_b': self._tensor_b,
-              'tensor_c': self._tensor_c,
+              'tensors': self._tensors,
               'alpha': self._alpha,
+              'operation_descriptions': self._operation_descriptions,
               'num_compute_threads': self._num_compute_threads,
               'num_active_threads': self._num_active_threads}
 
@@ -185,36 +215,49 @@ class ProductGenerator(GemmLikeGenerator):
 
     self._shr_mem_obj.set_size_per_mult(shr_mem_counter)
 
+    result_tensor = None
+    for tensor in self._tensors:
+      if tensor.direction == DataFlowDirection.SINK:
+        result_tensor = tensor
+    assert(result_tensor != None)
+
     # compute num matrix multiplications per block
     thread_policy = TheadPolicyFactory.get_product_policy(vm=self._vm,
-                                                       shr_mem_per_op=shr_mem_counter,
-                                                       num_threads=self._num_active_threads,
-                                                       op1=self._tensor_a,
-                                                       op2=self._tensor_b,
-                                                       res=self._tensor_c)
+                                                          shr_mem_per_op=shr_mem_counter,
+                                                          num_threads=self._num_active_threads,
+                                                          ops=self._tensors,
+                                                          res=result_tensor)
 
     self._num_ops_per_block = thread_policy.get_num_ops_per_block()
     self._shr_mem_obj.set_mults_per_block(self._num_ops_per_block)
 
+    for inst in self._instructions:
+      if isinstance(inst, ShrMemNewAlloc):
+        inst.set_mults_per_block(self._num_ops_per_block)
+
   def _generate_base_name(self):
-    addresses = f'{self._tensor_a.addressing[0]}{self._tensor_b.addressing[0]}{self._tensor_c.addressing[0]}'
-    traspose = f'{"T" if self._trans_a else "NT"}_{"T" if self._trans_b else "NT"}'
+    addresses = ""
+    for tensor in self._tensors:
+      addresses += f'{tensor.addressing[0]}'
+    traspose = ""
     constants = f'{self._alpha}'
 
-    result = hashlib.md5(('{}_{}{}{}_{}'.format(
+    tensorstrs = ""
+    for tensor in self._tensors:
+      tensorstrs += tensor.__str__()
+
+    result = hashlib.md5(('{}_{}_{}'.format(
       constants,
-      self._tensor_a.__str__(),
-      self._tensor_b.__str__(),
-      self._tensor_c.__str__(),
+      tensorstrs,
       self._kernel_type.value.__str__()).encode()))
     md5encoding = result.hexdigest()
     prefix = 's' if self._precision == "float" else "d"
 
     char = 'm'
     product_dims = ""
-    for d in self._tensor_a.get_dimensions():
-        product_dims += f'_{char}{d}'
-        char = chr(ord(char) + 1)
+    #for d in self._tensor_a.get_dimensions():
+    #    product_dims += f'_{char}{d}'
+    #    char = chr(ord(char) + 1)
 
     consts = f'alpha_{int(self._alpha)}'
     return '{0}product_{1}_{2}_{3}_{4}_{5}'.format(prefix,

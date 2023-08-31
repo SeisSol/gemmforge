@@ -1,17 +1,17 @@
+from typing import List
 from gemmforge.tensor.dense import DenseTensor
-from ..abstract_thread_policy import AbstractGemmLikeThreadPolicy, DenseMatrix
+from ..abstract_thread_policy import AbstractTensorThreadPolicy, DenseMatrix
 from gemmforge.vm import VM
 
 
-class GenericProductThreadPolicy(AbstractGemmLikeThreadPolicy):
+class GenericProductThreadPolicy(AbstractTensorThreadPolicy):
   def __init__(self,
                vm: VM,
                shr_mem_per_op: int,
                num_threads: int,
-               op1: DenseTensor,
-               op2: DenseTensor,
+               ops: List[DenseTensor],
                res: DenseTensor):
-    super().__init__(vm, num_threads, op1, op2, res)
+    super().__init__(vm, num_threads, ops, res)
     self._shr_mem_per_op = shr_mem_per_op
 
   def _estimate_num_registers_per_mult(self, accumulator_length):

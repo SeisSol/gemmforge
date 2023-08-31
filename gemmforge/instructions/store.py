@@ -77,10 +77,10 @@ class StoreRegToGlbTensor(AbstractInstruction):
     super(StoreRegToGlbTensor, self).__init__(vm)
 
     if dest.stype != SymbolType.Global:
-      raise InternalError('store: operand `dest` is not in glb mem.')
+      raise InternalError(f'store: operand `dest` is not in glb mem: {dest}')
 
     if src.stype != SymbolType.Register:
-      raise InternalError('store: operand `src` is not a register obj')
+      raise InternalError(f'store: operand `src` is not a register obj: {src}')
 
     self._dest = dest
     self._src = src

@@ -4,6 +4,7 @@ import enum
 class DataFlowDirection(enum.Enum):
   SOURCE = 0
   SINK = 1
+  SOURCESINK = 2
 
 
 class GeneralLexicon:

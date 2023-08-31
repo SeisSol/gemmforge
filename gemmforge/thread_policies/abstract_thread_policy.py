@@ -1,3 +1,5 @@
+from typing import List
+from gemmforge.tensor.dense import DenseTensor
 from gemmforge.vm import VM
 from ..matrix import DenseMatrix
 from abc import ABC, abstractmethod
@@ -39,6 +41,21 @@ class AbstractGemmLikeThreadPolicy(AbstractBinaryOpThreadPolicy):
                op2: DenseMatrix,
                res: DenseMatrix):
     super().__init__(vm, num_threads, op1, op2)
+    self._res = res
+
+  @abstractmethod
+  def get_num_ops_per_block(self):
+    pass
+
+class AbstractTensorThreadPolicy(ABC):
+  def __init__(self,
+               vm: VM,
+               num_threads: int,
+               ops: List[DenseTensor],
+               res: DenseTensor):
+    self._vm = vm
+    self._num_threads = num_threads
+    self._ops = ops
     self._res = res
 
   @abstractmethod

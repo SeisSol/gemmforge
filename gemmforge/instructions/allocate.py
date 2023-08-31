@@ -80,4 +80,45 @@ class ShrMemAlloc(AbstractInstruction):
       return False
 
   def __str__(self):
-    return f'{self._dest.name} = alloc_shr [{self._dest.obj.get_total_size_as_str()}];'
+    return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.get_total_size_as_str()}];'
+
+class ShrMemNewAlloc(AbstractInstruction):
+  def __init__(self,
+               vm: VM,
+               dest: Symbol,
+               size):
+    super(ShrMemNewAlloc, self).__init__(vm)
+    self._size = size
+    self._dest = dest
+    self._is_ready = False
+    self._mults_per_block = None
+
+  def gen_code(self, writer):
+    shrmem_obj = self._dest.obj
+    lexic = self._vm.get_lexic()
+
+    common_shrmem = f'{shrmem_obj.name}_alloc'
+    common_shrmem_size = shrmem_obj.get_total_size() * self._mults_per_block
+
+    shr_mem_decl = lexic.declare_shared_memory_inline(name=common_shrmem,
+                                                      precision=self._vm.fp_as_str(),
+                                                      size=common_shrmem_size,
+                                                      alignment=8)
+
+    if shr_mem_decl:
+      writer(f'{shr_mem_decl};')
+
+    address = f'{shrmem_obj.get_total_size()} * {lexic.thread_idx_y}'
+    writer(f'{self._vm.fp_as_str()} * {shrmem_obj.name} = &{common_shrmem}[{address}];')
+
+  def is_ready(self):
+    if self._mults_per_block:
+      return True
+    else:
+      return False
+
+  def set_mults_per_block(self, mults_per_block):
+    self._mults_per_block = mults_per_block
+
+  def __str__(self):
+    return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.get_total_size_as_str()}];'

@@ -15,11 +15,11 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
             'load_and_transpose': load_and_transpose}
 
   if isinstance(src.obj, DenseTensor):
-    num_loads_per_column = ceil(src.data_view.dimensions[0] / num_threads) * num_threads
-    if src.data_view.dimensions[0] > num_loads_per_column:
-      return ExactTensorLoader(**params)
-    else:
-      return ExtendedTensorLoader(**params)
+    #num_loads_per_column = ceil(src.data_view.dimensions[0] / num_threads) * num_threads
+    #if src.data_view.dimensions[0] > num_loads_per_column:
+    #  return ExactTensorLoader(**params)
+    #else:
+    return ExtendedTensorLoader(**params)
   else:
     num_loads_per_column = ceil(src.data_view.rows / num_threads) * num_threads
 

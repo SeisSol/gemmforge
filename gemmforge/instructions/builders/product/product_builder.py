@@ -1,9 +1,11 @@
+from typing import List
 from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
+from gemmforge.instructions.builders.alloctor_builder import ShrMemNewAllocBuilder
 from gemmforge.symbol_table import SymbolType, Symbol
 from gemmforge.instructions import SyncThreads
 from gemmforge.instructions import ShrMemBasedProduct
 from gemmforge.instructions.loaders import shm_mem_loader_factory
-from gemmforge.basic_types import GeneralLexicon
+from gemmforge.basic_types import DataFlowDirection, GeneralLexicon
 
 
 class ShrMemBasedProductBuilder(AbstractBuilder):
@@ -24,18 +26,14 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     self._counter = 0
     self._load_instrs = []
 
-    self._op1 = None
-    self._op2 = None
+    self._ops = list()
     self._dest = None
 
     self._mem_region_a = None
     self._mem_region_b = None
 
   def build(self,
-            trans_a: bool,
-            trans_b: bool,
-            op1: Symbol,
-            op2: Symbol,
+            ops: List[Symbol],
             dest: Symbol):
     self._reset()
 
@@ -43,24 +41,27 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     # In this case, a loader will load an operand from glb. mem. to shr. mem
     # transposing it on the fly. In, short, the loader guaranties to deliver
     # an operand as (MxK) to shr. mem.
-    self._symbol_table.add_scope()
-
-    if trans_a or trans_b:
-      raise Exception("No Transposed Tensor Allowed Currently in Product Kernel")
-
-    self._op1 = op1
-
-    # Note: we will handle transposition of the second operand during
-    # the matrix multiplication
-    self._op2 = self._make_loader_and_symbol(operand=op2, do_transpose=False)
+    # self._symbol_table.add_scope()
+    print("EX1", ", ".join([str(op) for op in ops]))
+    for op in ops:
+      if op.obj.direction == DataFlowDirection.SOURCE:
+        print(op)
+        self._symbol_table.add_scope()
+        self._make_loader_and_symbol(operand=op, do_transpose=False) 
+        self._ops.append(op)
+      #elif op.obj.direction == DataFlowDirection.SOURCESINK:
+      #  builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
+      #  symbol = builder.build(op.obj.get_name(), op.obj.get_volume(), obj)
+      #  self._instructions.extend(builder.get_instructions())
+      #  self._ops.append(symbol)
+      else:
+        self._ops.append(op)
+    print("EX2", ", ".join([str(op) for op in self._ops]))
 
     self._insert_sync_threads()
 
     gemm_params = {'vm': self._vm,
-                   'trans_a': False,
-                   'trans_b': False,
-                   'op1': self._op1,
-                   'op2': self._op2,
+                   'ops': self._ops,
                    'dest': dest,
                    'num_threads': self._num_threads}
     self._instructions.append(ShrMemBasedProduct(**gemm_params))
@@ -80,6 +81,14 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
 
     self._instructions.append(load_op)
     self._load_instrs.append(load_op)
+    return shr_mem_region
+
+
+  def _make_allocator_and_symbol(self, name, operand):
+    builder = ShrMemNewAllocBuilder(vm=self._vm, symbol_table=self._symbol_table)
+    shr_mem_region = builder.build(name, operand.obj.get_volume())
+    self._instructions.extend(builder.get_instructions())
+
     return shr_mem_region
 
   def get_srh_mem_loads(self):

@@ -66,9 +66,18 @@ class DenseTensor:
     return int(actualVolume)
 
   def get_volume(self):
-    actualVolume = reduce(mul, self.dimensions)
-    assert actualVolume == int(actualVolume)
-    return int(actualVolume)
+    volume = reduce(mul, self.dimensions)
+    assert volume == int(volume)
+    return int(volume)
+
+  def get_real_volume(self):
+    return self.get_volume()
+
+  def get_total_size(self):
+    return self.get_volume()
+
+  def get_name(self):
+    return self.name
 
   def get_offset_to_first_element(self):
     partiallyReducedDimensions = [1]
@@ -90,8 +99,14 @@ class DenseTensor:
     self.name = name
 
   def __str__(self):
+    openbr = "{"
+    closebr = "}"
     string = ""
-    string += "bounding box = {}\n".format(self.bbox)
-    string += "addressing = {}\n".format(self.addressing)
-    string += "dimensions = {}\n".format(self.dimensions)
+    string += f"Tensor: {openbr} name = {self.name}, "
+    string += f"addressing = {self.addressing}, "
+    string += f"dimensions = {self.dimensions}, "
+    string += f"dataflow direction = {self.direction}{closebr}"
     return string
+
+  def __repr__(self):
+    return self.__str__()

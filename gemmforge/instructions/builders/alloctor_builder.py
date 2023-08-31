@@ -1,3 +1,4 @@
+from gemmforge.instructions.allocate import ShrMemNewAlloc
 from .abstract_builder import AbstractBuilder
 from gemmforge.symbol_table import SymbolType, Symbol
 from gemmforge.basic_types import RegMemObject, ShrMemObject
@@ -36,6 +37,28 @@ class ShrMemAllocBuilder(AbstractAllocBuilder):
 
     self._symbol_table.add_symbol(dest)
     self._instructions.append(ShrMemAlloc(self._vm, dest, size))
+
+  def _name_new_symbol(self):
+    name = f'{GeneralLexicon.LOCAL_SHR_MEM}{self._counter}'
+    self._counter += 1
+    return name
+
+class ShrMemNewAllocBuilder(AbstractAllocBuilder):
+  def __init__(self, vm, symbol_table):
+    super(ShrMemNewAllocBuilder, self).__init__(vm, symbol_table)
+    self._counter = 0
+
+  def build(self, name, size, obj):
+    self._reset()
+    #self._obj = ShrMemObject(name, size)
+    dest = Symbol(name=name,
+                  stype=SymbolType.SharedMem,
+                  obj=obj)
+    print(f"ADD: {obj}, AS SYMBOL: {dest}")
+
+    self._symbol_table.add_symbol(dest)
+    self._instructions.append(ShrMemNewAlloc(self._vm, dest, size))
+    return dest
 
   def _name_new_symbol(self):
     name = f'{GeneralLexicon.LOCAL_SHR_MEM}{self._counter}'
