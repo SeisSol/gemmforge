@@ -80,7 +80,8 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
                                           self._num_active_threads)
 
     builder.build(ops=[self._symbol_table[tensor] for tensor in self._tensors],
-                  dest=self._symbol_table[self._reg_array_obj])
+                  dest=self._symbol_table[self._reg_array_obj],
+                  operation_descriptions=self._operation_descriptions)
 
     self._shr_mem_loads = builder.get_srh_mem_loads()
     self._instructions.extend(builder.get_instructions())
@@ -93,12 +94,9 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
         result_tensor = tensor
     assert(result_tensor != None)
 
-
     store = StoreRegToGlbTensor(self._vm,
                                 self._symbol_table[result_tensor],
                                 self._symbol_table[self._reg_array_obj],
-                                self._alpha,
-                                1.0,
                                 self._num_compute_threads)
     self._instructions.append(store)
 

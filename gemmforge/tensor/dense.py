@@ -79,6 +79,19 @@ class DenseTensor:
   def get_name(self):
     return self.name
 
+  def get_accumulated_dimensions(self):
+    cell_counts = [1]
+    for dim in self.get_dimensions():
+      cell_counts.append(dim*cell_counts[len(cell_counts) -1])
+    return cell_counts
+
+  def get_elements_needed_for_dimensions_skip(self):
+    skip_counts = [1]
+    for dim in self.get_dimensions()[:-2]:
+      skip_counts.append(dim*skip_counts[len(skip_counts) -1])
+    return skip_counts
+
+
   def get_offset_to_first_element(self):
     partiallyReducedDimensions = [1]
     for i in range(1, len(self.dimensions)):

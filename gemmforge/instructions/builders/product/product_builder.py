@@ -34,7 +34,8 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
 
   def build(self,
             ops: List[Symbol],
-            dest: Symbol):
+            dest: Symbol,
+            operation_descriptions):
     self._reset()
 
     # Note: of trans_a==True than an operand is given as KxM instead of (MxK).
@@ -63,7 +64,8 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     gemm_params = {'vm': self._vm,
                    'ops': self._ops,
                    'dest': dest,
-                   'num_threads': self._num_threads}
+                   'num_threads': self._num_threads,
+                   'operation_descriptions': operation_descriptions}
     self._instructions.append(ShrMemBasedProduct(**gemm_params))
 
   def _make_loader_and_symbol(self, operand, do_transpose):

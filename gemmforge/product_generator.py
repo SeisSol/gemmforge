@@ -237,14 +237,21 @@ class ProductGenerator(GemmLikeGenerator):
 
   def _generate_base_name(self):
     addresses = ""
+    transpose = ""
+
     for tensor in self._tensors:
-      addresses += f'{tensor.addressing[0]}'
-    traspose = ""
+      if tensor.direction == DataFlowDirection.SOURCE or \
+         tensor.direction == DataFlowDirection.SINK:
+        addresses += f'{tensor.addressing[0]}_'
+        transpose += "NT_"
+
     constants = f'{self._alpha}'
 
     tensorstrs = ""
     for tensor in self._tensors:
-      tensorstrs += tensor.__str__()
+      if tensor.direction == DataFlowDirection.SOURCE or \
+         tensor.direction == DataFlowDirection.SINK:
+        tensorstrs += tensor.__str__()
 
     result = hashlib.md5(('{}_{}_{}'.format(
       constants,
@@ -253,15 +260,17 @@ class ProductGenerator(GemmLikeGenerator):
     md5encoding = result.hexdigest()
     prefix = 's' if self._precision == "float" else "d"
 
-    char = 'm'
     product_dims = ""
-    #for d in self._tensor_a.get_dimensions():
-    #    product_dims += f'_{char}{d}'
-    #    char = chr(ord(char) + 1)
+    for tensor in self._tensors:
+      if tensor.direction == DataFlowDirection.SOURCE or \
+         tensor.direction == DataFlowDirection.SINK:
+        product_dims += "d"
+        for d in tensor.get_dimensions():
+            product_dims += f'{d}_'
 
     consts = f'alpha_{int(self._alpha)}'
     return '{0}product_{1}_{2}_{3}_{4}_{5}'.format(prefix,
-                                                    traspose,
+                                                    transpose,
                                                     product_dims,
                                                     consts,
                                                     addresses,
