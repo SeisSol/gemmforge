@@ -10,26 +10,11 @@ class DenseTensor:
                "strided": "*",
                "pointer_based": "**"}
 
-  def __init__(self, dimensions, addressing, bbox=None):
+  def __init__(self, dimensions, addressing):
     self.name = None
     self.dimensions = dimensions
     self.direction: Union[DataFlowDirection, None] = None
     self._real_dimensions = None
-
-    if bbox is not None:
-      self.bbox = bbox
-
-      # check whether bbox were given correctly
-      coords = [coord for coord in self.bbox]
-      for i in range(len(self.dimensions)):
-        if self.dimensions[i] < coords[len(self.dimensions) + i]:
-          raise GenerationError(f"Tensor size and bbox are compatible, dimensions: {self.dimensions}, bbox: {coords}",)
-    else:
-      tmpBbox = []
-      for i in range(len(self.dimensions)):
-        tmpBbox.append(0)
-      tmpBbox += self.dimensions
-      self.bbox = tmpBbox
 
     if addressing in DenseTensor.ADDRESSING:
       self.addressing = addressing
@@ -93,20 +78,21 @@ class DenseTensor:
 
 
   def get_offset_to_first_element(self):
-    partiallyReducedDimensions = [1]
-    for i in range(1, len(self.dimensions)):
-      reducedOffset = partiallyReducedDimensions[i - 1] * self.dimensions[i - 1]
-      assert reducedOffset == int(reducedOffset)
-      partiallyReducedDimensions.append(int(reducedOffset))
-    print("PRD: ", partiallyReducedDimensions)
+    #partiallyReducedDimensions = [1]
+    #for i in range(1, len(self.dimensions)):
+    #  reducedOffset = partiallyReducedDimensions[i - 1] * self.dimensions[i - 1]
+    #  assert reducedOffset == int(reducedOffset)
+    #  partiallyReducedDimensions.append(int(reducedOffset))
+    #print("PRD: ", partiallyReducedDimensions)
 
-    totalOffset  = 0
-    totalOffset += 1 * self.bbox[0]
-    for i in range(1, len(self.dimensions)):
-      totalOffset += partiallyReducedDimensions[i - 1] * self.bbox[i - 1]
-    print("TOTALOFFSET: ", totalOffset)
+    #totalOffset  = 0
+    #totalOffset += 1 * self.bbox[0]
+    #for i in range(1, len(self.dimensions)):
+    #  totalOffset += partiallyReducedDimensions[i - 1] * self.bbox[i - 1]
+    return 0
+    #print("TOTALOFFSET: ", totalOffset)
 
-    return int(totalOffset)
+    #return int(totalOffset)
 
   def set_name(self, name):
     self.name = name
