@@ -14,6 +14,7 @@ class SyclLexic(Lexic):
     self.block_dim_y = "item.get_group().get_local_range(1)"
     self.block_dim_z = "item.get_group().get_local_range(2)"
     self.stream_name = "cl::sycl::queue"
+    self.device_function = ""
 
   def get_launch_code(self, func_name, grid, block, stream, func_params):
     return f"kernel_{func_name}({stream}, {grid}, {block}, {func_params})"

@@ -1,10 +1,11 @@
+from ..tensor import DenseTensor
 from gemmforge.exceptions import GenerationError
 from gemmforge.basic_types import DataFlowDirection
 from typing import Union
 
 
 class DenseMatrix:
-  ADDRESSIGN = ["none", "strided", "pointer_based"]
+  ADDRESSING = ["none", "strided", "pointer_based"]
   PTR_TYPES = {"none": "*",
                "strided": "*",
                "pointer_based": "**"}
@@ -47,12 +48,12 @@ class DenseMatrix:
     else:
       self.bbox = (0, 0, num_rows, num_cols)
 
-    if addressing in DenseMatrix.ADDRESSIGN:
+    if addressing in DenseMatrix.ADDRESSING:
       self.addressing = addressing
       self.ptr_type = DenseMatrix.PTR_TYPES[self.addressing]
     else:
       raise ValueError('Invalid matrix addressing. '
-                       'Valid types: {}'.format(", ".join(DenseMatrix.ADDRESSIGN)))
+                       'Valid types: {}'.format(", ".join(DenseMatrix.ADDRESSING)))
 
   def set_data_flow_direction(self, direction: DataFlowDirection):
     self.direction = direction
@@ -84,3 +85,18 @@ class DenseMatrix:
     string += "num. actual cols = {}\n".format(self.get_actual_num_cols())
     string += "leading dimension = {}\n".format(self.leading_dimension)
     return string
+
+  def __repr__(self):
+    string = "DenseMatrix{"
+    string += "name = " + str(self.name) + ", "
+    string += "num. rows = {}, ".format(self.num_rows)
+    string += "num. columns = {}, ".format(self.num_cols)
+    string += "leading dimension = {}".format(self.leading_dimension)
+    string += "}"
+    return string
+
+  def as_tensor(self):
+    denseTensor = DenseTensor((self.num_rows, self.num_cols), self.addressing)
+    denseTensor.set_name(self.name)
+    denseTensor.set_data_flow_direction(self.direction)
+    return denseTensor

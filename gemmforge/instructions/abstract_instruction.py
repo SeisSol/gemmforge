@@ -14,7 +14,7 @@ class AbstractInstruction(ABC):
 
   @abstractmethod
   def __str__(self) -> str:
-    pass
+    return "not yet implemented"
 
   def is_ready(self) -> bool:
     return self._is_ready

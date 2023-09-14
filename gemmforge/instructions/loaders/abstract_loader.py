@@ -19,7 +19,7 @@ class AbstractShrMemWrite(AbstractInstruction):
     self._is_ready = True
 
   def __str__(self) -> str:
-    pass
+    return "abs_shr_mem_write{" + str(self._shr_mem_offset) + "}" if self._is_ready else "abs_shr_mem_write{not ready yet}"
 
 
 class AbstractShrMemLoader(AbstractShrMemWrite):

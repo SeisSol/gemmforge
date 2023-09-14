@@ -19,6 +19,9 @@ class DataView:
   def __str__(self):
     return f'rows: {self.rows}, cols: {self.columns}, lid: {self.lead_dim}, trans: {self.is_transposed}'
 
+  def __repr__(self):
+    return self.__str__()
+
 class TensorDataView:
   def __init__(self, dimensions: List[int], is_transposed: bool):
     self.dimensions = dimensions
@@ -27,6 +30,8 @@ class TensorDataView:
   def __str__(self):
     return f'dimensions: {self.dimensions}, trans: {self.is_transposed}'
 
+  def __repr__(self):
+    return self.__str__()
 
 
 class Symbol:
@@ -42,6 +47,8 @@ class Symbol:
   def __str__(self):
     return f'name: {self.name}, type: {self.stype}'
 
+  def __repr__(self):
+    return self.__str__()
 
 class Scope:
   def __init__(self):
@@ -63,6 +70,11 @@ class Scope:
   def values(self):
     return self._symbols.values()
 
+  def __str__(self):
+    return "Scope{" + self._symbols.__str__() + "}"
+
+  def __repr__(self):
+    return self.__str__()
 
 class InverseSymbolTable:
   def __init__(self):
@@ -94,7 +106,7 @@ class InverseSymbolTable:
   def print_scopes(self):
     for level, scope in enumerate(self._scopes):
       print('*' * 80)
-      self.print_scope(level)
+      print(scope)
 
   @property
   def from_global(self):
@@ -104,4 +116,5 @@ class InverseSymbolTable:
     for scope in reversed(self._scopes):
       if obj in scope:
         return scope[obj]
+    self.print_scopes()
     raise InternalError(f'obj {id(obj)} has not been found')

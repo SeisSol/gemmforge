@@ -20,4 +20,4 @@ class SyncThreads(AbstractInstruction):
       return f'{lexic.sync_vec_unit()};'
 
   def gen_mask_threads(self, num_threads) -> str:
-    return ''
+    return 'not implemented'

@@ -176,6 +176,7 @@ class ProductGenerator(GemmLikeGenerator):
     self._num_compute_threads = thread_count
     self._num_active_threads = num_vector_units_required * self._hw_descr.vec_unit_length
 
+
   def _populate_global_scope(self):
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SOURCE or tensor.direction == DataFlowDirection.SINK:

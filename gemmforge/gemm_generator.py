@@ -1,3 +1,4 @@
+from gemmforge.instructions.ptr_manip import GetElementPtr
 from . import constructs
 from io import StringIO
 from .exceptions import GenerationError
@@ -111,6 +112,23 @@ class GemmGenerator(GemmLikeGenerator):
                 raise GenerationError("gemm_generator: requested instr is not ready")
 
       self._kernel = src.getvalue()
+
+  def _generate_device_kernel(self, gemm_loop_offsets):
+    src = StringIO()
+    with constructs.Cpp(src) as file:
+      for instr in self._instructions:
+        if instr.is_ready():
+          #TODO: This feels hacky
+          if isinstance(instr, GetElementPtr):
+            for _, value in gemm_loop_offsets.items():
+              if value[0] == instr._src.name:
+                instr._loop_additional_offset = value[1]
+          instr.gen_code(file)
+        else:
+          raise GenerationError("gemm_generator: requested instr is not ready")
+
+      self._kernel = src.getvalue()
+
 
   def _generate_launcher(self):
     src = StringIO()

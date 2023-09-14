@@ -17,6 +17,7 @@ class GetElementPtr(AbstractInstruction):
     self._dest = dest
     self._include_extra_offset = include_extra_offset
     self._is_ready = True
+    self._loop_additional_offset = None
 
   def gen_code(self, writer):
 
@@ -37,6 +38,8 @@ class GetElementPtr(AbstractInstruction):
       main_offset = f'{GeneralLexicon.BATCH_ID}'
       sub_offset = f'{batch_obj.get_offset_to_first_element()}'
       address = f'{main_offset}][{sub_offset}{extra_offset}'
+      if self._loop_additional_offset:
+        address += self._loop_additional_offset
     elif batch_addressing == "none":
       address = f'{batch_obj.get_offset_to_first_element()}{extra_offset}'
     else:

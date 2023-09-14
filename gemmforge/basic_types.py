@@ -55,6 +55,6 @@ class ShrMemObject:
     total_size = self.get_total_size() if self._size_per_mult else 'not yet defined'
     return total_size
 
-  def __str__(self) -> str:
+  def __str__(self):
     total_size = self.get_total_size() if self._size_per_mult else 'not yet defined'
     return f'name {self.name}: total size = {total_size}'

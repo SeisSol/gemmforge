@@ -27,6 +27,7 @@ class DenseTensor:
     self.direction = direction
 
   def get_actual_num_dimensions(self):
+    """
     if self._real_dimensions != None:
         return self._real_dimensions
     realDimensions = list()
@@ -34,12 +35,14 @@ class DenseTensor:
       realDimensions.append(self.bbox[i + len(self.dimensions)] - self.bbox[i])
     self._real_dimensions = realDimensions
     return self._real_dimensions
+    """
+    return self.dimensions
 
   def get_size(self):
     return self.get_actual_volume()
 
   def get_dimensions(self):
-    return self.get_actual_num_dimensions()
+    return self.dimensions
 
   def get_padded_dimensions(self):
     return self.dimensions

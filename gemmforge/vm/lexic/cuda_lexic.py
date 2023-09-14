@@ -12,6 +12,7 @@ class CudaLexic(Lexic):
     self.block_dim_y = "blockDim.y"
     self.block_dim_z = "blockDim.z"
     self.stream_name = "cudaStream_t"
+    self.device_function = "__device__"
 
   def get_launch_code(self, func_name, grid, block, stream, func_params):
     return "kernel_{}<<<{},{},0,{}>>>({})".format(func_name, grid, block, stream, func_params)
