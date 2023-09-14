@@ -8,14 +8,12 @@ class VM:
   def __init__(self,
                hw_descr: HwDecription,
                lexic: Type[Lexic],
-               fp_type: str,
-               loop_over_gemm_tokens: Union[List[str], None] = None):
+               fp_type: str):
     self._hw_descr = hw_descr
     self._lexic = lexic
     self._fp_type = None
     self.set_fp_type(fp_type)
     self._real_literal = 'f' if self._fp_type == 'float' else ''
-    self._log_tokens = loop_over_gemm_tokens
 
   def get_hw_descr(self):
     return self._hw_descr
@@ -53,11 +51,9 @@ class VM:
 
 def vm_factory(arch: str,
                backend: str,
-               fp_type: str,
-               loop_over_gemm_tokens: Union[List[str], None] = None):
+               fp_type: str):
   descr = hw_descr_factory(arch, backend)
   lexic = lexic_factory(backend=backend, underlying_hardware=descr.manufacturer)
   return VM(hw_descr=descr,
             lexic=lexic,
-            fp_type=fp_type,
-            loop_over_gemm_tokens=loop_over_gemm_tokens)
+            fp_type=fp_type)

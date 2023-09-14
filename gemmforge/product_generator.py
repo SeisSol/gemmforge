@@ -114,7 +114,6 @@ class ProductGenerator(GemmLikeGenerator):
       max_num_threads_per_block = self._num_active_threads * self._num_ops_per_block
       kernel_bounds = [max_num_threads_per_block]
       team_index_str = self._lexic.batch_indexer_gemm()
-      loop_over_product_tokens = self._vm._log_tokens
 
       with self._lexic.kernel_definition(file,
                                          kernel_bounds,

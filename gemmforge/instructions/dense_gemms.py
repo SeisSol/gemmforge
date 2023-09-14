@@ -19,7 +19,6 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
     self._op2 = kwargs['op2']
     self._dest = kwargs['dest']
     self._num_threads = kwargs['num_threads']
-    self._log_tokens = self._vm._log_tokens
 
     if self._op1.stype == SymbolType.Batch:
       raise InternalError('gemm: `op1` is a batch type, must be either glb. or shr.')
@@ -33,10 +32,6 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
     self._is_ready = True
 
   def gen_code(self, writer):
-    writer("/*")
-    writer(f"{self._log_tokens}")
-    writer("*/")
-
     value_var = 'value'
     op1_data_view = self._op1.data_view
     op2_data_view = self._op2.data_view
@@ -82,7 +77,6 @@ class RegisterOnlyDenseGemm(AbstractInstruction):
     self._dest = kwargs['dest']
     self._num_threads = kwargs['num_threads']
     self._vec_unit_length = self._vm.get_hw_descr().vec_unit_length
-    self._log_tokens = self._vm._log_tokens
 
     if self._op1.stype != SymbolType.Global:
       raise InternalError('gemm: `op1` must be glb. memory')
@@ -96,10 +90,6 @@ class RegisterOnlyDenseGemm(AbstractInstruction):
     self._is_ready = True
 
   def gen_code(self, writer):
-    writer("/*")
-    writer(f"{self._log_tokens}")
-    writer("*/")
-
     op1_variable = 'value1'
     op2_variable = 'value2'
     warp_idx_variable = 'wid'

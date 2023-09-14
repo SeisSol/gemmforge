@@ -93,7 +93,6 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
       max_num_threads_per_block = self._num_active_threads * self._num_ops_per_block
       kernel_bounds = [max_num_threads_per_block]
       team_index_str = self._lexic.batch_indexer_gemm()
-      loop_over_gemm_tokens = self._vm._log_tokens
 
       with self._lexic.kernel_definition(file,
                                          kernel_bounds,
@@ -103,20 +102,11 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                                          self._shr_mem_obj.get_total_size()):
         with file.If(f'{self.get_element_size_guard(file)}'):
           with file.If(f'{self.get_flag_guard(file)}'):
-            needed_exit_calls = []
-            for token_group in loop_over_gemm_tokens:
-              if token_group[0] == "FOR_LOOPS":
-                file.Pragma("unroll")
-                f = file.For(f'{token_group[1][0][1]}; {token_group[1][1][1]}; {token_group[1][2][1]}')
-                f.__enter__()
-                needed_exit_calls.insert(0, f)
             for instr in self._instructions:
               if instr.is_ready():
                 instr.gen_code(file)
               else:
                 raise GenerationError("gemm_generator: requested instr is not ready")
-            for f in needed_exit_calls:
-              f.__exit__(None, None, None)
 
       self._kernel = src.getvalue()
 
@@ -252,9 +242,6 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
 
     gemm_kernel_builder = kernel_factory.get_builder()
     gemm_kernel_builder.build()
-
-    #if self._vm._log_tokens != None:
-    #  log_builder.build()
 
     self._instructions = gemm_kernel_builder.get_instructions()
     self._reg_array_obj = gemm_kernel_builder.get_reg_array_obj()
