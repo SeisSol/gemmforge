@@ -1,6 +1,5 @@
-from .log_kernels import ShrMemBasedLoopOverGemmKernelBuilder
-from ..gemms.factory import GemmKernelType
-
+from gemmforge.instructions.builders.kernels.log.log_kernels import ShrMemBasedLoopOverGemmKernelBuilder
+from gemmforge.instructions.builders.kernels.gemms.factory import GemmKernelType
 
 class LoopOverGemmKernelsFactory:
   def __init__(self, **kwargs):

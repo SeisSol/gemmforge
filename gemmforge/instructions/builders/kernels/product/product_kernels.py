@@ -1,7 +1,7 @@
 from gemmforge.basic_types import DataFlowDirection
 from gemmforge.instructions.builders import GetElementPtrBuilder, RegistersAllocBuilder, ShrMemAllocBuilder
 from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
-from gemmforge.instructions.builders.alloctor_builder import ShrMemNewAllocBuilder
+from gemmforge.instructions.builders.allocator_builder import ShrMemNewAllocBuilder
 from gemmforge.instructions.builders.product.product_builder import ShrMemBasedProductBuilder
 from gemmforge.instructions.store import StoreRegToGlbTensor
 

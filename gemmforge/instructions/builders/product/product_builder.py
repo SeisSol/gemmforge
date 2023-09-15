@@ -3,7 +3,7 @@ from typing import List
 from gemmforge.basic_types import DataFlowDirection, GeneralLexicon
 from gemmforge.instructions import ShrMemBasedProduct, SyncThreads
 from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
-from gemmforge.instructions.builders.alloctor_builder import ShrMemNewAllocBuilder
+from gemmforge.instructions.builders.allocator_builder import ShrMemNewAllocBuilder
 from gemmforge.instructions.loaders import shm_mem_loader_factory
 from gemmforge.symbol_table import Symbol, SymbolType
 

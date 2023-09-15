@@ -1,6 +1,6 @@
 from gemmforge.basic_types import DataFlowDirection
 from gemmforge.instructions.builders import GetElementPtrBuilder, RegistersAllocBuilder, ShrMemAllocBuilder
-from gemmforge.instructions.builders.alloctor_builder import ShrMemNewAllocBuilder
+from gemmforge.instructions.builders.allocator_builder import ShrMemNewAllocBuilder
 from gemmforge.instructions.builders.gemms.gemm_builder import ShrMemBasedDenseGemmBuilder
 from gemmforge.instructions.builders.kernels.gemms.base_kernel import BaseGemmKernelBuilder
 from gemmforge.symbol_table import SymbolType
