@@ -1,5 +1,3 @@
-# from .product_kernels import RegisterOnlyDensProductKernelBuilder
-
 from .product_kernels import ShrMemBasedProductKernelBuilder
 from ..gemms.factory import GemmKernelType
 

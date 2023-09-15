@@ -33,27 +33,24 @@ class GemmGenerator(GemmLikeGenerator):
 
     self._factory = GemmKernelsFactory
 
-  def set(self, trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
+  def set(self, trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, base_name=None, preserve_matrix_properties=False):
     self._instructions = []
 
     self._mat_a = mat_a
     self._trans_a = trans_a
-    if self._mat_a.name == None:
+    if not preserve_matrix_properties or (preserve_matrix_properties and self._mat_a.name == None):
       self._mat_a.set_name('A')
-    if self._mat_a.direction == None:
       self._mat_a.set_data_flow_direction(DataFlowDirection.SOURCE)
 
     self._mat_b = mat_b
     self._trans_b = trans_b
-    if self._mat_b.name == None:
+    if not preserve_matrix_properties or (preserve_matrix_properties and self._mat_b.name == None):
       self._mat_b.set_name('B')
-    if self._mat_b.direction == None:
       self._mat_b.set_data_flow_direction(DataFlowDirection.SOURCE)
 
     self._mat_c = mat_c
-    if self._mat_c.name == None:
+    if not preserve_matrix_properties or (preserve_matrix_properties and self._mat_c.name == None):
       self._mat_c.set_name('C')
-    if self._mat_c.direction == None:
       self._mat_c.set_data_flow_direction(DataFlowDirection.SINK)
     self._matrices = [self._mat_a, self._mat_b, self._mat_c]
 
