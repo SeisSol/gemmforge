@@ -1,7 +1,7 @@
-from gemmforge import DenseMatrix, GenerationError, GemmGenerator
-from gemmforge.vm import vm_factory
 import argparse
 
+from gemmforge import DenseMatrix, GemmGenerator, GenerationError
+from gemmforge.vm import vm_factory
 
 parser = argparse.ArgumentParser(description="Specify Backend and Arch of the GPU")
 parser.add_argument("-a",
@@ -14,7 +14,6 @@ parser.add_argument("-b",
                     action="store",
                     help="Name of the Backend, currently cuda, hip, hipsycl and oneapi are supported",
                     default="cuda")
-
 
 args = parser.parse_args()
 

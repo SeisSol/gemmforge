@@ -1,7 +1,7 @@
-from gemmforge import DenseMatrix, GenerationError, CsaGenerator
-from gemmforge.vm import vm_factory
 import argparse
 
+from gemmforge import CsaGenerator, DenseMatrix, GenerationError
+from gemmforge.vm import vm_factory
 
 parser = argparse.ArgumentParser(description='Specify Backend and Arch of the GPU')
 parser.add_argument('-a',
@@ -31,7 +31,7 @@ try:
   vm = vm_factory(backend=args.backend,
                   arch=args.arch,
                   fp_type='float')
-  
+
   gen = CsaGenerator(vm)
   gen.set(mat_a, mat_b, alpha=13, beta=0)
   gen.generate()

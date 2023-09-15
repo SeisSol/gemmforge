@@ -1,5 +1,5 @@
-from ..abstract_thread_policy import AbstractBinaryOpThreadPolicy, DenseMatrix
 from gemmforge.vm import VM
+from ..abstract_thread_policy import AbstractBinaryOpThreadPolicy, DenseMatrix
 
 
 class GenericCsaThreadPolicy(AbstractBinaryOpThreadPolicy):

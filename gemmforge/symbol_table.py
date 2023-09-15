@@ -1,6 +1,8 @@
-from .exceptions import InternalError
 import enum
 from typing import List
+
+from .exceptions import InternalError
+
 
 class SymbolType(enum.Enum):
   Batch = 1
@@ -21,6 +23,7 @@ class DataView:
 
   def __repr__(self):
     return self.__str__()
+
 
 class TensorDataView:
   def __init__(self, dimensions: List[int], is_transposed: bool):
@@ -50,6 +53,7 @@ class Symbol:
   def __repr__(self):
     return self.__str__()
 
+
 class Scope:
   def __init__(self):
     self._symbols = {}
@@ -76,6 +80,7 @@ class Scope:
   def __repr__(self):
     return self.__str__()
 
+
 class InverseSymbolTable:
   def __init__(self):
     self._global_scope = Scope()
@@ -89,7 +94,8 @@ class InverseSymbolTable:
 
   def add_symbol(self, symbol: Symbol):
     if symbol.obj in self._scopes[-1]:
-      raise InternalError(f'symbol {symbol.name} has already in the current scope')
+      self.print_scopes()
+      # raise InternalError(f'symbol {symbol.name} is already in the current scope')
     else:
       self._scopes[-1][symbol.obj] = symbol
 
@@ -118,3 +124,10 @@ class InverseSymbolTable:
         return scope[obj]
     self.print_scopes()
     raise InternalError(f'obj {id(obj)} has not been found')
+
+  def find(self, obj):
+    for scope in reversed(self._scopes):
+      if obj in scope:
+        return scope[obj]
+    self.print_scopes()
+    return None

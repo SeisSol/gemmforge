@@ -1,9 +1,8 @@
-from .abstract_instruction import AbstractInstruction
-from gemmforge.vm import VM
+from gemmforge.basic_types import DataFlowDirection, GeneralLexicon
 from gemmforge.common import get_extra_offset_name
-from gemmforge.symbol_table import SymbolType, Symbol, DataView, InverseSymbolTable
-from gemmforge.basic_types import GeneralLexicon, DataFlowDirection
 from gemmforge.exceptions import GenerationError
+from gemmforge.vm import VM
+from .abstract_instruction import AbstractInstruction
 
 
 class GetElementPtr(AbstractInstruction):

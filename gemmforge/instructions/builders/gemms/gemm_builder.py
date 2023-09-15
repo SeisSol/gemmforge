@@ -1,10 +1,8 @@
-from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
-from gemmforge.symbol_table import SymbolType, Symbol
-from gemmforge.instructions import SyncThreads
-from gemmforge.instructions import ShrMemBasedDenseGemm
-from gemmforge.instructions import RegisterOnlyDenseGemm
-from gemmforge.instructions.loaders import shm_mem_loader_factory
 from gemmforge.basic_types import GeneralLexicon
+from gemmforge.instructions import RegisterOnlyDenseGemm, ShrMemBasedDenseGemm, SyncThreads
+from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
+from gemmforge.instructions.loaders import shm_mem_loader_factory
+from gemmforge.symbol_table import Symbol, SymbolType
 
 
 class ShrMemBasedDenseGemmBuilder(AbstractBuilder):

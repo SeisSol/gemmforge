@@ -1,9 +1,6 @@
-from .abstract_instruction import AbstractInstruction
-from gemmforge.vm import VM
-from gemmforge.symbol_table import SymbolType, Symbol, DataView, InverseSymbolTable
-from gemmforge.basic_types import GeneralLexicon, DataFlowDirection, RegMemObject
 from gemmforge.exceptions import InternalError
-from abc import abstractmethod
+from gemmforge.symbol_table import SymbolType
+from .abstract_instruction import AbstractInstruction
 
 
 class ShrMemBasedDenseGemm(AbstractInstruction):

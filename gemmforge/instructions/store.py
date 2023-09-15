@@ -1,8 +1,7 @@
-from .abstract_instruction import AbstractInstruction
-from gemmforge.vm import VM
-from gemmforge.symbol_table import SymbolType, Symbol, DataView, InverseSymbolTable
-from gemmforge.basic_types import GeneralLexicon, DataFlowDirection, RegMemObject
 from gemmforge.exceptions import InternalError
+from gemmforge.symbol_table import Symbol, SymbolType
+from gemmforge.vm import VM
+from .abstract_instruction import AbstractInstruction
 
 
 class StoreRegToGlb(AbstractInstruction):
@@ -66,6 +65,7 @@ class StoreRegToGlb(AbstractInstruction):
   def __str__(self) -> str:
     return 'not implemented'
 
+
 class StoreRegToGlbTensor(AbstractInstruction):
   def __init__(self,
                vm: VM,
@@ -97,17 +97,17 @@ class StoreRegToGlbTensor(AbstractInstruction):
       real_suffix = 'f' if precision == "float" else ''
       thread_idx_x = self._vm.get_lexic().thread_idx_x,
 
-      #Calculating the begin of the threadIdx.x'th row of tensor
-      #Between 2 rows of a matrix, the distance is 1
-      #But assume tensor of rank 3 (N1xN2xN3), assume it is matrices stored 
-      #back to back
-      #First N rows have distance 1, but,
-      #To the second N rows we have N1x(N2-1) elements (column major storage)
-      #Assume (N1xN2xN3x2) then between the rows of rank 3 and rank 4,#
-      #We have N1x(N2-1) and 2o on.
+      # Calculating the begin of the threadIdx.x'th row of tensor
+      # Between 2 rows of a matrix, the distance is 1
+      # But assume tensor of rank 3 (N1xN2xN3), assume it is matrices stored
+      # back to back
+      # First N rows have distance 1, but,
+      # To the second N rows we have N1x(N2-1) elements (column major storage)
+      # Assume (N1xN2xN3x2) then between the rows of rank 3 and rank 4,#
+      # We have N1x(N2-1) and 2o on.
 
-      #i'th row is we need to get where it is located
-      #if i < N1, or N1 < i < N1*N2, or N1*N2 < i  < N1*N2*N3
+      # i'th row is we need to get where it is located
+      # if i < N1, or N1 < i < N1*N2, or N1*N2 < i  < N1*N2*N3
       rank_offsets = list()
       example = 7
       i = len(self._dest.obj.get_elements_needed_for_dimensions_skip())
@@ -117,11 +117,11 @@ class StoreRegToGlbTensor(AbstractInstruction):
       writer(f"{rowsLeftIsConst}int rowsLeft = " + thread_idx_x[0] + ";")
       for cell_count in reversed(self._dest.obj.get_elements_needed_for_dimensions_skip()):
         rank_offset = "rowsLeft" + " / " + str(cell_count)
-        print(f"rankOffset{i} = ",  example//cell_count)
+        print(f"rankOffset{i} = ", example // cell_count)
         writer(f"const int rankOffset{i} = {rank_offset};")
         if i > 1:
           writer(f"rowsLeft -= rankOffset{i} * {cell_count};")
-        example -= (example//cell_count) * cell_count
+        example -= (example // cell_count) * cell_count
         print(f"rowsLeft = ", example)
         rank_offsets.append((f"rankOffset{i}", cell_count))
         i -= 1

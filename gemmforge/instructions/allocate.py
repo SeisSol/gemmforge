@@ -1,8 +1,8 @@
-from .abstract_instruction import AbstractInstruction
-from gemmforge.vm import VM
-from gemmforge.symbol_table import Symbol
 from gemmforge.basic_types import GeneralLexicon
 from gemmforge.exceptions import InternalError
+from gemmforge.symbol_table import Symbol
+from gemmforge.vm import VM
+from .abstract_instruction import AbstractInstruction
 
 
 class RegisterAlloc(AbstractInstruction):
@@ -82,6 +82,7 @@ class ShrMemAlloc(AbstractInstruction):
   def __str__(self):
     return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.get_total_size_as_str()}];'
 
+
 class ShrMemNewAlloc(AbstractInstruction):
   def __init__(self,
                vm: VM,
@@ -121,4 +122,4 @@ class ShrMemNewAlloc(AbstractInstruction):
     self._mults_per_block = mults_per_block
 
   def __str__(self):
-    return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.get_total_size_as_str()}];'
+    return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.name}];'

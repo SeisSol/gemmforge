@@ -1,9 +1,5 @@
+from gemmforge.basic_types import GeneralLexicon
 from .abstract_instruction import AbstractInstruction
-from gemmforge.vm import VM
-from gemmforge.symbol_table import SymbolType, Symbol, DataView, InverseSymbolTable
-from gemmforge.basic_types import GeneralLexicon, DataFlowDirection, RegMemObject
-from gemmforge.exceptions import InternalError
-from abc import abstractmethod
 
 
 class ShrMemBasedProduct(AbstractInstruction):
@@ -23,20 +19,20 @@ class ShrMemBasedProduct(AbstractInstruction):
   def _find_operand_with_name(self, name):
     for operand in self._ops:
       if operand.name == name or \
-        operand.name == GeneralLexicon.GLOBAL_MEM_PREFIX + name:
+          operand.name == GeneralLexicon.GLOBAL_MEM_PREFIX + name:
         return operand
-    assert(False)
+    assert (False)
 
   def gen_code(self, writer):
     writer("/*")
     writer(f"This is the product kernel created from the following YaTeTo description:")
     writer("\n".join(str(x) for x in self._operation_descriptions))
-    #writer(str(self._operation_descriptions))
+    # writer(str(self._operation_descriptions))
     writer("*/")
-    #writer("/*")
-    #writer("\n".join(str(x) for x in self._ops))
-    #writer(str(self._ops))
-    #writer("*/")
+    # writer("/*")
+    # writer("\n".join(str(x) for x in self._ops))
+    # writer(str(self._ops))
+    # writer("*/")
     loop_iterator_to_skip = None
     thread_idx_x = self._vm.get_lexic().thread_idx_x
     for operation in self._operation_descriptions:
@@ -45,7 +41,7 @@ class ShrMemBasedProduct(AbstractInstruction):
       writer.If(self.gen_mask_threads(threads_needed_for_operation)).__enter__()
 
       # We always want coalesced write, therefore we need to see which index
-      # has stride one 
+      # has stride one
       dest_strides = operation.result.memoryLayout._stride
       dest_indices = operation.result.indices
       loop_iterator_to_skip = None
@@ -53,14 +49,15 @@ class ShrMemBasedProduct(AbstractInstruction):
         print(offset, dest_strides[offset], dest_indices[offset])
         if dest_strides[offset] == 1:
           loop_iterator_to_skip = dest_indices[offset]
-      assert(loop_iterator_to_skip != None)
+      assert (loop_iterator_to_skip != None)
 
       # The dictionary should be ordered we need python 3.8
       it = 0
       for loop_iterator, loop_range in operation.loopRanges.items():
         if loop_iterator_to_skip != loop_iterator:
           writer.Pragma("unroll")
-          writer.For(f"int {loop_iterator} = {loop_range.start}; {loop_iterator} < {loop_range.stop}; ++{loop_iterator}").__enter__()
+          writer.For(
+            f"int {loop_iterator} = {loop_range.start}; {loop_iterator} < {loop_range.stop}; ++{loop_iterator}").__enter__()
         it += 1
       op1 = self._find_operand_with_name(operation.leftTerm.name)
       op1_strides = operation.leftTerm.memoryLayout._stride
@@ -78,7 +75,7 @@ class ShrMemBasedProduct(AbstractInstruction):
         if loop_iterator_to_skip and dest_indices[offset] == loop_iterator_to_skip:
           kernel_str += thread_idx_x
         else:
-          kernel_str += dest_indices[offset] 
+          kernel_str += dest_indices[offset]
         kernel_str += " * " + str(dest_strides[offset])
         if offset != len(dest_strides) - 1:
           kernel_str += " + "
@@ -91,7 +88,7 @@ class ShrMemBasedProduct(AbstractInstruction):
         if loop_iterator_to_skip and op1_indices[offset] == loop_iterator_to_skip:
           kernel_str += thread_idx_x
         else:
-          kernel_str += op1_indices[offset] 
+          kernel_str += op1_indices[offset]
         kernel_str += " * " + str(op1_strides[offset])
         if offset != len(op1_strides) - 1:
           kernel_str += " + "
@@ -102,20 +99,21 @@ class ShrMemBasedProduct(AbstractInstruction):
         if loop_iterator_to_skip and op2_indices[offset] == loop_iterator_to_skip:
           kernel_str += thread_idx_x
         else:
-          kernel_str += op2_indices[offset] 
+          kernel_str += op2_indices[offset]
         kernel_str += " * " + str(op2_strides[offset])
         if offset != len(op2_strides) - 1:
           kernel_str += " + "
       kernel_str += "];"
       writer(kernel_str)
 
-      assert(loop_iterator_to_skip != None)
+      assert (loop_iterator_to_skip != None)
       for _ in range(len(operation.loopRanges.items()) - 1):
         writer.For("...").__exit__(type=None, value=None, traceback=None)
       writer.If("...").__exit__(type=None, value=None, traceback=None)
 
   def __str__(self) -> str:
     return f'{self._dest.name} = product(TODO...)'
+
 
 class RegisterOnlyProduct(AbstractInstruction):
   def __init__(self, **kwargs):

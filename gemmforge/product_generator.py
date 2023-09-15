@@ -1,20 +1,20 @@
+import hashlib
+import math
 from copy import deepcopy
+from io import StringIO
+
 from gemmforge.instructions.allocate import ShrMemNewAlloc
 from gemmforge.instructions.builders.kernels.product.factory import ProductKernelsFactory
-from .abstract_gemmlike_generator import GemmLikeGenerator
 from . import constructs
-from io import StringIO
-from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
-from .basic_types import GeneralLexicon, DataFlowDirection
-from .symbol_table import Symbol, SymbolType
 from .abstract_generator import AbstractGenerator as Generator
-from .instructions.builders.kernels import GemmKernelsFactory
+from .basic_types import DataFlowDirection, GeneralLexicon
+from .exceptions import GenerationError
 from .instructions.builders.kernels import GemmKernelType
-from .vm import VM
+from .symbol_table import Symbol, SymbolType
 from .thread_policies import TheadPolicyFactory
-import math
-import hashlib
+from .vm import VM
+
 
 class ProductGenerator(GemmLikeGenerator):
   def __init__(self, vm: VM, kernel_type=GemmKernelType.AUTO):
@@ -35,11 +35,11 @@ class ProductGenerator(GemmLikeGenerator):
 
   # complete_operation_descriptions = List[self._descr, tensor_a, tensor_b, tensor_c, alpha, args]
   def set(self, complete_operation_descriptions):
-    #if trans_a or trans_b:
+    # if trans_a or trans_b:
     #    raise Exception("TODO: Tensor Product in gemmforge does not support transposed a or b currently")
     self._tensors = set()
     for operation_description in complete_operation_descriptions:
-      #print(operation_description)
+      # print(operation_description)
       # If a tensor appears both as sink and source we will change to sourcesink
       tensor_x = operation_description[1]
       tensor_x.set_name(operation_description[0].leftTerm.name)
@@ -176,13 +176,12 @@ class ProductGenerator(GemmLikeGenerator):
     self._num_compute_threads = thread_count
     self._num_active_threads = num_vector_units_required * self._hw_descr.vec_unit_length
 
-
   def _populate_global_scope(self):
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SOURCE or tensor.direction == DataFlowDirection.SINK:
         self._symbol_table.add_symbol(Symbol(obj=tensor,
-                                              name=tensor.name,
-                                              stype=SymbolType.Batch))
+                                             name=tensor.name,
+                                             stype=SymbolType.Batch))
     self._symbol_table.add_scope()
 
   def _emit_instructions(self):
@@ -219,7 +218,7 @@ class ProductGenerator(GemmLikeGenerator):
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SINK:
         result_tensor = tensor
-    assert(result_tensor != None)
+    assert (result_tensor != None)
 
     # compute num matrix multiplications per block
     thread_policy = TheadPolicyFactory.get_product_policy(vm=self._vm,
@@ -241,7 +240,7 @@ class ProductGenerator(GemmLikeGenerator):
 
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SOURCE or \
-         tensor.direction == DataFlowDirection.SINK:
+          tensor.direction == DataFlowDirection.SINK:
         addresses += f'{tensor.addressing[0]}_'
         transpose += "NT_"
 
@@ -250,7 +249,7 @@ class ProductGenerator(GemmLikeGenerator):
     tensorstrs = ""
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SOURCE or \
-         tensor.direction == DataFlowDirection.SINK:
+          tensor.direction == DataFlowDirection.SINK:
         tensorstrs += tensor.__str__()
 
     result = hashlib.md5(('{}_{}_{}'.format(
@@ -263,18 +262,18 @@ class ProductGenerator(GemmLikeGenerator):
     product_dims = ""
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SOURCE or \
-         tensor.direction == DataFlowDirection.SINK:
+          tensor.direction == DataFlowDirection.SINK:
         product_dims += "d"
         for d in tensor.get_dimensions():
-            product_dims += f'{d}_'
+          product_dims += f'{d}_'
 
     consts = f'alpha_{int(self._alpha)}'
     return '{0}product_{1}_{2}_{3}_{4}_{5}'.format(prefix,
-                                                    transpose,
-                                                    product_dims,
-                                                    consts,
-                                                    addresses,
-                                                    md5encoding[:Generator.ENCODING_LENGTH])
+                                                   transpose,
+                                                   product_dims,
+                                                   consts,
+                                                   addresses,
+                                                   md5encoding[:Generator.ENCODING_LENGTH])
 
   def _get_func_params(self):
     base_params = super(ProductGenerator, self)._get_func_params(matrices=self._tensors)

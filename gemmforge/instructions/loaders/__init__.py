@@ -1,9 +1,9 @@
-from gemmforge.symbol_table import SymbolType
-from gemmforge.exceptions import InternalError
-from gemmforge.tensor.dense import DenseTensor
-from .shr_mem_loaders import ExtendedPatchLoader, ExactPatchLoader, ExactTensorLoader, ExtendedTensorLoader
-from .shr_transpose_mem_loaders import ExtendedTransposePatchLoader, ExactTransposePatchLoader, ArbitraryLeadingDimensionExactTransposePatchLoader
 from math import ceil
+
+from gemmforge.tensor.dense import DenseTensor
+from .shr_mem_loaders import ExactPatchLoader, ExactTensorLoader, ExtendedPatchLoader, ExtendedTensorLoader
+from .shr_transpose_mem_loaders import ArbitraryLeadingDimensionExactTransposePatchLoader, ExactTransposePatchLoader, \
+    ExtendedTransposePatchLoader
 
 
 def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpose=False):
@@ -15,14 +15,13 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
             'load_and_transpose': load_and_transpose}
 
   if isinstance(src.obj, DenseTensor):
-    #num_loads_per_column = ceil(src.data_view.dimensions[0] / num_threads) * num_threads
-    #if src.data_view.dimensions[0] > num_loads_per_column:
+    # num_loads_per_column = ceil(src.data_view.dimensions[0] / num_threads) * num_threads
+    # if src.data_view.dimensions[0] > num_loads_per_column:
     #  return ExactTensorLoader(**params)
-    #else:
+    # else:
     return ExtendedTensorLoader(**params)
   else:
     num_loads_per_column = ceil(src.data_view.rows / num_threads) * num_threads
-
 
     if src.obj.leading_dimension_given:
       if src.data_view.lead_dim != src.data_view.rows:

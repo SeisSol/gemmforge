@@ -1,7 +1,8 @@
+# from .product_kernels import RegisterOnlyDensProductKernelBuilder
+
 from .product_kernels import ShrMemBasedProductKernelBuilder
-#from .product_kernels import RegisterOnlyDensProductKernelBuilder
-from enum import Enum
 from ..gemms.factory import GemmKernelType
+
 
 class ProductKernelsFactory:
   def __init__(self, **kwargs):
@@ -14,7 +15,7 @@ class ProductKernelsFactory:
     model = self._hw_descr.model
     if model == 'pvc':
       raise Exception("Register Only Product Kernel is not yet implemented")
-      #return GemmKernelType.REGISTER_ONLY_BASED
+      # return GemmKernelType.REGISTER_ONLY_BASED
     else:
       return GemmKernelType.SHR_MEM_BASED
 
@@ -26,7 +27,7 @@ class ProductKernelsFactory:
       return ShrMemBasedProductKernelBuilder(**self._kwargs)
     elif self._product_kernel_type == GemmKernelType.REGISTER_ONLY_BASED:
       raise Exception("Register Only Product Kernel is not yet implemented")
-      #return RegisterOnlyProductKernelBuilder(**self._kwargs)
+      # return RegisterOnlyProductKernelBuilder(**self._kwargs)
     else:
       raise RuntimeError('unknown gemm type')
 

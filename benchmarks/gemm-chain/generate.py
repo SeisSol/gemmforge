@@ -1,10 +1,11 @@
-from gemmforge import DenseMatrix, GenerationError, GemmGenerator
-from gemmforge.vm import vm_factory
-from jinja2 import Environment, FileSystemLoader
-import os
-import yaml
 import argparse
+import os
 
+import yaml
+from jinja2 import Environment, FileSystemLoader
+
+from gemmforge import DenseMatrix, GemmGenerator, GenerationError
+from gemmforge.vm import vm_factory
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-a',
@@ -25,10 +26,10 @@ args = parser.parse_args()
 
 
 def produce_matrix(spec):
-    return DenseMatrix(num_rows=spec['num_rows'],
-                       num_cols=spec['num_cols'],
-                       addressing=spec['addressing'],
-                       bbox=spec['bbox'])
+  return DenseMatrix(num_rows=spec['num_rows'],
+                     num_cols=spec['num_cols'],
+                     addressing=spec['addressing'],
+                     bbox=spec['bbox'])
 
 
 stream = open('params.yaml', 'r')
@@ -69,96 +70,93 @@ tmp3 = produce_matrix(spec)
 
 vm = None
 try:
-    kernels = []
-    launches = []
-    headers = []
+  kernels = []
+  launches = []
+  headers = []
 
-    vm = vm_factory(backend=args.backend,
-                    arch=args.arch,
-                    fp_type=config['fp_type'])
+  vm = vm_factory(backend=args.backend,
+                  arch=args.arch,
+                  fp_type=config['fp_type'])
 
-    gen = GemmGenerator(vm)
-    gen.set(trans_a=False,
-            trans_b=False,
-            mat_a=f_mr_t,
-            mat_b=d_k,
-            mat_c=tmp1,
-            alpha=1.0,
-            beta=0.0,
-            base_name='call_FirstGemm')
-    gen.generate()
-    flops_per_op = gen.get_flops()
+  gen = GemmGenerator(vm)
+  gen.set(trans_a=False,
+          trans_b=False,
+          mat_a=f_mr_t,
+          mat_b=d_k,
+          mat_c=tmp1,
+          alpha=1.0,
+          beta=0.0,
+          base_name='call_FirstGemm')
+  gen.generate()
+  flops_per_op = gen.get_flops()
 
-    kernels.append(gen.get_kernel())
-    launches.append(gen.get_launcher())
-    headers.append(gen.get_launcher_header())
+  kernels.append(gen.get_kernel())
+  launches.append(gen.get_launcher())
+  headers.append(gen.get_launcher_header())
 
+  gen = GemmGenerator(vm)
+  gen.set(trans_a=False,
+          trans_b=False,
+          mat_a=tmp1,
+          mat_b=a_plus,
+          mat_c=tmp2,
+          alpha=1.0,
+          beta=0.0,
+          base_name='call_SecondGemm')
+  gen.generate()
+  flops_per_op += gen.get_flops()
 
-    gen = GemmGenerator(vm)
-    gen.set(trans_a=False,
-            trans_b=False,
-            mat_a=tmp1,
-            mat_b=a_plus,
-            mat_c=tmp2,
-            alpha=1.0,
-            beta=0.0,
-            base_name='call_SecondGemm')
-    gen.generate()
-    flops_per_op += gen.get_flops()
+  kernels.append(gen.get_kernel())
+  launches.append(gen.get_launcher())
+  headers.append(gen.get_launcher_header())
 
-    kernels.append(gen.get_kernel())
-    launches.append(gen.get_launcher())
-    headers.append(gen.get_launcher_header())
+  gen = GemmGenerator(vm)
+  gen.set(trans_a=False,
+          trans_b=False,
+          mat_a=r_div_m,
+          mat_b=tmp2,
+          mat_c=i_surf,
+          alpha=1.0,
+          beta=1.0,
+          base_name='call_ThirdGemm')
+  gen.generate()
+  flops_per_op += gen.get_flops()
 
+  kernels.append(gen.get_kernel())
+  launches.append(gen.get_launcher())
+  headers.append(gen.get_launcher_header())
 
-    gen = GemmGenerator(vm)
-    gen.set(trans_a=False,
-            trans_b=False,
-            mat_a=r_div_m,
-            mat_b=tmp2,
-            mat_c=i_surf,
-            alpha=1.0,
-            beta=1.0,
-            base_name='call_ThirdGemm')
-    gen.generate()
-    flops_per_op += gen.get_flops()
+  dir_name = './gen_code'
+  if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
 
-    kernels.append(gen.get_kernel())
-    launches.append(gen.get_launcher())
-    headers.append(gen.get_launcher_header())
+  path = None
+  hw_descr = vm.get_hw_descr()
+  if hw_descr.backend == 'cuda':
+    path = os.path.join(dir_name, 'kernels.cu')
+  elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
+    path = os.path.join(dir_name, 'kernels.cpp')
 
-    dir_name = './gen_code'
-    if not os.path.exists(dir_name):
-        os.mkdir(dir_name)
+  with open(path, 'w') as file:
+    for header_file in vm.get_headers():
+      file.write(f'#include \"{header_file}\"\n')
 
-    path = None
-    hw_descr = vm.get_hw_descr()
-    if hw_descr.backend == 'cuda':
-        path = os.path.join(dir_name, 'kernels.cu')
-    elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
-        path = os.path.join(dir_name, 'kernels.cpp')
+    for kernel in kernels:
+      file.write(kernel)
+      print(kernel)
 
-    with open(path, 'w') as file:
-        for header_file in vm.get_headers():
-          file.write(f'#include \"{header_file}\"\n')
+    for launcher in launches:
+      file.write(launcher)
+      print(launcher)
 
-        for kernel in kernels:
-            file.write(kernel)
-            print(kernel)
-
-        for launcher in launches:
-            file.write(launcher)
-            print(launcher)
-
-    path = os.path.join(dir_name, 'kernels.h')
-    with open(path, 'w') as file:
-        for header in headers:
-            file.write(header)
-            print(header)
+  path = os.path.join(dir_name, 'kernels.h')
+  with open(path, 'w') as file:
+    for header in headers:
+      file.write(header)
+      print(header)
 
 except GenerationError as err:
-    print('ERROR: {}'.format(err))
-
+  print('ERROR: {}'.format(err))
 
 env = Environment(loader=FileSystemLoader(searchpath=os.path.dirname(__file__)))
 env.globals.update(zip=zip)
@@ -187,7 +185,6 @@ def get_call_size(launcher_name, params):
 
 
 template.globals['get_call_size'] = get_call_size
-
 
 names = ['i_surf', 'r_div_m', 'f_mr_t', 'd_k', 'a_plus', 'tmp1', 'tmp2', 'tmp3']
 descriptions = [i_surf, r_div_m, f_mr_t, d_k, a_plus, tmp1, tmp2, tmp3]
@@ -220,4 +217,3 @@ with open(os.path.join(dir_name, 'config.cmake'), 'w') as file:
   file.write(f'set(SM_ARCH {args.arch})\n')
   file.write(f'set(REAL_SIZE_IN_BYTES {real_size})\n')
   file.write(f'set(REAL_SIZE {real_size})\n')
-

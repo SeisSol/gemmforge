@@ -1,8 +1,9 @@
+from abc import ABC, abstractmethod
 from typing import List
+
 from gemmforge.tensor.dense import DenseTensor
 from gemmforge.vm import VM
 from ..matrix import DenseMatrix
-from abc import ABC, abstractmethod
 
 
 class AbstractUniOpThreadPolicy(ABC):
@@ -46,6 +47,7 @@ class AbstractGemmLikeThreadPolicy(AbstractBinaryOpThreadPolicy):
   @abstractmethod
   def get_num_ops_per_block(self):
     pass
+
 
 class AbstractTensorThreadPolicy(ABC):
   def __init__(self,

@@ -1,6 +1,6 @@
-from .lexic import Lexic
 from .cuda_lexic import CudaLexic
 from .hip_lexic import HipLexic
+from .lexic import Lexic
 from .sycl_lexic import SyclLexic
 
 

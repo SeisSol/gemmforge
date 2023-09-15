@@ -1,8 +1,5 @@
-from abc import ABC, abstractmethod
-from gemmforge import constructs
+from gemmforge.symbol_table import DataView
 from .abstract_loader import AbstractShrMemLoader
-from gemmforge.symbol_table import SymbolType, DataView
-from copy import deepcopy
 
 
 def _find_next_prime(number):
@@ -183,8 +180,8 @@ class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
     index_var = 'index'
     counter_var = 'counter'
 
-    assert(self._src.data_view.rows == self._dest.data_view.columns)
-    assert(self._src.data_view.columns == self._dest.data_view.rows)
+    assert (self._src.data_view.rows == self._dest.data_view.columns)
+    assert (self._src.data_view.columns == self._dest.data_view.rows)
 
     with writer.Scope():
 
@@ -214,7 +211,7 @@ class ArbitraryLeadingDimensionExactTransposePatchLoader(AbstractShrMemLoader):
           if (src_data_view.rows % self._num_threads) != 0:
             residue = src_data_view.rows - num_hops * self._num_threads
             with writer.If(f'{thread_idx_x} < {residue}'):
-              #shr_mem_addr = f'{thread_idx_x} * {src_data_view.rows} + i'
+              # shr_mem_addr = f'{thread_idx_x} * {src_data_view.rows} + i'
               glb_mem_addr = f'{thread_idx_x} + {num_hops} * {self._num_threads} + i * {src_data_view.lead_dim}'
 
               # Change [i][j] -> [j][i]

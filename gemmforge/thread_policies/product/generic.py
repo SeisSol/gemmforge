@@ -1,7 +1,8 @@
 from typing import List
+
 from gemmforge.tensor.dense import DenseTensor
-from ..abstract_thread_policy import AbstractTensorThreadPolicy, DenseMatrix
 from gemmforge.vm import VM
+from ..abstract_thread_policy import AbstractTensorThreadPolicy
 
 
 class GenericProductThreadPolicy(AbstractTensorThreadPolicy):
@@ -28,8 +29,8 @@ class GenericProductThreadPolicy(AbstractTensorThreadPolicy):
     hw_descr = self._vm.get_hw_descr()
     shr_mem_bytes = self._shr_mem_per_op * self._vm.bytes_per_real()
     if shr_mem_bytes == 0:
-        shr_mem_bytes = 1
-        print("WARNING: THREAED POLICY SHR_MEM_BYTES IS 0")
+      shr_mem_bytes = 1
+      print("WARNING: THREAED POLICY SHR_MEM_BYTES IS 0")
     mults_wrt_shr_mem = hw_descr.max_local_mem_size_per_block / shr_mem_bytes
     mults_wrt_num_regs = hw_descr.max_reg_per_block / (self._num_threads * max_num_regs_per_thread)
     mults_per_sm = int(min(mults_wrt_shr_mem, mults_wrt_num_regs))

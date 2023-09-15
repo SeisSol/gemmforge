@@ -1,15 +1,16 @@
-from . import constructs
+import hashlib
+import math
 from io import StringIO
-from .exceptions import GenerationError
+
+from gemmforge.vm import VM
+from . import constructs
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .basic_types import DataFlowDirection, GeneralLexicon
-from .symbol_table import SymbolType, Symbol
+from .exceptions import GenerationError
 from .instructions.builders import GetElementPtrBuilder
-from gemmforge.vm import VM
+from .symbol_table import Symbol, SymbolType
 from .thread_policies import TheadPolicyFactory
-import math
-import hashlib
 
 
 class CsaGenerator(GemmLikeGenerator):

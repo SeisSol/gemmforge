@@ -1,7 +1,8 @@
-from .lexic import Lexic, lexic_factory
-from .hw_descr import HwDecription, hw_descr_factory
 from math import ceil
-from typing import Type, Union, List
+from typing import Type
+
+from .hw_descr import HwDecription, hw_descr_factory
+from .lexic import Lexic, lexic_factory
 
 
 class VM:

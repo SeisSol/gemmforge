@@ -1,7 +1,8 @@
-from ..tensor import DenseTensor
-from gemmforge.exceptions import GenerationError
-from gemmforge.basic_types import DataFlowDirection
 from typing import Union
+
+from gemmforge.basic_types import DataFlowDirection
+from gemmforge.exceptions import GenerationError
+from ..tensor import DenseTensor
 
 
 class DenseMatrix:
@@ -19,7 +20,7 @@ class DenseMatrix:
 
     if leading_dimension == None:
       # TODO: check if the assumption holds that a matrix will be always transposed,
-      # if not then we need to change the leading dimension when the matrix is 
+      # if not then we need to change the leading dimension when the matrix is
       # transposed on-the-fly when loaded into the shared memory
       self.leading_dimension = self.num_rows
     else:
@@ -77,13 +78,16 @@ class DenseMatrix:
     self.name = name
 
   def __str__(self):
-    string = "num. rows = {}\n".format(self.num_rows)
-    string += "num. columns = {}\n".format(self.num_cols)
-    string += "bounding box = {}\n".format(self.bbox)
-    string += "addressing = {}\n".format(self.addressing)
-    string += "num. actual rows = {}\n".format(self.get_actual_num_rows())
-    string += "num. actual cols = {}\n".format(self.get_actual_num_cols())
-    string += "leading dimension = {}\n".format(self.leading_dimension)
+    string = "DenseMatrix{"
+    string += "name = " + str(self.name) + "\n"
+    string += "\tnum. rows = {}\n".format(self.num_rows)
+    string += "\tnum. columns = {}\n".format(self.num_cols)
+    string += "\tbounding box = {}\n".format(self.bbox)
+    string += "\taddressing = {}\n".format(self.addressing)
+    string += "\tnum. actual rows = {}\n".format(self.get_actual_num_rows())
+    string += "\tnum. actual cols = {}\n".format(self.get_actual_num_cols())
+    string += "\tleading dimension = {}\n".format(self.leading_dimension)
+    string += "\tdirection = {}\n".format(self.direction) + "}"
     return string
 
   def __repr__(self):
@@ -91,7 +95,8 @@ class DenseMatrix:
     string += "name = " + str(self.name) + ", "
     string += "num. rows = {}, ".format(self.num_rows)
     string += "num. columns = {}, ".format(self.num_cols)
-    string += "leading dimension = {}".format(self.leading_dimension)
+    string += "leading dimension = {}, ".format(self.leading_dimension)
+    string += "direction = {}".format(self.direction)
     string += "}"
     return string
 
@@ -100,3 +105,6 @@ class DenseMatrix:
     denseTensor.set_name(self.name)
     denseTensor.set_data_flow_direction(self.direction)
     return denseTensor
+
+  def get_total_size(self):
+    return self.num_rows * self.num_cols

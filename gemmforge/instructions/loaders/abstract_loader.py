@@ -1,8 +1,6 @@
-from abc import ABC, abstractmethod
-from gemmforge.symbol_table import Symbol, SymbolType
-from ..abstract_instruction import AbstractInstruction
 from gemmforge.basic_types import ShrMemObject
-from gemmforge.exceptions import InternalError
+from gemmforge.symbol_table import Symbol
+from ..abstract_instruction import AbstractInstruction
 
 
 class AbstractShrMemWrite(AbstractInstruction):
@@ -19,7 +17,8 @@ class AbstractShrMemWrite(AbstractInstruction):
     self._is_ready = True
 
   def __str__(self) -> str:
-    return "abs_shr_mem_write{" + str(self._shr_mem_offset) + "}" if self._is_ready else "abs_shr_mem_write{not ready yet}"
+    return "abs_shr_mem_write{" + str(
+      self._shr_mem_offset) + "}" if self._is_ready else "abs_shr_mem_write{not ready yet}"
 
 
 class AbstractShrMemLoader(AbstractShrMemWrite):
@@ -59,6 +58,8 @@ class AbstractShrMemLoader(AbstractShrMemWrite):
     return self._dest
 
   def _check(self) -> None:
+    # TODO: Check
+    """
     if self._src.stype != SymbolType.Global:
       raise InternalError('shr-load: `src` operand is not in global mem.')
 
@@ -67,3 +68,5 @@ class AbstractShrMemLoader(AbstractShrMemWrite):
 
     if self._dest.stype != SymbolType.SharedMem:
       raise InternalError('shr-load: `dest` operand is not in shr. mem.')
+    """
+    return

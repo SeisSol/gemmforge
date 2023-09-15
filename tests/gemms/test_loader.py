@@ -1,8 +1,8 @@
-from gemmforge import DenseMatrix
-from gemmforge import GemmKernelType
-from itertools import product
 import functools
 from copy import deepcopy
+from itertools import product
+
+from gemmforge import DenseMatrix, GemmKernelType
 
 
 class LoaderError(Exception):
@@ -43,15 +43,15 @@ class TestLoader:
   def _produce_matrix(self, matrix_spec):
     if "leading_dimension" in matrix_spec:
       return DenseMatrix(num_rows=matrix_spec["rows"],
-                        num_cols=matrix_spec["cols"],
-                        addressing=matrix_spec["addressing"],
-                        bbox=matrix_spec["bbox"],
-                        leading_dimension=matrix_spec["leading_dimension"])
+                         num_cols=matrix_spec["cols"],
+                         addressing=matrix_spec["addressing"],
+                         bbox=matrix_spec["bbox"],
+                         leading_dimension=matrix_spec["leading_dimension"])
     else:
       return DenseMatrix(num_rows=matrix_spec["rows"],
-                        num_cols=matrix_spec["cols"],
-                        addressing=matrix_spec["addressing"],
-                        bbox=matrix_spec["bbox"])
+                         num_cols=matrix_spec["cols"],
+                         addressing=matrix_spec["addressing"],
+                         bbox=matrix_spec["bbox"])
 
   def is_param(self, param):
     if isinstance(param, str):
@@ -94,6 +94,7 @@ def _build_flatten_table(flatten_table, original_table, combo_key=()):
       _build_flatten_table(flatten_table, original_table[key], (*combo_key, key))
   else:
     flatten_table[combo_key] = original_table
+
 
 def _set_value(table, combo_key, value):
   if len(combo_key) == 1:

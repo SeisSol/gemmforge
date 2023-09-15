@@ -1,11 +1,11 @@
 from typing import List
+
+from gemmforge.basic_types import DataFlowDirection, GeneralLexicon
+from gemmforge.instructions import ShrMemBasedProduct, SyncThreads
 from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
 from gemmforge.instructions.builders.alloctor_builder import ShrMemNewAllocBuilder
-from gemmforge.symbol_table import SymbolType, Symbol
-from gemmforge.instructions import SyncThreads
-from gemmforge.instructions import ShrMemBasedProduct
 from gemmforge.instructions.loaders import shm_mem_loader_factory
-from gemmforge.basic_types import DataFlowDirection, GeneralLexicon
+from gemmforge.symbol_table import Symbol, SymbolType
 
 
 class ShrMemBasedProductBuilder(AbstractBuilder):
@@ -48,9 +48,9 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
       if op.obj.direction == DataFlowDirection.SOURCE:
         print(op)
         self._symbol_table.add_scope()
-        self._make_loader_and_symbol(operand=op, do_transpose=False) 
+        self._make_loader_and_symbol(operand=op, do_transpose=False)
         self._ops.append(op)
-      #elif op.obj.direction == DataFlowDirection.SOURCESINK:
+      # elif op.obj.direction == DataFlowDirection.SOURCESINK:
       #  builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
       #  symbol = builder.build(op.obj.get_name(), op.obj.get_volume(), obj)
       #  self._instructions.extend(builder.get_instructions())
@@ -84,7 +84,6 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     self._instructions.append(load_op)
     self._load_instrs.append(load_op)
     return shr_mem_region
-
 
   def _make_allocator_and_symbol(self, name, operand):
     builder = ShrMemNewAllocBuilder(vm=self._vm, symbol_table=self._symbol_table)

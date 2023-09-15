@@ -1,8 +1,8 @@
-from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
-from gemmforge.instructions.builders import GetElementPtrBuilder
-from gemmforge.instructions.builders import RegistersAllocBuilder
-from gemmforge.instructions import StoreRegToGlb
 from abc import abstractmethod
+
+from gemmforge.instructions import StoreRegToGlb
+from gemmforge.instructions.builders import GetElementPtrBuilder, RegistersAllocBuilder
+from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
 
 
 class BaseGemmKernelBuilder(AbstractBuilder):
@@ -57,7 +57,6 @@ class BaseGemmKernelBuilder(AbstractBuilder):
                           self._beta,
                           self._num_compute_threads)
     self._instructions.append(store)
-
 
   def build(self):
     self.build_prologue()

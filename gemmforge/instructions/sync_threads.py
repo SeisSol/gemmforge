@@ -1,6 +1,4 @@
 from .abstract_instruction import AbstractInstruction
-from gemmforge.vm import VM
-from gemmforge.exceptions import InternalError
 
 
 class SyncThreads(AbstractInstruction):

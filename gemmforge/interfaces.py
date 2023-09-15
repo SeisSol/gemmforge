@@ -1,6 +1,7 @@
 from .matrix import DenseMatrix
 from .tensor import DenseTensor
 
+
 class YatetoInterface:
   def __init__(self):
     pass
@@ -56,7 +57,6 @@ class YatetoInterface:
 
     return bbox
 
-
   @classmethod
   def produce_dense_matrix(cls,
                            yateto_ranges,
@@ -70,11 +70,10 @@ class YatetoInterface:
                                      transpose=transpose)
 
     return DenseMatrix(num_rows=yateto_memory_layout_bbox[0].stop,
-                      num_cols=yateto_memory_layout_bbox[1].stop,
-                      addressing=addressing,
-                      bbox=gemmforge_bbox,
-                      leading_dimension=leading_dimension)
-
+                       num_cols=yateto_memory_layout_bbox[1].stop,
+                       addressing=addressing,
+                       bbox=gemmforge_bbox,
+                       leading_dimension=leading_dimension)
 
   @classmethod
   def produce_dense_tensor(cls, yateto_ranges, yateto_memory_layout_bbox, addressing, transpose):

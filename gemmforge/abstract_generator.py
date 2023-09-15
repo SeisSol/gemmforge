@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from .vm import VM
-from .exceptions import GenerationError, InternalError
-from .basic_types import DataFlowDirection
-from .basic_types import GeneralLexicon
+
+from .basic_types import DataFlowDirection, GeneralLexicon
 from .common import get_extra_offset_name
+from .exceptions import GenerationError, InternalError
+from .vm import VM
 
 
 class AbstractGenerator(ABC):

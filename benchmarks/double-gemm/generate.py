@@ -1,9 +1,10 @@
-from gemmforge import DenseMatrix, GenerationError, GemmGenerator
-from gemmforge.vm import vm_factory
-import os
-import yaml
 import argparse
+import os
 
+import yaml
+
+from gemmforge import DenseMatrix, GemmGenerator, GenerationError
+from gemmforge.vm import vm_factory
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--realsize', type=int, action='store',
@@ -22,10 +23,10 @@ args = parser.parse_args()
 
 
 def produce_matrix(spec):
-    return DenseMatrix(num_rows=spec['num_rows'],
-                       num_cols=spec['num_cols'],
-                       addressing=spec['addressing'],
-                       bbox=spec['bbox'])
+  return DenseMatrix(num_rows=spec['num_rows'],
+                     num_cols=spec['num_cols'],
+                     addressing=spec['addressing'],
+                     bbox=spec['bbox'])
 
 
 stream = open('params.yaml', 'r')
@@ -48,74 +49,73 @@ alpha = config['alpha']
 beta = config['beta']
 
 try:
-    kernels = []
-    launches = []
-    headers = []
+  kernels = []
+  launches = []
+  headers = []
 
-    vm = vm_factory(backend=args.backend,
-                    arch=args.arch,
-                    fp_type='float' if args.realsize == 4 else 'double')
+  vm = vm_factory(backend=args.backend,
+                  arch=args.arch,
+                  fp_type='float' if args.realsize == 4 else 'double')
 
-    gen = GemmGenerator(vm)
-    gen.set(trans_a=config['trans_a'],
-            trans_b=config['trans_b'],
-            mat_a=mat_a,
-            mat_b=mat_b,
-            mat_c=tmp,
-            alpha=1.0,
-            beta=0.0,
-            base_name='callFirstGemm')
-    gen.generate()
+  gen = GemmGenerator(vm)
+  gen.set(trans_a=config['trans_a'],
+          trans_b=config['trans_b'],
+          mat_a=mat_a,
+          mat_b=mat_b,
+          mat_c=tmp,
+          alpha=1.0,
+          beta=0.0,
+          base_name='callFirstGemm')
+  gen.generate()
 
-    kernels.append(gen.get_kernel())
-    launches.append(gen.get_launcher())
-    headers.append(gen.get_launcher_header())
+  kernels.append(gen.get_kernel())
+  launches.append(gen.get_launcher())
+  headers.append(gen.get_launcher_header())
 
-    gen = GemmGenerator(vm)
-    gen.set(trans_a=config['trans_c'],
-            trans_b=False,
-            mat_a=mat_c,
-            mat_b=tmp,
-            mat_c=mat_d,
-            alpha=config['alpha'],
-            beta=config['beta'],
-            base_name='callSecondGemm')
-    gen.generate()
+  gen = GemmGenerator(vm)
+  gen.set(trans_a=config['trans_c'],
+          trans_b=False,
+          mat_a=mat_c,
+          mat_b=tmp,
+          mat_c=mat_d,
+          alpha=config['alpha'],
+          beta=config['beta'],
+          base_name='callSecondGemm')
+  gen.generate()
 
-    kernels.append(gen.get_kernel())
-    launches.append(gen.get_launcher())
-    headers.append(gen.get_launcher_header())
+  kernels.append(gen.get_kernel())
+  launches.append(gen.get_launcher())
+  headers.append(gen.get_launcher_header())
 
+  dir_name = './gen_code'
+  if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
 
-    dir_name = './gen_code'
-    if not os.path.exists(dir_name):
-        os.mkdir(dir_name)
+  path = None
+  hw_descr = vm.get_hw_descr()
+  if hw_descr.backend == 'cuda':
+    path = os.path.join(dir_name, 'kernels.cu')
+  elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
+    path = os.path.join(dir_name, 'kernels.cpp')
 
-    path = None
-    hw_descr = vm.get_hw_descr()
-    if hw_descr.backend == 'cuda':
-        path = os.path.join(dir_name, 'kernels.cu')
-    elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
-        path = os.path.join(dir_name, 'kernels.cpp')
+  with open(path, 'w') as file:
+    for header_file in vm.get_headers():
+      file.write(f'#include \"{header_file}\"\n')
 
-    with open(path, 'w') as file:
-        for header_file in vm.get_headers():
-          file.write(f'#include \"{header_file}\"\n')
+    for kernel in kernels:
+      file.write(kernel)
+      print(kernel)
 
-        for kernel in kernels:
-            file.write(kernel)
-            print(kernel)
+    for launcher in launches:
+      file.write(launcher)
+      print(launcher)
 
-        for launcher in launches:
-            file.write(launcher)
-            print(launcher)
-
-    path = os.path.join(dir_name, 'kernels.h')
-    with open(path, 'w') as file:
-        for header in headers:
-            file.write(header)
-            print(header)
+  path = os.path.join(dir_name, 'kernels.h')
+  with open(path, 'w') as file:
+    for header in headers:
+      file.write(header)
+      print(header)
 
 
 except GenerationError as err:
-    print('ERROR: {}'.format(err))
+  print('ERROR: {}'.format(err))

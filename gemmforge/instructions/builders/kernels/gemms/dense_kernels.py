@@ -1,8 +1,7 @@
-from .base_kernel import BaseGemmKernelBuilder
-from gemmforge.instructions.builders import ShrMemAllocBuilder
-from gemmforge.instructions.builders import ShrMemBasedDenseGemmBuilder
-from gemmforge.instructions.builders import RegisterOnlyDenseGemmBuilder
 from gemmforge.basic_types import ShrMemObject
+from gemmforge.instructions.builders import RegisterOnlyDenseGemmBuilder, ShrMemAllocBuilder, \
+    ShrMemBasedDenseGemmBuilder
+from .base_kernel import BaseGemmKernelBuilder
 
 
 class ShrMemBasedDenseGemmKernelBuilder(BaseGemmKernelBuilder):

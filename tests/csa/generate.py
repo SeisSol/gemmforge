@@ -1,12 +1,12 @@
-from gemmforge import GenerationError, CsaGenerator
-from gemmforge.vm import vm_factory
-from gemmforge import constructs
-from io import StringIO
-from test_loader import TestLoader
-import os
-import yaml
 import argparse
+import os
+from io import StringIO
 
+import yaml
+
+from gemmforge import CsaGenerator, GenerationError, constructs
+from gemmforge.vm import vm_factory
+from test_loader import TestLoader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--specfile', action='store', help='path to a yaml file with a test spec')

@@ -1,11 +1,12 @@
 from typing import List
+
 from gemmforge.tensor.dense import DenseTensor
 from gemmforge.thread_policies.product.generic import GenericProductThreadPolicy
 from gemmforge.vm import VM
-from ..matrix import DenseMatrix
+from .csa.generic import GenericCsaThreadPolicy
 from .gemm.generic import GenericGemmThreadPolicy
 from .gemm.only_register_based import OnlyRegisterBasedThreadPolicy
-from .csa.generic import GenericCsaThreadPolicy
+from ..matrix import DenseMatrix
 
 
 class TheadPolicyFactory:
@@ -56,16 +57,16 @@ class TheadPolicyFactory:
 
   @classmethod
   def get_product_policy(cls,
-               vm: VM,
-               shr_mem_per_op: int,
-               num_threads: int,
-               ops: List[DenseTensor],
-               res: DenseTensor):
+                         vm: VM,
+                         shr_mem_per_op: int,
+                         num_threads: int,
+                         ops: List[DenseTensor],
+                         res: DenseTensor):
     default_policy = GenericProductThreadPolicy(vm,
-                                       shr_mem_per_op,
-                                       num_threads,
-                                       ops,
-                                       res)
+                                                shr_mem_per_op,
+                                                num_threads,
+                                                ops,
+                                                res)
     hw_descr = vm.get_hw_descr()
     if hw_descr.manufacturer in TheadPolicyFactory.ALLOWED_MANUFACTURES:
       return default_policy

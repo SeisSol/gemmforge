@@ -1,13 +1,10 @@
+from gemmforge.basic_types import DataFlowDirection
+from gemmforge.instructions.builders import GetElementPtrBuilder, RegistersAllocBuilder, ShrMemAllocBuilder
 from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
-from gemmforge.instructions.builders import ShrMemAllocBuilder
-from gemmforge.basic_types import DataFlowDirection, ShrMemObject
-from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
-from gemmforge.instructions.builders import GetElementPtrBuilder
-from gemmforge.instructions.builders import RegistersAllocBuilder
-from gemmforge.instructions import StoreRegToGlb
 from gemmforge.instructions.builders.alloctor_builder import ShrMemNewAllocBuilder
 from gemmforge.instructions.builders.product.product_builder import ShrMemBasedProductBuilder
 from gemmforge.instructions.store import StoreRegToGlbTensor
+
 
 class ShrMemBasedProductKernelBuilder(AbstractBuilder):
   """ This is the base class for building complete gemm kernels."""
@@ -37,8 +34,7 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
   def build_prologue(self):
     builder = GetElementPtrBuilder(self._vm, self._symbol_table)
     print(", ".join([str(x) for x in self._symbol_table.from_global.values()]))
-    #print(", ".join([str(x) for x in self._symbol_table]))
-    #raise Exception("uwu")
+    # print(", ".join([str(x) for x in self._symbol_table]))
     for symbol in self._symbol_table.from_global.values():
       print(symbol)
       builder.build(symbol)
@@ -64,7 +60,7 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
         builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
         symbol = builder.build(tensor.name, tensor.get_volume(), tensor)
         self._instructions.extend(builder.get_instructions())
-        #self._tmp_objects.append(builder.get_resultant_obj())
+        # self._tmp_objects.append(builder.get_resultant_obj())
 
   def build_kernel(self):
     builder = ShrMemAllocBuilder(self._vm, self._symbol_table)
@@ -74,10 +70,10 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
 
     # generate the rest instructions i.e., load to shr. mem, compute, store
     builder = ShrMemBasedProductBuilder(self._vm,
-                                          self._symbol_table,
-                                          self._reg_array_obj,
-                                          self._shr_mem_obj,
-                                          self._num_active_threads)
+                                        self._symbol_table,
+                                        self._reg_array_obj,
+                                        self._shr_mem_obj,
+                                        self._num_active_threads)
 
     builder.build(ops=[self._symbol_table[tensor] for tensor in self._tensors],
                   dest=self._symbol_table[self._reg_array_obj],
@@ -92,14 +88,13 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     for tensor in self._tensors:
       if tensor.direction == DataFlowDirection.SINK:
         result_tensor = tensor
-    assert(result_tensor != None)
+    assert (result_tensor != None)
 
     store = StoreRegToGlbTensor(self._vm,
                                 self._symbol_table[result_tensor],
                                 self._symbol_table[self._reg_array_obj],
                                 self._num_compute_threads)
     self._instructions.append(store)
-
 
   def build(self):
     self.build_prologue()

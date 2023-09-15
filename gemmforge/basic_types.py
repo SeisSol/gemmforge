@@ -21,6 +21,7 @@ class GeneralLexicon:
   SHR_MEM_REGION_PREFIX = 'shrRegion'
   REG_NAME = 'reg'
 
+
 class RegMemObject:
   def __init__(self, name, size=None):
     self.name = name
@@ -28,6 +29,9 @@ class RegMemObject:
 
   def __str__(self):
     return f'name: {self.name}; size = {self.size}'
+
+  def __repr__(self):
+    return self.__str__()
 
 
 class ShrMemObject:
@@ -58,3 +62,6 @@ class ShrMemObject:
   def __str__(self):
     total_size = self.get_total_size() if self._size_per_mult else 'not yet defined'
     return f'name {self.name}: total size = {total_size}'
+
+  def __repr__(self):
+    return self.__str__()

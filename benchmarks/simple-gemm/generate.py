@@ -1,10 +1,10 @@
-from gemmforge import DenseMatrix, GenerationError
-from gemmforge import GemmGenerator, GemmKernelType
-from gemmforge.vm import vm_factory
-import os
-import yaml
 import argparse
+import os
 
+import yaml
+
+from gemmforge import DenseMatrix, GemmGenerator, GemmKernelType, GenerationError
+from gemmforge.vm import vm_factory
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--realsize', type=int, action='store',
@@ -21,11 +21,12 @@ parser.add_argument('-b',
                     default='cuda')
 args = parser.parse_args()
 
+
 def produce_matrix(spec):
-    return DenseMatrix(num_rows=spec['num_rows'],
-                       num_cols=spec['num_cols'],
-                       addressing=spec['addressing'],
-                       bbox=spec['bbox'])
+  return DenseMatrix(num_rows=spec['num_rows'],
+                     num_cols=spec['num_cols'],
+                     addressing=spec['addressing'],
+                     bbox=spec['bbox'])
 
 
 stream = open('params.yaml', 'r')
@@ -40,49 +41,49 @@ else:
   gemm_type = GemmKernelType.AUTO
 
 try:
-    vm = vm_factory(backend=args.backend,
-                    arch=args.arch,
-                    fp_type='float' if args.realsize == 4 else 'double')
+  vm = vm_factory(backend=args.backend,
+                  arch=args.arch,
+                  fp_type='float' if args.realsize == 4 else 'double')
 
-    gen = GemmGenerator(vm, gemm_type)
-    gen.set(trans_a=config['trans_a'],
-            trans_b=config['trans_b'],
-            mat_a=mat_a,
-            mat_b=mat_b,
-            mat_c=mat_c,
-            alpha=config['alpha'],
-            beta=config['beta'],
-            base_name='gemm')
-    gen.generate()
+  gen = GemmGenerator(vm, gemm_type)
+  gen.set(trans_a=config['trans_a'],
+          trans_b=config['trans_b'],
+          mat_a=mat_a,
+          mat_b=mat_b,
+          mat_c=mat_c,
+          alpha=config['alpha'],
+          beta=config['beta'],
+          base_name='gemm')
+  gen.generate()
 
-    krnl = gen.get_kernel()
-    lnch = gen.get_launcher()
-    header = gen.get_launcher_header()
+  krnl = gen.get_kernel()
+  lnch = gen.get_launcher()
+  header = gen.get_launcher_header()
 
-    print(krnl)
-    print(lnch)
+  print(krnl)
+  print(lnch)
 
-    dir_name = './gen_code'
-    if not os.path.exists(dir_name):
-        os.mkdir(dir_name)
+  dir_name = './gen_code'
+  if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
 
-    path = None
-    hw_descr = vm.get_hw_descr()
-    if hw_descr.backend == 'cuda':
-        path = os.path.join(dir_name, 'kernels.cu')
-    elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
-        path = os.path.join(dir_name, 'kernels.cpp')
+  path = None
+  hw_descr = vm.get_hw_descr()
+  if hw_descr.backend == 'cuda':
+    path = os.path.join(dir_name, 'kernels.cu')
+  elif hw_descr.backend == 'hip' or hw_descr.backend == 'hipsycl' or hw_descr.backend == 'oneapi':
+    path = os.path.join(dir_name, 'kernels.cpp')
 
-    with open(path, 'w') as file:
-        for header_file in vm.get_headers():
-          file.write(f'#include \"{header_file}\"\n')
+  with open(path, 'w') as file:
+    for header_file in vm.get_headers():
+      file.write(f'#include \"{header_file}\"\n')
 
-        file.write(krnl)
-        file.write(lnch)
+    file.write(krnl)
+    file.write(lnch)
 
-    path = os.path.join(dir_name, 'kernels.h')
-    with open(path, 'w') as file:
-        file.write(header)
+  path = os.path.join(dir_name, 'kernels.h')
+  with open(path, 'w') as file:
+    file.write(header)
 
 except GenerationError as err:
-    print('ERROR: {}'.format(err))
+  print('ERROR: {}'.format(err))

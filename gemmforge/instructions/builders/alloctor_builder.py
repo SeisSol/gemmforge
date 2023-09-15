@@ -1,10 +1,10 @@
-from gemmforge.instructions.allocate import ShrMemNewAlloc
-from .abstract_builder import AbstractBuilder
-from gemmforge.symbol_table import SymbolType, Symbol
-from gemmforge.basic_types import RegMemObject, ShrMemObject
-from gemmforge.instructions import RegisterAlloc, ShrMemAlloc
-from gemmforge.basic_types import GeneralLexicon
 from abc import abstractmethod
+
+from gemmforge.basic_types import GeneralLexicon, RegMemObject, ShrMemObject
+from gemmforge.instructions import RegisterAlloc, ShrMemAlloc
+from gemmforge.instructions.allocate import ShrMemNewAlloc
+from gemmforge.symbol_table import Symbol, SymbolType
+from .abstract_builder import AbstractBuilder
 
 
 class AbstractAllocBuilder(AbstractBuilder):
@@ -43,6 +43,7 @@ class ShrMemAllocBuilder(AbstractAllocBuilder):
     self._counter += 1
     return name
 
+
 class ShrMemNewAllocBuilder(AbstractAllocBuilder):
   def __init__(self, vm, symbol_table):
     super(ShrMemNewAllocBuilder, self).__init__(vm, symbol_table)
@@ -50,7 +51,7 @@ class ShrMemNewAllocBuilder(AbstractAllocBuilder):
 
   def build(self, name, size, obj):
     self._reset()
-    #self._obj = ShrMemObject(name, size)
+    # self._obj = ShrMemObject(name, size)
     dest = Symbol(name=name,
                   stype=SymbolType.SharedMem,
                   obj=obj)

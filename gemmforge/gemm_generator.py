@@ -1,17 +1,17 @@
+import hashlib
+import math
+from io import StringIO
+
 from gemmforge.instructions.ptr_manip import GetElementPtr
 from . import constructs
-from io import StringIO
-from .exceptions import GenerationError
 from .abstract_gemmlike_generator import GemmLikeGenerator
-from .basic_types import GeneralLexicon, DataFlowDirection
-from .symbol_table import Symbol, SymbolType
 from .abstract_generator import AbstractGenerator as Generator
-from .instructions.builders.kernels import GemmKernelsFactory
-from .instructions.builders.kernels import GemmKernelType
-from .vm import VM
+from .basic_types import DataFlowDirection, GeneralLexicon
+from .exceptions import GenerationError
+from .instructions.builders.kernels import GemmKernelType, GemmKernelsFactory
+from .symbol_table import Symbol, SymbolType
 from .thread_policies import TheadPolicyFactory
-import math
-import hashlib
+from .vm import VM
 
 
 class GemmGenerator(GemmLikeGenerator):
@@ -31,22 +31,30 @@ class GemmGenerator(GemmLikeGenerator):
     self._shr_mem_obj = None
     self._shr_mem_loads = []
 
+    self._factory = GemmKernelsFactory
+
   def set(self, trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, base_name=None):
     self._instructions = []
 
     self._mat_a = mat_a
     self._trans_a = trans_a
-    self._mat_a.set_name('A')
-    self._mat_a.set_data_flow_direction(DataFlowDirection.SOURCE)
+    if self._mat_a.name == None:
+      self._mat_a.set_name('A')
+    if self._mat_a.direction == None:
+      self._mat_a.set_data_flow_direction(DataFlowDirection.SOURCE)
 
     self._mat_b = mat_b
     self._trans_b = trans_b
-    self._mat_b.set_name('B')
-    self._mat_b.set_data_flow_direction(DataFlowDirection.SOURCE)
+    if self._mat_b.name == None:
+      self._mat_b.set_name('B')
+    if self._mat_b.direction == None:
+      self._mat_b.set_data_flow_direction(DataFlowDirection.SOURCE)
 
     self._mat_c = mat_c
-    self._mat_c.set_name('C')
-    self._mat_c.set_data_flow_direction(DataFlowDirection.SINK)
+    if self._mat_c.name == None:
+      self._mat_c.set_name('C')
+    if self._mat_c.direction == None:
+      self._mat_c.set_data_flow_direction(DataFlowDirection.SINK)
     self._matrices = [self._mat_a, self._mat_b, self._mat_c]
 
     self._alpha = alpha
@@ -118,17 +126,16 @@ class GemmGenerator(GemmLikeGenerator):
     with constructs.Cpp(src) as file:
       for instr in self._instructions:
         if instr.is_ready():
-          #TODO: This feels hacky
+          # TODO: This feels hacky
           if isinstance(instr, GetElementPtr):
             for _, value in gemm_loop_offsets.items():
               if value[0] == instr._src.name:
                 instr._loop_additional_offset = value[1]
           instr.gen_code(file)
         else:
-          raise GenerationError("gemm_generator: requested instr is not ready")
+          raise GenerationError(f"gemm_generator: requested instr is not ready: {instr}")
 
       self._kernel = src.getvalue()
-
 
   def _generate_launcher(self):
     src = StringIO()
@@ -239,7 +246,7 @@ class GemmGenerator(GemmLikeGenerator):
               'num_compute_threads': self._num_compute_threads,
               'num_active_threads': self._num_active_threads}
 
-    kernel_factory = GemmKernelsFactory(**params)
+    kernel_factory = self._factory(**params)
     self._kernel_type = kernel_factory.gemm_kernel_type()
 
     gemm_kernel_builder = kernel_factory.get_builder()

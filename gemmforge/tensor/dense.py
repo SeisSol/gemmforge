@@ -1,8 +1,9 @@
-from gemmforge.exceptions import GenerationError
-from gemmforge.basic_types import DataFlowDirection
-from typing import Union
 from functools import reduce
 from operator import mul
+from typing import Union
+
+from gemmforge.basic_types import DataFlowDirection
+
 
 class DenseTensor:
   ADDRESSING = ["none", "strided", "pointer_based"]
@@ -70,32 +71,31 @@ class DenseTensor:
   def get_accumulated_dimensions(self):
     cell_counts = [1]
     for dim in self.get_dimensions():
-      cell_counts.append(dim*cell_counts[len(cell_counts) -1])
+      cell_counts.append(dim * cell_counts[len(cell_counts) - 1])
     return cell_counts
 
   def get_elements_needed_for_dimensions_skip(self):
     skip_counts = [1]
     for dim in self.get_dimensions()[:-2]:
-      skip_counts.append(dim*skip_counts[len(skip_counts) -1])
+      skip_counts.append(dim * skip_counts[len(skip_counts) - 1])
     return skip_counts
 
-
   def get_offset_to_first_element(self):
-    #partiallyReducedDimensions = [1]
-    #for i in range(1, len(self.dimensions)):
+    # partiallyReducedDimensions = [1]
+    # for i in range(1, len(self.dimensions)):
     #  reducedOffset = partiallyReducedDimensions[i - 1] * self.dimensions[i - 1]
     #  assert reducedOffset == int(reducedOffset)
     #  partiallyReducedDimensions.append(int(reducedOffset))
-    #print("PRD: ", partiallyReducedDimensions)
+    # print("PRD: ", partiallyReducedDimensions)
 
-    #totalOffset  = 0
-    #totalOffset += 1 * self.bbox[0]
-    #for i in range(1, len(self.dimensions)):
+    # totalOffset  = 0
+    # totalOffset += 1 * self.bbox[0]
+    # for i in range(1, len(self.dimensions)):
     #  totalOffset += partiallyReducedDimensions[i - 1] * self.bbox[i - 1]
     return 0
-    #print("TOTALOFFSET: ", totalOffset)
+    # print("TOTALOFFSET: ", totalOffset)
 
-    #return int(totalOffset)
+    # return int(totalOffset)
 
   def set_name(self, name):
     self.name = name

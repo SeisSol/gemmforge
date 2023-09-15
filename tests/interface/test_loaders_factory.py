@@ -1,13 +1,12 @@
 import unittest
+
 from gemmforge import DenseMatrix
-from gemmforge.vm import vm_factory
-from gemmforge.instructions.loaders import shm_mem_loader_factory
-from gemmforge.instructions.loaders import ExactPatchLoader, ExtendedPatchLoader
-from gemmforge.instructions.loaders import ExactTransposePatchLoader
-from gemmforge.instructions.loaders import ExtendedTransposePatchLoader
 from gemmforge.basic_types import ShrMemObject
-from gemmforge.symbol_table import Symbol, SymbolType, InverseSymbolTable
-from gemmforge.symbol_table import DataView
+from gemmforge.instructions.loaders import ExactPatchLoader, ExactTransposePatchLoader, ExtendedPatchLoader, \
+    ExtendedTransposePatchLoader, shm_mem_loader_factory
+from gemmforge.symbol_table import DataView, InverseSymbolTable, Symbol, SymbolType
+from gemmforge.vm import vm_factory
+
 
 # TODO: Test cases for ArbitraryLeadingDimensionsExactTranspsoePatchLoaders
 # and benchmarks for them
@@ -15,7 +14,7 @@ class TestLoaders(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-      pass
+    pass
 
   @classmethod
   def tearDownClass(cls):
@@ -24,7 +23,7 @@ class TestLoaders(unittest.TestCase):
   def setUp(self):
     self._vm = vm_factory(arch='sm_60', backend='cuda', fp_type='float')
     self._table = InverseSymbolTable()
-    
+
     self._shr_mem_obj = ShrMemObject(name='shr_mem', size=1000, mults_per_block=1)
     self._shr_mem_symbol = Symbol(name='shr_mem',
                                   stype=SymbolType.SharedMem,
@@ -39,12 +38,12 @@ class TestLoaders(unittest.TestCase):
                              columns=matrix.get_actual_num_cols(),
                              lead_dim=matrix.leading_dimension,
                              is_transposed=False)
-    
+
     dest = Symbol(name='dest',
                   stype=SymbolType.SharedMem,
                   obj=matrix)
     return src, dest
-    
+
   def tearDown(self):
     pass
 
@@ -55,7 +54,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 15, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,
@@ -86,7 +85,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 15, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,
@@ -102,7 +101,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 34, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,
@@ -118,7 +117,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 15, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,
@@ -133,7 +132,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 34, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,
@@ -149,7 +148,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 15, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,
@@ -164,7 +163,7 @@ class TestLoaders(unittest.TestCase):
                          addressing='none',
                          bbox=[0, 0, 34, 20])
     src, dest = self._make_symbols(matrix)
-    
+
     loader = shm_mem_loader_factory(vm=self._vm,
                                     dest=dest,
                                     src=src,

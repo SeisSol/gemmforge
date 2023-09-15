@@ -1,6 +1,7 @@
+from abc import ABC
+
 from .abstract_generator import AbstractGenerator
 from .symbol_table import InverseSymbolTable
-from abc import ABC
 
 
 class GemmLikeGenerator(AbstractGenerator, ABC):

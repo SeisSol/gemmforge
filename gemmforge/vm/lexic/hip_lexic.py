@@ -1,5 +1,4 @@
 from . import CudaLexic
-from .lexic import Lexic
 
 
 class HipLexic(CudaLexic):

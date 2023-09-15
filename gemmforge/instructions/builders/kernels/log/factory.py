@@ -1,26 +1,8 @@
-from enum import Enum
-
-from .dense_kernels import RegisterOnlyDenseGemmKernelBuilder, ShrMemBasedDenseGemmKernelBuilder
-
-
-class GemmKernelType(Enum):
-  AUTO = 0
-  SHR_MEM_BASED = 1
-  REGISTER_ONLY_BASED = 2
-
-  @classmethod
-  def to_str(cls, value):
-    if value == "auto":
-      return GemmKernelType.AUTO
-    if value == "shr_mem":
-      return GemmKernelType.SHR_MEM_BASED
-    elif value == "register_only":
-      return GemmKernelType.REGISTER_ONLY_BASED
-    else:
-      RuntimeError('unknown representation of gemm kernel type as `str`')
+from .log_kernels import ShrMemBasedLoopOverGemmKernelBuilder
+from ..gemms.factory import GemmKernelType
 
 
-class GemmKernelsFactory:
+class LoopOverGemmKernelsFactory:
   def __init__(self, **kwargs):
     self._kwargs = kwargs
     self._vm = kwargs['vm']
@@ -30,7 +12,7 @@ class GemmKernelsFactory:
   def _auto_select(self):
     model = self._hw_descr.model
     if model == 'pvc':
-      return GemmKernelType.REGISTER_ONLY_BASED
+      raise Exception("Register Only Loop Over Gemm Kernel is not yet implemented")
     else:
       return GemmKernelType.SHR_MEM_BASED
 
@@ -39,9 +21,9 @@ class GemmKernelsFactory:
       self._gemm_kernel_type = self._auto_select()
 
     if self._gemm_kernel_type == GemmKernelType.SHR_MEM_BASED:
-      return ShrMemBasedDenseGemmKernelBuilder(**self._kwargs)
+      return ShrMemBasedLoopOverGemmKernelBuilder(**self._kwargs)
     elif self._gemm_kernel_type == GemmKernelType.REGISTER_ONLY_BASED:
-      return RegisterOnlyDenseGemmKernelBuilder(**self._kwargs)
+      raise Exception("Register Only Loop Over Gemm Kernel is not yet implemented")
     else:
       raise RuntimeError('unknown gemm type')
 

@@ -1,8 +1,6 @@
-from abc import ABC, abstractmethod
-from gemmforge import constructs
-from .abstract_loader import AbstractShrMemLoader
-from gemmforge.symbol_table import SymbolType, Symbol, DataView
 from copy import deepcopy
+
+from .abstract_loader import AbstractShrMemLoader
 
 
 class ExtendedPatchLoader(AbstractShrMemLoader):
@@ -102,6 +100,7 @@ class ExtendedTensorLoader(AbstractShrMemLoader):
 
           self._assign(writer, shr_mem_addr, glb_mem_addr)
 
+
 class ExactPatchLoader(AbstractShrMemLoader):
   """A strategy which loads only a necessary part of a matrix into shared memory.
 
@@ -164,6 +163,7 @@ class ExactPatchLoader(AbstractShrMemLoader):
     # If lead_dim and num_rows are equal in a contigous matrix this is a no-op
     self._dest.data_view.lead_dim = self._src.data_view.rows
 
+
 class ExactTensorLoader(AbstractShrMemLoader):
   """A strategy which loads (currently) the whole tensor, todo subtensor
 
@@ -190,13 +190,14 @@ class ExactTensorLoader(AbstractShrMemLoader):
 
       outerLoopCount = len(src_data_view.dimensions[1:])
       if outerLoopCount > 18:
-        raise Exception("Too many outer loops, need to change shr_mem_loader loop index generator for that to work")
+        raise Exception(
+          "Too many outer loops, need to change shr_mem_loader loop index generator for that to work")
       begin_char = 'i'
       current_char = begin_char
       for dim in src_data_view.dimensions[1:]:
         writer.Pragma("unroll")
         writer.For(f'int {current_char} = 0; {current_char} < {dim}; ++{current_char}').__enter__()
-        current_char =  chr(ord(current_char) + 1)
+        current_char = chr(ord(current_char) + 1)
 
       offsetStr1 = ""
       offsetStr2 = ""
@@ -204,7 +205,7 @@ class ExactTensorLoader(AbstractShrMemLoader):
       for i in range(len(src_data_view.dimensions[1:])):
         offsetStr1 += f" + {dest_data_view.dimensions[i]} * {current_char}"
         offsetStr2 += f" + {src_data_view_padded_dimensions[i]} * {current_char}"
-        current_char =  chr(ord(current_char) + 1)
+        current_char = chr(ord(current_char) + 1)
 
       num_hops = int(dest_data_view.dimensions[0] / self._num_threads)
       if num_hops > 0:
@@ -217,7 +218,7 @@ class ExactTensorLoader(AbstractShrMemLoader):
           glb_mem_addr += f' + counter * {self._num_threads}' + offsetStr2
 
           self._assign(writer, shr_mem_addr, glb_mem_addr)
-      
+
       # the last hop to fill shared mem with data
       if (dest_data_view.dimensions[0] % self._num_threads) != 0:
         residue = dest_data_view.dimensions[0] - num_hops * self._num_threads
