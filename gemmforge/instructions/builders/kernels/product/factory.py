@@ -1,5 +1,5 @@
-from .product_kernels import ShrMemBasedProductKernelBuilder
-from ..gemms.factory import GemmKernelType
+from gemmforge.instructions.builders.kernels.product.product_kernels import ShrMemBasedProductKernelBuilder
+from gemmforge.instructions.builders.kernels.gemms.factory import GemmKernelType
 
 
 class ProductKernelsFactory:

@@ -4,7 +4,7 @@ from gemmforge.instructions import GetElementPtr
 from gemmforge.matrix.dense import DenseMatrix
 from gemmforge.symbol_table import DataView, Symbol, SymbolType, TensorDataView
 from gemmforge.tensor.dense import DenseTensor
-from .abstract_builder import AbstractBuilder
+from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
 
 
 class GetElementPtrBuilder(AbstractBuilder):

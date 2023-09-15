@@ -4,7 +4,7 @@ from gemmforge.basic_types import GeneralLexicon, RegMemObject, ShrMemObject
 from gemmforge.instructions import RegisterAlloc, ShrMemAlloc
 from gemmforge.instructions.allocate import ShrMemNewAlloc
 from gemmforge.symbol_table import Symbol, SymbolType
-from .abstract_builder import AbstractBuilder
+from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
 
 
 class AbstractAllocBuilder(AbstractBuilder):
