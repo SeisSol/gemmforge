@@ -48,8 +48,9 @@ class ShrMemBasedLoopOverGemmKernelBuilder(BaseGemmKernelBuilder):
   def build_prologue(self):
     builder = GetElementPtrBuilder(self._vm, self._symbol_table)
     for symbol in self._symbol_table.from_global.values():
-      builder.build(symbol)
-      self._instructions.extend(builder.get_instructions())
+      if symbol.obj in [self._mat_a, self._mat_b, self._mat_c]:
+        builder.build(symbol)
+        self._instructions.extend(builder.get_instructions())
 
     # create an array of registers
     builder = RegistersAllocBuilder(self._vm, self._symbol_table)

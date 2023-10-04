@@ -118,7 +118,7 @@ class GemmGenerator(GemmLikeGenerator):
 
       self._kernel = src.getvalue()
 
-  def _generate_device_kernel(self, gemm_loop_offsets):
+  def _generate_device_kernel(self, gemm_loop_offsets, get_responsible_buffer):
     src = StringIO()
     with constructs.Cpp(src) as file:
       for instr in self._instructions:
@@ -126,8 +126,13 @@ class GemmGenerator(GemmLikeGenerator):
           # TODO: This feels hacky
           if isinstance(instr, GetElementPtr):
             for _, value in gemm_loop_offsets.items():
-              if value[0] == instr._src.name:
+              #print(value[0], instr._src.name, get_responsible_buffer(instr._src.name))
+              #TODO: Fix
+              if value[0] == instr._src.name or \
+                get_responsible_buffer(instr._src.name) == value[0]:
+                #or value[0] == "_" + instr._src.name:
                 instr._loop_additional_offset = value[1]
+                break
           instr.gen_code(file)
         else:
           raise GenerationError(f"gemm_generator: requested instr is not ready: {instr}")

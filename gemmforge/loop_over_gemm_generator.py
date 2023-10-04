@@ -210,6 +210,12 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
   def get_flops(self):
     raise Exception("TODO")
 
+  def get_responsible_buffer(self, name):
+    for buff_name, mat_names in self._buff_name_to_matrix_names.items():
+      if name in mat_names:
+        return buff_name
+    return None
+
   def _generate_kernel(self):
     self._kernel = ""
     src = StringIO()
@@ -266,7 +272,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
               elif descr_item[0] == "gemm":
                 with file.Scope():
                   gemm_generator = self._gemm_generators[current_gemm_generator]
-                  gemm_generator._generate_device_kernel(gemm_loop_offsets)
+                  gemm_generator._generate_device_kernel(gemm_loop_offsets, self.get_responsible_buffer)
                   gemm_kernels.append(gemm_generator._kernel)
                   gemm_loop_offsets = {"lhs": ("", "+ 0"), "rhs": ("", "+ 0"), "result": ("", "+ 0")}
                   for line in gemm_generator._kernel.split("\n"):

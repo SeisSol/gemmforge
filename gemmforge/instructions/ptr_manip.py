@@ -71,7 +71,8 @@ class GetElementPtr(AbstractInstruction):
       batch_addressing = batch_obj.addressing
 
       address = f'{batch_obj.get_offset_to_first_element()}'
-
+      if self._loop_additional_offset:
+        address += self._loop_additional_offset
       rhs = f'&{self._src.name}[{address}]'
 
       lhs = 'const ' if self._src.obj.direction == DataFlowDirection.SOURCE else ''
