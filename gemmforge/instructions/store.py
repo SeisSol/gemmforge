@@ -14,8 +14,8 @@ class StoreRegToGlb(AbstractInstruction):
                num_threads: int):
     super(StoreRegToGlb, self).__init__(vm)
 
-    if dest.stype != SymbolType.Global:
-      raise InternalError('store: operand `dest` is not in glb mem.')
+    #if dest.stype != SymbolType.Global:
+    #  raise InternalError('store: operand `dest` is not in glb mem.')
 
     if src.stype != SymbolType.Register:
       raise InternalError('store: operand `src` is not a register obj')

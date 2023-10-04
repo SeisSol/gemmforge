@@ -224,9 +224,12 @@ class GemmGenerator(GemmLikeGenerator):
 
   def _populate_global_scope(self):
     for matrix in self._matrices:
+      #if "tmp" not in matrix.name:
       self._symbol_table.add_symbol(Symbol(obj=matrix,
-                                           name=matrix.name,
-                                           stype=SymbolType.Batch))
+                                          name=matrix.name,
+                                          stype=SymbolType.Batch))
+      #else:
+      #  raise Exception("UWU")
     self._symbol_table.add_scope()
 
   def _emit_instructions(self):

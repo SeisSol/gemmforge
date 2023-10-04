@@ -3,6 +3,8 @@ from gemmforge.instructions.builders import GetElementPtrBuilder, RegistersAlloc
 from gemmforge.instructions.builders.allocator_builder import ShrMemNewAllocBuilder
 from gemmforge.instructions.builders.gemms.gemm_builder import ShrMemBasedDenseGemmBuilder
 from gemmforge.instructions.builders.kernels.gemms.base_kernel import BaseGemmKernelBuilder
+from gemmforge.instructions.store import StoreRegToGlb
+from gemmforge.matrix.dense import DenseMatrix
 from gemmforge.symbol_table import SymbolType
 
 
@@ -45,30 +47,24 @@ class ShrMemBasedLoopOverGemmKernelBuilder(BaseGemmKernelBuilder):
 
   def build_prologue(self):
     builder = GetElementPtrBuilder(self._vm, self._symbol_table)
-    print(", ".join([str(x) for x in self._symbol_table.from_global.values()]))
-
     for symbol in self._symbol_table.from_global.values():
-      if symbol.stype == SymbolType.Batch:
-        print(symbol)
-        # try:
-        builder.build(symbol)
-        self._instructions.extend(builder.get_instructions())
-        # except:
-        #  pass
+      builder.build(symbol)
+      self._instructions.extend(builder.get_instructions())
 
     # create an array of registers
     builder = RegistersAllocBuilder(self._vm, self._symbol_table)
     builder.build(self._mat_c.get_actual_num_cols(), 0.0)
-
     self._instructions.extend(builder.get_instructions())
     self._reg_array_obj = builder.get_resultant_obj()
 
-    for matrix in [self._mat_a, self._mat_b, self._mat_c]:
-      if matrix.direction == DataFlowDirection.SOURCESINK and "tmp" in matrix.name:
-        builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
-        symbol = builder.build(matrix.name, matrix.get_actual_volume(), matrix)
-        self._instructions.extend(builder.get_instructions())
-        # self._tmp_objects.append(builder.get_resultant_obj())
+  def build_epilogue(self):
+    store = StoreRegToGlb(self._vm,
+                          self._symbol_table[self._mat_c],
+                          self._symbol_table[self._reg_array_obj],
+                          self._alpha,
+                          self._beta,
+                          self._num_compute_threads)
+    self._instructions.append(store)
 
   def build(self):
     self.build_prologue()

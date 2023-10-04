@@ -123,3 +123,34 @@ class ShrMemNewAlloc(AbstractInstruction):
 
   def __str__(self):
     return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.name}];'
+
+
+class ShrMemNewAssign(AbstractInstruction):
+  def __init__(self,
+               vm: VM,
+               dest: Symbol,
+               src: str):
+    super(ShrMemNewAssign, self).__init__(vm)
+    self._src = src
+    self._dest = dest
+    self._is_ready = False
+    self._mults_per_block = None
+
+  def gen_code(self, writer):
+    shrmem_obj = self._dest.obj
+    lexic = self._vm.get_lexic()
+
+    address = f'{shrmem_obj.get_total_size()} * {lexic.thread_idx_y}'
+    writer(f'{self._vm.fp_as_str()} * {shrmem_obj.name} = &{self._src}[0];')
+
+  def is_ready(self):
+    if self._mults_per_block:
+      return True
+    else:
+      return False
+
+  def set_mults_per_block(self, mults_per_block):
+    self._mults_per_block = mults_per_block
+
+  def __str__(self):
+    return f'{self._dest.name} = new_alloc_shr [{self._dest.obj.name}];'

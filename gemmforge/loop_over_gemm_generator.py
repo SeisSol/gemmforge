@@ -3,14 +3,17 @@ from copy import deepcopy
 from io import StringIO
 
 from gemmforge.gemm_generator import GemmGenerator
-from gemmforge.instructions.allocate import ShrMemNewAlloc
+from gemmforge.instructions.allocate import ShrMemNewAlloc, ShrMemNewAssign
+from gemmforge.instructions.builders import ptr_manip_builder
+from gemmforge.instructions.builders.allocator_builder import ShrMemAllocBuilder, ShrMemNewAllocBuilder, ShrMemNewAssignBuilder
 from gemmforge.instructions.builders.kernels.log.factory import LoopOverGemmKernelsFactory
+from gemmforge.instructions.ptr_manip import GetElementPtr
 from gemmforge.matrix.dense import DenseMatrix
 from . import constructs
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
 from .basic_types import DataFlowDirection, GeneralLexicon
-from .exceptions import InternalError
+from .exceptions import GenerationError, InternalError
 from .instructions.builders.kernels import GemmKernelType
 from .symbol_table import Symbol, SymbolType
 from .vm import VM
@@ -33,7 +36,16 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     self._betas = list()
 
     self._matrices = set()
-    self._matrices = set()
+    self._tmp_id = 0
+
+    self._buffer_sizes = dict()
+    self._buff_name_to_matrix_names = dict()
+    self._buffer_matrices = list()
+
+  def get_next_tmp_name(self):
+    tmp_name = "tmp" + str(self._tmp_id)
+    self._tmp_id += 1
+    return tmp_name
 
   def set(self, complete_operation_description, base_name=None):
     if len(self._complete_operation_description) != 0:
@@ -46,58 +58,98 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     print(self._complete_operation_description)
 
     self._matrices = set()
-    self._matrices = set()
     for offset, descr_item in enumerate(self._complete_operation_description):
       print(offset, descr_item)
       if descr_item[0] == "gemm":
         operation_description = descr_item[1]["descr"]
         # raise Exception(str(operation_description) +"\n"+ str(descr_item[1]))
 
+        for offset, tensor_description in enumerate([operation_description.result, \
+                                                      operation_description.leftTerm, \
+                                                      operation_description.rightTerm]):
+          if tensor_description.is_temporary:
+            tmp_name = self.get_next_tmp_name()
+            tensor_name = tensor_description.name
+            tensor_description.name = tmp_name
+
+            if tensor_name in self._buffer_sizes.keys():
+              if tensor_description.eqspp.size > self._buffer_sizes[tensor_name]:
+                self._buffer_sizes[tensor_name] = \
+                  tensor_description.eqspp.size
+            else:
+              self._buffer_sizes[tensor_name] = \
+                tensor_description.eqspp.size
+
+            if tensor_name in self._buff_name_to_matrix_names:
+              self._buff_name_to_matrix_names[tensor_name].append(tmp_name)
+            else:
+              self._buff_name_to_matrix_names[tensor_name] = [tmp_name]
+
+            if offset == 0:
+              descr_item[1]["matrix_c"].name = tmp_name
+              print("Rename:", descr_item[1]["matrix_c"])
+            elif offset == 1:
+              descr_item[1]["matrix_a"].name = tmp_name
+              print("Rename:", descr_item[1]["matrix_a"])
+            else:
+              descr_item[1]["matrix_b"].name = tmp_name
+              print("Rename:", descr_item[1]["matrix_b"])
+
         a = descr_item[1]["matrix_a"]
         a.set_name(operation_description.leftTerm.name)
         a.set_data_flow_direction(DataFlowDirection.SOURCE)
-        a_as_sink = deepcopy(a)
+        a.temporary = operation_description.leftTerm.is_temporary
+        a_as_sink = a.copy()
         a_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
         if any(matrix.name == a.name for matrix in self._matrices):
           # Remove the tensor with the same name
           self._matrices = {matrix for matrix in self._matrices if matrix.name != a.name}
           a_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
           self._matrices.add(a_as_sink)
+          print("Add: ", a_as_sink)
         else:
           self._matrices.add(a)
+          print("Add: ", a)
 
         b = descr_item[1]["matrix_b"]
         b.set_name(operation_description.rightTerm.name)
         b.set_data_flow_direction(DataFlowDirection.SOURCE)
-        b_as_sink = deepcopy(b)
+        b.temporary = operation_description.rightTerm.is_temporary
+        b_as_sink = b.copy()
         b_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
         if any(matrix.name == b.name for matrix in self._matrices):
           # Remove the tensor with the same name
           self._matrices = {matrix for matrix in self._matrices if matrix.name != b.name}
           b_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
           self._matrices.add(b_as_sink)
+          print("Add: ", b_as_sink)
         else:
           self._matrices.add(b)
+          print("Add: ", b)
 
         c = descr_item[1]["matrix_c"]
         c.set_name(operation_description.result.name)
         c.set_data_flow_direction(DataFlowDirection.SINK)
-        c_as_source = deepcopy(c)
+        c.temporary = operation_description.result.is_temporary
+        c_as_source = c.copy()
         c_as_source.set_data_flow_direction(DataFlowDirection.SOURCE)
         if any(matrix.name == c.name for matrix in self._matrices):
           # Remove the tensor with the same name
           self._matrices = {matrix for matrix in self._matrices if matrix.name != c.name}
           c_as_source.set_data_flow_direction(DataFlowDirection.SOURCESINK)
           self._matrices.add(c_as_source)
+          print("Add: ", c_as_source)
         else:
           self._matrices.add(c)
+          print("Add: ", c)
 
     for offset, descr_item in enumerate(self._complete_operation_description):
       if descr_item[0] == "gemm":
+        operation_description = descr_item[1]["descr"]
         aname = operation_description.leftTerm.name
         bname = operation_description.rightTerm.name
         cname = operation_description.result.name
-        print(aname, bname, cname, self._matrices)
+
         am = None
         bm = None
         cm = None
@@ -122,7 +174,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                            mat_a=am, mat_b=bm, mat_c=cm,
                            alpha=operation_description.alpha,
                            beta=operation_description.beta,
-                           base_name=f"LOGGemmKernel{offset}")
+                           base_name=f"LOGGemmKernel{offset}",
+                           preserve_matrix_properties=True)
         self._alphas.append(operation_description.alpha)
         self._betas.append(operation_description.beta)
         self._gemm_generators.append(gemm_generator)
@@ -131,25 +184,14 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
       for gemm_generator in self._gemm_generators:
         gemm_generator._factory = LoopOverGemmKernelsFactory
 
-    # raise Exception(self._gemm_generators)
-
-    # raise Exception(self._alphas, self._betas)
-    # raise Exception(self._complete_operation_description)
     same_alpha = all(x == self._alphas[0] for x in self._alphas)
     if not same_alpha:
       raise InternalError("TODO: multiple alphas in LOG")
     self._alpha = self._alphas[0]
-    # same_beta = all(x == self._betas[0] for x in self._betas)
-    # if not same_beta:
-    #  raise InternalError("TODO: multiple betas in LOG")
-    # self._beta = self._betas[0]
 
     print(self._matrices)
     self._base_name = self._generate_base_name()
     self._is_set = True
-    # print(self._complete_operation_description)
-    # raise Exception(self._complete_operation_description)
-    # raise Exception(self._matrices)
 
   def generate(self):
     self._check_if_set()
@@ -169,7 +211,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     raise Exception("TODO")
 
   def _generate_kernel(self):
-    self._kernel = "// Random Comment\n"
+    self._kernel = ""
     src = StringIO()
     max_num_threads_per_block = self._num_active_threads * self._num_ops_per_block
     kernel_bounds = [max_num_threads_per_block]
@@ -179,9 +221,6 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     current_gemm_generator = 0
     tab_count = 0
 
-    # raise Exception('\n'.join(map(str, self._complete_operation_description)) )
-    # raise Exception(len(self._gemm_generators))
-
     with constructs.Cpp(src) as file:
       with self._lexic.kernel_definition(file,
                                          kernel_bounds,
@@ -190,9 +229,18 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                                          self._precision,
                                          total_sizes):
         tab_count += 1
-        with file.If(f'{self.get_flag_guard(file)}'):
-          tab_count += 1
-          with file.If(f'{self.get_element_size_guard(file)}'):
+        with file.If(f'{self.get_element_size_guard(file)}'):
+          with file.If(f'{self.get_flag_guard(file)}'):
+            tab_count += 1
+            for instr in self._instructions:
+              if isinstance(instr, ShrMemNewAlloc) or \
+                 isinstance(instr, GetElementPtr)  or \
+                 isinstance(instr, ShrMemNewAssign):
+                instr.set_mults_per_block(self._num_ops_per_block) 
+              if instr.is_ready():
+                instr.gen_code(file)
+              else:
+                raise GenerationError(f"gemm_generator: requested instr {instr} is not ready")
             tab_count += 1
             gemm_loop_offsets = {"lhs": ("", "+ 0"), "rhs": ("", "+ 0"), "result": ("", "+ 0")}
             for descr_item in self._complete_operation_description:
@@ -216,14 +264,14 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
               elif descr_item[0] == "OuterLoopBody":
                 raise InternalError("OuterLoopBody in LOG not yet implemented")
               elif descr_item[0] == "gemm":
-                gemm_generator = self._gemm_generators[current_gemm_generator]
-                # self._symbol_table.add_scope()
-                gemm_generator._generate_device_kernel(gemm_loop_offsets)
-                gemm_kernels.append(gemm_generator._kernel)
-                gemm_loop_offsets = {"lhs": ("", "+ 0"), "rhs": ("", "+ 0"), "result": ("", "+ 0")}
-                for line in gemm_generator._kernel.split("\n"):
-                  src.write("  " * tab_count + line + "\n")
-                current_gemm_generator += 1
+                with file.Scope():
+                  gemm_generator = self._gemm_generators[current_gemm_generator]
+                  gemm_generator._generate_device_kernel(gemm_loop_offsets)
+                  gemm_kernels.append(gemm_generator._kernel)
+                  gemm_loop_offsets = {"lhs": ("", "+ 0"), "rhs": ("", "+ 0"), "result": ("", "+ 0")}
+                  for line in gemm_generator._kernel.split("\n"):
+                    src.write("  " * (tab_count+1) + line + "\n")
+                  current_gemm_generator += 1
               else:
                 raise InternalError("Unknown description item keyword found in LOG Generator")
           tab_count -= 1
@@ -277,55 +325,47 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
       if gemm_active_threads > self._num_active_threads:
         self._num_active_threads = gemm_active_threads
 
-      """
-      current_gemm_generator = 0
-      loop_len = 0
-      for descr_item in self._complete_operation_description:
-        if descr_item[0] == "forLoopBegin":
-          descr = descr_item[1]
-          if loop_len != 0:
-            raise InternalError("TODO: Two Loops in a row")
-          loop_len =  int(descr['stop']) - int(descr['start'])
-        elif descr_item[0] == "gemm":
-          gemm_generator = self._gemm_generators[current_gemm_generator]
-          merge_n = int(self._num_active_threads / gemm_generator._num_compute_threads)
-          if merge_n > loop_len:
-            merge_n = loop_len
-          gemm_generator._merge_n = merge_n
-          current_gemm_generator += 1
-      """
-
   def _populate_global_scope(self):
-    self._symbol_table.print_scopes()
-    # raise Exception("UWU")
-    # self._symbol_table.add_scope()
     for matrix in self._matrices:
-      # print(matrix)
-      if matrix.direction == DataFlowDirection.SOURCE or \
-          matrix.direction == DataFlowDirection.SINK:
-        # print(matrix, matrix in self._symbol_table.from_global)
-        # print(matrix.name, matrix.name in self._symbol_table.from_global)
-        # print(matrix.name, matrix.name in self._symbol_table.from_global)
-        if not self._symbol_table.find(matrix.name):
-          self._symbol_table.add_symbol(Symbol(obj=matrix,
-                                               name=matrix.name,
-                                               stype=SymbolType.Batch))
+      #need_scope = False
+      if not matrix.temporary:
+        self._symbol_table.add_symbol(Symbol(obj=matrix,
+                                             name=matrix.name,
+                                             stype=SymbolType.Batch))
 
-    # self._symbol_table.print_scopes()
-    # raise Exception("UWU")
-    # self._symbol_table.add_scope()
+    print(self._buffer_sizes)
+    for name, size in self._buffer_sizes.items():
+      builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
+      buffer = DenseMatrix(size, 1, "none", [0, 0, size, 1], size)
+      buffer.set_name(name + "_buffer")
+      buffer.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+      self._buffer_matrices.append(buffer)
+      symbol = builder.build(name + "_buffer", size, buffer)
+      self._instructions.extend(builder.get_instructions())
+    for buff_name, matrix_names in self._buff_name_to_matrix_names.items():
+      builder = ShrMemNewAssignBuilder(self._vm, self._symbol_table)
+      for matrix_name in matrix_names:
+        did = False
+        for matrix in self._matrices:
+          print(matrix, matrix_name)
+          if matrix.name == matrix_name:
+            builder.build(matrix_name,buff_name + "_buffer",matrix)
+            self._instructions.extend(builder.get_instructions())
+            did = True
+        if not did:
+          raise Exception("HMM")
+        #pass
+    #if need_scope:
+    #  self._symbol_table.add_scope()
 
-    self._symbol_table.print_scopes()
-    # raise Exception("UWU")
     self._symbol_table.add_scope()
 
   def _emit_instructions(self):
+
     for gemm_generator in self._gemm_generators:
       gemm_generator._emit_instructions()
-      self._instructions.append(gemm_generator._instructions)
-      self._reg_array_objs.append(gemm_generator._reg_array_obj)
-      self._shr_mem_objs.append(gemm_generator._shr_mem_obj)
-      self._shr_mem_loads.append(gemm_generator._shr_mem_loads)
+      self._symbol_table.pop_scope()
+      self._symbol_table.add_scope()
 
   def _analyze(self):
     for gemm_generator in self._gemm_generators:

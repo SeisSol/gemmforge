@@ -17,6 +17,7 @@ class DenseMatrix:
     self.num_cols = num_cols
     self.direction: Union[DataFlowDirection, None] = None
     self.leading_dimension_given = False
+    self.temporary = False
 
     if leading_dimension == None:
       # TODO: check if the assumption holds that a matrix will be always transposed,
@@ -71,6 +72,9 @@ class DenseMatrix:
   def get_real_volume(self):
     return self.num_rows * self.num_cols
 
+  def get_volume(self):
+    return self.get_real_volume()
+
   def get_offset_to_first_element(self):
     return self.leading_dimension * self.bbox[1] + self.bbox[0]
 
@@ -96,7 +100,8 @@ class DenseMatrix:
     string += "num. rows = {}, ".format(self.num_rows)
     string += "num. columns = {}, ".format(self.num_cols)
     string += "leading dimension = {}, ".format(self.leading_dimension)
-    string += "direction = {}".format(self.direction)
+    string += "direction = {}, ".format(self.direction)
+    string += "bbox = {}".format(self.bbox)
     string += "}"
     return string
 
@@ -108,3 +113,11 @@ class DenseMatrix:
 
   def get_total_size(self):
     return self.num_rows * self.num_cols
+
+  def copy(self):
+    clone = DenseMatrix(self.num_rows, self.num_cols, self.addressing,
+                        self.bbox, self.leading_dimension)
+    clone.set_name(self.name)
+    clone.set_data_flow_direction(self.direction)
+    clone.temporary = self.temporary
+    return clone

@@ -95,7 +95,7 @@ class InverseSymbolTable:
   def add_symbol(self, symbol: Symbol):
     if symbol.obj in self._scopes[-1]:
       self.print_scopes()
-      # raise InternalError(f'symbol {symbol.name} is already in the current scope')
+      raise InternalError(f'symbol {symbol.name} is already in the current scope')
     else:
       self._scopes[-1][symbol.obj] = symbol
 
@@ -123,7 +123,8 @@ class InverseSymbolTable:
       if obj in scope:
         return scope[obj]
     self.print_scopes()
-    raise InternalError(f'obj {id(obj)} has not been found')
+    
+    raise InternalError(f'obj {obj}, id {id(obj)} has not been found. ')
 
   def find(self, obj):
     for scope in reversed(self._scopes):

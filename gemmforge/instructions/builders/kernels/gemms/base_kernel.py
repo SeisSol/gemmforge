@@ -3,6 +3,7 @@ from abc import abstractmethod
 from gemmforge.instructions import StoreRegToGlb
 from gemmforge.instructions.builders import GetElementPtrBuilder, RegistersAllocBuilder
 from gemmforge.instructions.builders.abstract_builder import AbstractBuilder
+from gemmforge.matrix.dense import DenseMatrix
 
 
 class BaseGemmKernelBuilder(AbstractBuilder):
@@ -34,7 +35,6 @@ class BaseGemmKernelBuilder(AbstractBuilder):
     return self._shr_mem_loads
 
   def build_prologue(self):
-    builder = GetElementPtrBuilder(self._vm, self._symbol_table)
     for symbol in self._symbol_table.from_global.values():
       builder.build(symbol)
       self._instructions.extend(builder.get_instructions())
