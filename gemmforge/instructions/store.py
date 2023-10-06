@@ -33,34 +33,38 @@ class StoreRegToGlb(AbstractInstruction):
     precision = self._vm.fp_as_str()
 
     with writer.If(self.gen_mask_threads(self._num_threads)):
-      writer.Pragma("unroll")
-      with writer.For(f'int n = 0; n < {dest_matrix.get_actual_num_cols()}; ++n'):
-        rhs = "{}[{} + {} * n]".format(dest_name,
-                                       self._vm.get_lexic().thread_idx_x,
-                                       dest_matrix.leading_dimension)
+      if dest_matrix.get_actual_num_cols() > 1:
+        writer.Pragma("unroll")
+        with writer.For(f'int n = 0; n < {dest_matrix.get_actual_num_cols()}; ++n'):
+          rhs = "{}[{} + {} * n]".format(dest_name,
+                                        self._vm.get_lexic().thread_idx_x,
+                                        dest_matrix.leading_dimension)
+      else:
+          rhs = "{}[{}]".format(dest_name,
+                                self._vm.get_lexic().thread_idx_x)
 
-        real_suffix = 'f' if precision == "float" else ''
+      real_suffix = 'f' if precision == "float" else ''
 
-        src_access = '' if self._src.obj.size == 1 else '[n]'
-        if not isinstance(self._alpha, float):
-          lhs = f'{self._alpha} * {self._src.name}{src_access}'
+      src_access = '' if self._src.obj.size == 1 else '[n]'
+      if not isinstance(self._alpha, float):
+        lhs = f'{self._alpha} * {self._src.name}{src_access}'
+      else:
+        if self._alpha == 1.0:
+          lhs = f'{self._src.name}{src_access}'
         else:
-          if self._alpha == 1.0:
-            lhs = f'{self._src.name}{src_access}'
+          lhs = f'{self._alpha}{real_suffix} * {self._src.name}{src_access}'
+
+      if not isinstance(self._beta, float):
+        lhs += f' + {self._beta} * {rhs}'
+      else:
+        if self._beta != 0.0:
+          if self._beta == 1.0:
+            lhs += f' + {rhs}'
           else:
-            lhs = f'{self._alpha}{real_suffix} * {self._src.name}{src_access}'
+            const = f'{self._beta}{real_suffix}'
+            lhs += f' + {const} * {rhs}'
 
-        if not isinstance(self._beta, float):
-          lhs += f' + {self._beta} * {rhs}'
-        else:
-          if self._beta != 0.0:
-            if self._beta == 1.0:
-              lhs += f' + {rhs}'
-            else:
-              const = f'{self._beta}{real_suffix}'
-              lhs += f' + {const} * {rhs}'
-
-        writer(f'{rhs} = {lhs};')
+      writer(f'{rhs} = {lhs};')
 
   def __str__(self) -> str:
     return 'not implemented'
