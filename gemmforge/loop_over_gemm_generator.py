@@ -437,8 +437,12 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                                                         addresses,
                                                         md5encoding[:Generator.ENCODING_LENGTH])
 
+  def _get_sorted_non_tmp_matrices(self):
+    return sorted([m for m in self._matrices if not m.temporary], key=lambda x: x.name)
+  
   def _get_func_params(self):
-    base_params = super(LoopOverGemmGenerator, self)._get_func_params(matrices=self._matrices)
+    base_params = super(LoopOverGemmGenerator, self)._get_func_params(
+      matrices=self._get_sorted_non_tmp_matrices())
     if isinstance(self._alpha, float):
       # raise Exception(base_params)
       return base_params
@@ -447,14 +451,16 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
       return f'{self._precision} {self._alpha}, {base_params}'
 
   def _get_launcher_params(self, with_defaults=False):
-    base_params = super(LoopOverGemmGenerator, self)._get_launcher_params(with_defaults, matrices=self._matrices)
+    base_params = super(LoopOverGemmGenerator, self)._get_launcher_params(with_defaults, 
+      matrices=self._get_sorted_non_tmp_matrices())
     if isinstance(self._alpha, float):
       return base_params
     else:
       return f'{self._precision} {self._alpha}, {base_params}'
 
   def _get_func_args(self):
-    base_args = super(LoopOverGemmGenerator, self)._get_func_args(matrices=self._matrices)
+    base_args = super(LoopOverGemmGenerator, self)._get_func_args(
+      matrices=self._get_sorted_non_tmp_matrices())
     if isinstance(self._alpha, float):
       return base_args
     else:
