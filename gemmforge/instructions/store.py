@@ -35,8 +35,8 @@ class StoreRegToGlb(AbstractInstruction):
     with writer.If(self.gen_mask_threads(self._num_threads)):
       if dest_matrix.get_actual_num_cols() > 1:
         writer.Pragma("unroll")
-        with writer.For(f'int n = 0; n < {dest_matrix.get_actual_num_cols()}; ++n'):
-          rhs = "{}[{} + {} * n]".format(dest_name,
+        writer.For(f'int n = 0; n < {dest_matrix.get_actual_num_cols()}; ++n').__enter__()
+        rhs = "{}[{} + {} * n]".format(dest_name,
                                         self._vm.get_lexic().thread_idx_x,
                                         dest_matrix.leading_dimension)
       else:
@@ -65,6 +65,9 @@ class StoreRegToGlb(AbstractInstruction):
             lhs += f' + {const} * {rhs}'
 
       writer(f'{rhs} = {lhs};')
+
+      if dest_matrix.get_actual_num_cols() > 1:
+        writer.For("").__exit__(None, None, None)
 
   def __str__(self) -> str:
     return 'not implemented'
