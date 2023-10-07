@@ -185,9 +185,9 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
         gemm_generator._factory = LoopOverGemmKernelsFactory
 
     same_alpha = all(x == self._alphas[0] for x in self._alphas)
-    if not same_alpha:
-      raise InternalError("TODO: multiple alphas in LOG")
-    self._alpha = self._alphas[0]
+    #if not same_alpha:
+    #  raise InternalError("TODO: multiple alphas in LOG")
+    #self._alpha = self._alphas[0]
 
     print(self._matrices)
     self._base_name = self._generate_base_name()
@@ -403,8 +403,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
         addresses += f'{tensor.addressing[0]}_'
         transpose += "NT_"
 
-    constants = f'{self._alpha}'
-
+    #constants = f'{self._alpha}'
+    constants = ""
     tensorstrs = ""
     for tensor in self._matrices:
       if tensor.direction == DataFlowDirection.SOURCE or \
@@ -443,28 +443,29 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
   def _get_func_params(self):
     base_params = super(LoopOverGemmGenerator, self)._get_func_params(
       matrices=self._get_sorted_non_tmp_matrices())
-    if isinstance(self._alpha, float):
-      # raise Exception(base_params)
-      return base_params
-    else:
-      # raise Exception(f"{self._precision} {self._alpha}, {base_params}")
-      return f'{self._precision} {self._alpha}, {base_params}'
+    for alpha in self._alphas:
+      if not isinstance(alpha, float):
+        raise Exception("LoopOverGemm supports only static alpha input (compile-time float not variable)")
+
+    return base_params
 
   def _get_launcher_params(self, with_defaults=False):
     base_params = super(LoopOverGemmGenerator, self)._get_launcher_params(with_defaults, 
       matrices=self._get_sorted_non_tmp_matrices())
-    if isinstance(self._alpha, float):
-      return base_params
-    else:
-      return f'{self._precision} {self._alpha}, {base_params}'
+    for alpha in self._alphas:
+      if not isinstance(alpha, float):
+        raise Exception("LoopOverGemm supports only static alpha input (compile-time float not variable)")
+
+    return base_params
 
   def _get_func_args(self):
     base_args = super(LoopOverGemmGenerator, self)._get_func_args(
       matrices=self._get_sorted_non_tmp_matrices())
-    if isinstance(self._alpha, float):
-      return base_args
-    else:
-      return f'{self._alpha}, {base_args}'
+    for alpha in self._alphas:
+      if not isinstance(alpha, float):
+        raise Exception("LoopOverGemm supports only static alpha input (compile-time float not variable)")
+
+    return base_args
 
   def _get_block_dim_spec(self):
     super(LoopOverGemmGenerator, self)._get_block_dim_spec()

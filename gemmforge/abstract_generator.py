@@ -145,8 +145,12 @@ class AbstractGenerator(ABC):
     else:
       if matrix.addressing == "none":
         return f'const {precision} {matrix.ptr_type} __restrict__ {matrix.name}, {sub_offset}'
-      else:
+      elif matrix.addressing == "strided":
         return f'const {precision} {matrix.ptr_type} {matrix.name}, {sub_offset}'
+      elif matrix.addressing == "pointer_based":
+        return f'const {precision} {matrix.ptr_type[0]} const {matrix.ptr_type[1]} {matrix.name}, {sub_offset}'
+      else:
+        raise InternalError("Unrecognized addressing type in _build_param")
 
   def _generate_extra_offset_symbol(self, matrix):
     # TODO: remove this
