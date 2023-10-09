@@ -6,6 +6,7 @@ from gemmforge.gemm_generator import GemmGenerator
 from gemmforge.instructions.allocate import ShrMemNewAlloc, ShrMemNewAssign
 from gemmforge.instructions.builders import ptr_manip_builder
 from gemmforge.instructions.builders.allocator_builder import ShrMemAllocBuilder, ShrMemNewAllocBuilder, ShrMemNewAssignBuilder
+from gemmforge.instructions.builders.kernels.gemms.factory import GemmKernelsFactory
 from gemmforge.instructions.builders.kernels.log.factory import LoopOverGemmKernelsFactory
 from gemmforge.instructions.ptr_manip import GetElementPtr
 from gemmforge.matrix.dense import DenseMatrix
@@ -180,9 +181,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
         self._betas.append(operation_description.beta)
         self._gemm_generators.append(gemm_generator)
 
-    if len(self._gemm_generators) > 1:
-      for gemm_generator in self._gemm_generators:
-        gemm_generator._factory = LoopOverGemmKernelsFactory
+    for gemm_generator in self._gemm_generators:
+      gemm_generator._factory = LoopOverGemmKernelsFactory
 
     same_alpha = all(x == self._alphas[0] for x in self._alphas)
     #if not same_alpha:

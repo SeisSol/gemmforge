@@ -11,11 +11,12 @@ class DenseTensor:
                "strided": "*",
                "pointer_based": "**"}
 
-  def __init__(self, dimensions, addressing):
+  def __init__(self, dimensions, addressing, bbox=None):
     self.name = None
     self.dimensions = dimensions
     self.direction: Union[DataFlowDirection, None] = None
     self._real_dimensions = None
+    self._bbox = bbox
 
     if addressing in DenseTensor.ADDRESSING:
       self.addressing = addressing
