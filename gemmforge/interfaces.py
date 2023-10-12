@@ -46,8 +46,6 @@ class YatetoInterface:
     """
     if transpose:
       raise Exception("Support for transposed tensors not yet implemented")
-    else:
-      yateto_ranges
 
     bbox = list()
     for i in range(len(yateto_ranges)):
@@ -77,8 +75,10 @@ class YatetoInterface:
 
   @classmethod
   def produce_dense_tensor(cls, yateto_ranges, yateto_memory_layout_bbox, addressing, transpose):
-    print(yateto_ranges)
-    print(yateto_memory_layout_bbox)
+    print("i1: ", yateto_ranges)
+    print("i2: ", yateto_memory_layout_bbox)
+    if isinstance(yateto_ranges, int):
+      raise Exception("uwu")
     gemmforge_bbox = cls.deduce_bbox_tensor(yateto_ranges=yateto_ranges,
                                             mem_layout=yateto_memory_layout_bbox,
                                             transpose=transpose)

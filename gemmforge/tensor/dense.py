@@ -16,7 +16,8 @@ class DenseTensor:
     self.dimensions = dimensions
     self.direction: Union[DataFlowDirection, None] = None
     self._real_dimensions = None
-    self._bbox = bbox
+    self.bbox = bbox
+    self.temporary = False
 
     if addressing in DenseTensor.ADDRESSING:
       self.addressing = addressing
@@ -113,3 +114,11 @@ class DenseTensor:
 
   def __repr__(self):
     return self.__str__()
+
+  def copy(self):
+    clone = DenseTensor(self.dimensions, self.addressing,
+                        self.bbox)
+    clone.set_name(self.name)
+    clone.set_data_flow_direction(self.direction)
+    clone.temporary = self.temporary
+    return clone

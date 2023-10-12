@@ -81,8 +81,8 @@ class StoreRegToGlbTensor(AbstractInstruction):
                num_threads: int):
     super(StoreRegToGlbTensor, self).__init__(vm)
 
-    if dest.stype != SymbolType.Global:
-      raise InternalError(f'store: operand `dest` is not in glb mem: {dest}')
+    #if dest.stype != SymbolType.Global:
+    #  raise InternalError(f'store: operand `dest` is not in glb mem: {dest}')
 
     if src.stype != SymbolType.Register:
       raise InternalError(f'store: operand `src` is not a register obj: {src}')
@@ -100,7 +100,7 @@ class StoreRegToGlbTensor(AbstractInstruction):
     dest_name = self._dest.name
     precision = self._vm.fp_as_str()
 
-    with writer.If(self.gen_mask_threads(self._num_threads)):
+    with writer.If(self.gen_mask_threads(int(self._num_threads))):
       real_suffix = 'f' if precision == "float" else ''
       thread_idx_x = self._vm.get_lexic().thread_idx_x,
 
@@ -135,13 +135,13 @@ class StoreRegToGlbTensor(AbstractInstruction):
 
       writer.Emptyline()
       s = ""
-      rowOffsetStr = "const int rowOffsetForCurentRow = "
+      rowOffsetStr = "const int rowOffsetForCurrentRow = "
       for rank_offset, multiplier in reversed(rank_offsets):
         s += rank_offset + " * " + str(multiplier)
         accumulated_dimensions = self._dest.obj.get_accumulated_dimensions()
         print(accumulated_dimensions)
         print(rank_offsets)
-        rowOffsetStr += str(accumulated_dimensions[len(rank_offsets)])
+        rowOffsetStr += str(accumulated_dimensions[len(rank_offsets)]) + ";"
       writer(rowOffsetStr)
       writer.Emptyline()
       with writer.For(f'int i = 0; i < {self._dest.obj.get_dimensions()[1]}; ++i'):

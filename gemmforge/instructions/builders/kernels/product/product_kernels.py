@@ -11,11 +11,13 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
 
   def __init__(self, **kwargs):
     super(ShrMemBasedProductKernelBuilder, self).__init__(kwargs['vm'], kwargs['symbol_table'])
-    self._tensors = kwargs['tensors']
-    self._alpha = kwargs['alpha']
+    self._op1 = kwargs['op1']
+    self._op2 = kwargs['op2']
+    self._result = kwargs['result']
+    self._alphas = kwargs['alphas']
     self._num_compute_threads = kwargs['num_compute_threads']
     self._num_active_threads = kwargs['num_active_threads']
-    self._operation_descriptions = kwargs['operation_descriptions']
+    self._operation_description = kwargs['operation_description']
 
     self._reg_array_obj = None
     self._shr_mem_obj = None
@@ -45,7 +47,7 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     print("WARNING: TODO: FIND A BETTER THREAD DISTRIBUTION FOR SUM OPERATOR")
     # Max line size of every tmp result or final result
     max_line_width = 0
-    for tensor in self._tensors:
+    for tensor in [self._op1, self._op2, self._result]:
       if tensor.direction == DataFlowDirection.SINK or tensor.direction == DataFlowDirection.SOURCESINK:
         line_width = tensor.get_size() / tensor.get_dimensions()[0]
         if line_width > max_line_width:
@@ -55,8 +57,8 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     self._instructions.extend(builder.get_instructions())
     self._reg_array_obj = builder.get_resultant_obj()
 
-    for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SOURCESINK:
+    for tensor in [self._op1, self._op2, self._result]:
+      if tensor.temporary:
         builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
         symbol = builder.build(tensor.name, tensor.get_volume(), tensor)
         self._instructions.extend(builder.get_instructions())
@@ -75,23 +77,18 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
                                         self._shr_mem_obj,
                                         self._num_active_threads)
 
-    builder.build(ops=[self._symbol_table[tensor] for tensor in self._tensors],
+    builder.build(op1=self._symbol_table[self._op1],
+                  op2=self._symbol_table[self._op2],
                   dest=self._symbol_table[self._reg_array_obj],
-                  operation_descriptions=self._operation_descriptions)
+                  operation_description=self._operation_description)
 
     self._shr_mem_loads = builder.get_srh_mem_loads()
     self._instructions.extend(builder.get_instructions())
 
   def build_epilogue(self):
-    # Max line size of every tmp result or final result
-    result_tensor = None
-    for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SINK:
-        result_tensor = tensor
-    assert (result_tensor != None)
 
     store = StoreRegToGlbTensor(self._vm,
-                                self._symbol_table[result_tensor],
+                                self._symbol_table[self._result],
                                 self._symbol_table[self._reg_array_obj],
                                 self._num_compute_threads)
     self._instructions.append(store)

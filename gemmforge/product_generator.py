@@ -3,8 +3,9 @@ import math
 from copy import deepcopy
 from io import StringIO
 
-from gemmforge.instructions.allocate import ShrMemNewAlloc
+from gemmforge.instructions.allocate import ShrMemAlloc, ShrMemNewAlloc, ShrMemNewAssign
 from gemmforge.instructions.builders.kernels.product.factory import ProductKernelsFactory
+from gemmforge.instructions.ptr_manip import GetElementPtr
 from . import constructs
 from .abstract_gemmlike_generator import GemmLikeGenerator
 from .abstract_generator import AbstractGenerator as Generator
@@ -23,12 +24,12 @@ class ProductGenerator(GemmLikeGenerator):
     # Kernel Type is ignored right now prob.
     # Currently no transposed tensors are supported
 
-    self._reg_array_obj = None
-    self._shr_mem_obj = None
+    self._reg_array_obj = list()
+    self._shr_mem_obj = list()
     self._shr_mem_loads = list()
 
     self._tensors = list()
-    self._alpha = 1.0
+    self._alphas = list()
     self._operation_descriptions = list()
     # No beta supported for this operation
     # self._betas = list()
@@ -38,50 +39,59 @@ class ProductGenerator(GemmLikeGenerator):
     # if trans_a or trans_b:
     #    raise Exception("TODO: Tensor Product in gemmforge does not support transposed a or b currently")
     self._tensors = set()
-    for operation_description in complete_operation_descriptions:
+    self._complete_operation_description = complete_operation_descriptions
+    for offset, descr_item in enumerate(self._complete_operation_description):
+      print(offset, descr_item)
+      if descr_item[0] != "product":
+        raise Exception("Fused product kernels should only exist of product descriptions")
+
+      operation_description = descr_item[1]["descr"]
       # print(operation_description)
       # If a tensor appears both as sink and source we will change to sourcesink
-      tensor_x = operation_description[1]
-      tensor_x.set_name(operation_description[0].leftTerm.name)
-      tensor_x.set_data_flow_direction(DataFlowDirection.SOURCE)
-      tensor_x_as_sink = deepcopy(tensor_x)
-      tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
-      if any(tensor.name == tensor_x.name for tensor in self._tensors):
+      tensor_a = descr_item[1]["tensor_a"]
+      tensor_a.set_name(operation_description.leftTerm.name)
+      tensor_a.set_data_flow_direction(DataFlowDirection.SOURCE)
+      tensor_a.temporary = operation_description.leftTerm.is_temporary
+      tensor_a_as_sink = tensor_a.copy()
+      tensor_a_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
+      if any(tensor.name == tensor_a.name for tensor in self._tensors):
         # Remove the tensor with the same name
-        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_x.name}
-        tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
-        self._tensors.add(tensor_x_as_sink)
+        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_a.name}
+        tensor_a_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+        self._tensors.add(tensor_a_as_sink)
       else:
-        self._tensors.add(tensor_x)
+        self._tensors.add(tensor_a)
 
-      tensor_x = operation_description[2]
-      tensor_x.set_name(operation_description[0].rightTerm.name)
-      tensor_x.set_data_flow_direction(DataFlowDirection.SOURCE)
-      tensor_x_as_sink = deepcopy(tensor_x)
-      tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
-      if any(tensor.name == tensor_x.name for tensor in self._tensors):
+      tensor_b = descr_item[1]["tensor_b"]
+      tensor_b.set_name(operation_description.rightTerm.name)
+      tensor_b.set_data_flow_direction(DataFlowDirection.SOURCE)
+      tensor_b.temporary = operation_description.rightTerm.is_temporary
+      tensor_b_as_sink = tensor_b.copy()
+      tensor_b_as_sink.set_data_flow_direction(DataFlowDirection.SINK)
+      if any(tensor.name == tensor_b.name for tensor in self._tensors):
         # Remove the tensor with the same name
-        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_x.name}
-        tensor_x_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
-        self._tensors.add(tensor_x_as_sink)
+        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_b.name}
+        tensor_b_as_sink.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+        self._tensors.add(tensor_b_as_sink)
       else:
-        self._tensors.add(tensor_x)
+        self._tensors.add(tensor_b)
 
-      tensor_x = operation_description[3]
-      tensor_x.set_name(operation_description[0].result.name)
-      tensor_x.set_data_flow_direction(DataFlowDirection.SINK)
-      tensor_x_as_source = deepcopy(tensor_x)
-      tensor_x_as_source.set_data_flow_direction(DataFlowDirection.SOURCE)
-      if any(tensor.name == tensor_x.name for tensor in self._tensors):
+      tensor_c = descr_item[1]["tensor_c"]
+      tensor_c.set_name(operation_description.result.name)
+      tensor_c.set_data_flow_direction(DataFlowDirection.SINK)
+      tensor_c.temporary = operation_description.result.is_temporary
+      tensor_c_as_source = tensor_c.copy()
+      tensor_c_as_source.set_data_flow_direction(DataFlowDirection.SOURCE)
+      if any(tensor.name == tensor_c.name for tensor in self._tensors):
         # Remove the tensor with the same name
-        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_x.name}
-        tensor_x_as_source.set_data_flow_direction(DataFlowDirection.SOURCESINK)
-        self._tensors.add(tensor_x_as_source)
+        self._tensors = {tensor for tensor in self._tensors if tensor.name != tensor_c.name}
+        tensor_c_as_source.set_data_flow_direction(DataFlowDirection.SOURCESINK)
+        self._tensors.add(tensor_c_as_source)
       else:
-        self._tensors.add(tensor_x)
+        self._tensors.add(tensor_c)
 
-      self._alpha = operation_description[4]
-      self._operation_descriptions.append(operation_description[0])
+      self._alphas.append(descr_item[1]["alpha"])
+      self._operation_descriptions.append(operation_description)
 
     print(self._tensors)
 
@@ -109,25 +119,55 @@ class ProductGenerator(GemmLikeGenerator):
   def _generate_kernel(self):
     print("WARNING: TODO: A LOT OF STUFF HERE")
     src = StringIO()
+
     with constructs.Cpp(src) as file:
 
       max_num_threads_per_block = self._num_active_threads * self._num_ops_per_block
       kernel_bounds = [max_num_threads_per_block]
       team_index_str = self._lexic.batch_indexer_gemm()
 
+      mem_sizes = [shr_mem_obj.get_total_size() for shr_mem_obj in self._shr_mem_obj]
       with self._lexic.kernel_definition(file,
                                          kernel_bounds,
                                          self._base_name,
                                          self._get_func_params(),
                                          self._precision,
-                                         self._shr_mem_obj.get_total_size()):
+                                         max(mem_sizes)):
         with file.If(f'{self.get_element_size_guard(file)}'):
           with file.If(f'{self.get_flag_guard(file)}'):
-            for instr in self._instructions:
-              if instr.is_ready():
-                instr.gen_code(file)
-              else:
-                raise GenerationError("product_generator: requested instr is not ready: ", instr)
+            names = set()
+            assigned_names = set()
+            for instrPerKernel in self._instructions:
+            #The concept is, allocations are replicated on every kernel as every kernel gets these allocation requests
+              for instr in instrPerKernel:
+                if isinstance(instr, ShrMemNewAlloc):
+                  instr.set_mults_per_block(self._num_ops_per_block) 
+                  name = instr._dest.obj.name
+                  if not name in names:
+                    names.add(name)
+                    instr.gen_code(file)
+                  else:
+                    instr.gen_code(None)
+                if isinstance(instr, ShrMemNewAssign):
+                  instr.set_mults_per_block(self._num_ops_per_block) 
+                  name = instr._dest.obj.name
+                  if not name in assigned_names:
+                    instr.set_mults_per_block(1) 
+                    instr.gen_code(file)
+                    assigned_names.add(name)
+                  else:
+                    instr.gen_code(None)
+            for instrPerKernel in self._instructions:
+              with file.Scope():
+                for instr in instrPerKernel:
+                  if instr.is_ready() and \
+                    not isinstance(instr, ShrMemNewAlloc) and \
+                    not isinstance(instr, ShrMemNewAssign):
+                    instr.gen_code(file)
+                  else:
+                    if not instr.is_ready():
+                      pass
+                      #raise GenerationError("product_generator: requested instr is not ready: ", instr)
 
       self._kernel = src.getvalue()
 
@@ -178,69 +218,75 @@ class ProductGenerator(GemmLikeGenerator):
 
   def _populate_global_scope(self):
     for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SOURCE or tensor.direction == DataFlowDirection.SINK:
+      if not tensor.temporary:
         self._symbol_table.add_symbol(Symbol(obj=tensor,
                                              name=tensor.name,
                                              stype=SymbolType.Batch))
     self._symbol_table.add_scope()
 
   def _emit_instructions(self):
-    params = {'vm': self._vm,
-              'product_kernel_type': self._kernel_type,
-              'symbol_table': self._symbol_table,
-              'tensors': self._tensors,
-              'alpha': self._alpha,
-              'operation_descriptions': self._operation_descriptions,
-              'num_compute_threads': self._num_compute_threads,
-              'num_active_threads': self._num_active_threads}
+    for i, operation_descr in enumerate(self._operation_descriptions):
+      op1 = None
+      op2 = None
+      result = None
+      for tensor in self._tensors:
+        if tensor.name == operation_descr.leftTerm.name:
+          op1 = tensor
+        elif tensor.name == operation_descr.rightTerm.name:
+          op2 = tensor
+        elif tensor.name == operation_descr.result.name:
+          result = tensor
 
-    kernel_factory = ProductKernelsFactory(**params)
-    self._kernel_type = kernel_factory.product_kernel_type()
+      params = {'vm': self._vm,
+                'product_kernel_type': self._kernel_type,
+                'symbol_table': self._symbol_table,
+                'op1': op1,
+                'op2': op2,
+                'result': result,
+                'alphas': self._alphas[i],
+                'operation_description': operation_descr,
+                'num_compute_threads': self._num_compute_threads,
+                'num_active_threads': self._num_active_threads}
 
-    product_kernel_builder = kernel_factory.get_builder()
-    product_kernel_builder.build()
+      kernel_factory = ProductKernelsFactory(**params)
+      self._kernel_type = kernel_factory.product_kernel_type()
 
-    self._instructions = product_kernel_builder.get_instructions()
-    self._reg_array_obj = product_kernel_builder.get_reg_array_obj()
-    self._shr_mem_obj = product_kernel_builder.get_shr_mem_obj()
-    self._shr_mem_loads = product_kernel_builder.get_shr_mem_loads()
+      product_kernel_builder = kernel_factory.get_builder()
+      product_kernel_builder.build()
+
+      self._instructions.append(product_kernel_builder.get_instructions())
+      self._symbol_table.pop_scope()
+      self._symbol_table.add_scope()
+
+      self._reg_array_obj.append(product_kernel_builder.get_reg_array_obj())
+      self._shr_mem_obj.append(product_kernel_builder.get_shr_mem_obj())
+      self._shr_mem_loads.append(product_kernel_builder.get_shr_mem_loads())
+
 
   def _analyze(self):
-    # compute total required shr. mem
-    shr_mem_counter = 0
-    for instr in self._shr_mem_loads:
-      instr.set_shr_mem_offset(shr_mem_counter)
-      shr_mem_counter += instr.compute_shared_mem_size()
+    for i, instrGroup in enumerate(self._instructions):
+      shr_mem_counter = 0
+      for instr in self._shr_mem_loads[i]:
+        instr.set_shr_mem_offset(shr_mem_counter)
+        shr_mem_counter += instr.compute_shared_mem_size()
 
-    self._shr_mem_obj.set_size_per_mult(shr_mem_counter)
+      self._shr_mem_obj[i].set_size_per_mult(shr_mem_counter)
 
-    result_tensor = None
-    for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SINK:
-        result_tensor = tensor
-    assert (result_tensor != None)
+    # TODO: Support for multiple blocks
+    self._num_ops_per_block = 1
+    for i, instrGroup in enumerate(self._instructions):
+      self._shr_mem_obj[i].set_mults_per_block(self._num_ops_per_block)
+      for inst in instrGroup:
+        if isinstance(inst, ShrMemNewAlloc):
+          inst.set_mults_per_block(self._num_ops_per_block)
 
-    # compute num matrix multiplications per block
-    thread_policy = TheadPolicyFactory.get_product_policy(vm=self._vm,
-                                                          shr_mem_per_op=shr_mem_counter,
-                                                          num_threads=self._num_active_threads,
-                                                          ops=self._tensors,
-                                                          res=result_tensor)
-
-    self._num_ops_per_block = thread_policy.get_num_ops_per_block()
-    self._shr_mem_obj.set_mults_per_block(self._num_ops_per_block)
-
-    for inst in self._instructions:
-      if isinstance(inst, ShrMemNewAlloc):
-        inst.set_mults_per_block(self._num_ops_per_block)
 
   def _generate_base_name(self):
     addresses = ""
     transpose = ""
 
     for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SOURCE or \
-          tensor.direction == DataFlowDirection.SINK:
+      if not tensor.temporary:
         addresses += f'{tensor.addressing[0]}_'
         transpose += "NT_"
 
@@ -248,8 +294,7 @@ class ProductGenerator(GemmLikeGenerator):
 
     tensorstrs = ""
     for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SOURCE or \
-          tensor.direction == DataFlowDirection.SINK:
+      if not tensor.temporary:
         tensorstrs += tensor.__str__()
 
     result = hashlib.md5(('{}_{}_{}'.format(
@@ -261,13 +306,13 @@ class ProductGenerator(GemmLikeGenerator):
 
     product_dims = ""
     for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SOURCE or \
-          tensor.direction == DataFlowDirection.SINK:
+      if not tensor.temporary:
         product_dims += "d"
         for d in tensor.get_dimensions():
           product_dims += f'{d}_'
 
-    consts = f'alpha_{int(self._alpha)}'
+    consts = "alpha_"
+    consts += "alpha_".join([str(a).replace(".", "_") for a in self._alphas])
     return '{0}product_{1}_{2}_{3}_{4}_{5}'.format(prefix,
                                                    transpose,
                                                    product_dims,
@@ -276,25 +321,33 @@ class ProductGenerator(GemmLikeGenerator):
                                                    md5encoding[:Generator.ENCODING_LENGTH])
 
   def _get_func_params(self):
-    base_params = super(ProductGenerator, self)._get_func_params(matrices=self._tensors)
-    if isinstance(self._alpha, float):
-      return base_params
-    else:
-      return f'{self._precision} {self._alpha}, {base_params}'
+    base_params = super(ProductGenerator, self)._get_func_params(
+      matrices=self._get_sorted_non_tmp_tensors()
+    )
+    for alpha in self._alphas:
+      if not isinstance(alpha, float):
+        raise Exception("Product supports only static alpha input (compile-time float not variable)")
+
+    return f'{base_params}'
 
   def _get_launcher_params(self, with_defaults=False):
-    base_params = super(ProductGenerator, self)._get_launcher_params(with_defaults, matrices=self._tensors)
-    if isinstance(self._alpha, float):
-      return base_params
-    else:
-      return f'{self._precision} {self._alpha}, {base_params}'
+    base_params = super(ProductGenerator, self)._get_launcher_params(with_defaults,
+                                                                     matrices=self._get_sorted_non_tmp_tensors())
+    for alpha in self._alphas:
+      if not isinstance(alpha, float):
+        raise Exception("Product supports only static alpha input (compile-time float not variable)")
+
+    return f'{base_params}'
 
   def _get_func_args(self):
-    base_args = super(ProductGenerator, self)._get_func_args(matrices=self._tensors)
-    if isinstance(self._alpha, float):
-      return base_args
-    else:
-      return f'{self._alpha}, {base_args}'
+    base_args = super(ProductGenerator, self)._get_func_args(
+      matrices=self._get_sorted_non_tmp_tensors()
+    )
+    for alpha in self._alphas:
+      if not isinstance(alpha, float):
+        raise Exception("Product supports only static alpha input (compile-time float not variable)")
+
+    return f'{base_args}'
 
   def _get_block_dim_spec(self):
     super(ProductGenerator, self)._get_block_dim_spec()
@@ -305,3 +358,7 @@ class ProductGenerator(GemmLikeGenerator):
     num_blocks = "({0} + {1} - 1) / {1}".format(GeneralLexicon.NUM_ELEMENTS,
                                                 self._num_ops_per_block)
     return f'grid({num_blocks}, 1, 1)'
+
+  def _get_sorted_non_tmp_tensors(self):
+    return sorted([m for m in self._tensors if not m.temporary], key=lambda x: x.name)
+  

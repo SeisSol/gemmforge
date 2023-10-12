@@ -107,10 +107,12 @@ class ShrMemNewAlloc(AbstractInstruction):
                                                       alignment=8)
 
     if shr_mem_decl:
-      writer(f'{shr_mem_decl};')
+      if writer != None:
+        writer(f'{shr_mem_decl};')
 
     address = f'{shrmem_obj.get_total_size()} * {lexic.thread_idx_y}'
-    writer(f'{self._vm.fp_as_str()} * {shrmem_obj.name} = &{common_shrmem}[{address}];')
+    if writer != None:
+      writer(f'{self._vm.fp_as_str()} * {shrmem_obj.name} = &{common_shrmem}[{address}];')
 
   def is_ready(self):
     if self._mults_per_block:

@@ -140,7 +140,7 @@ class AbstractGenerator(ABC):
   def _build_param(self, matrix):
     sub_offset = f'int {self._generate_extra_offset_symbol(matrix)}'
     precision = self._vm.fp_as_str()
-    if matrix.direction == DataFlowDirection.SINK:
+    if matrix.direction == DataFlowDirection.SINK or matrix.direction == DataFlowDirection.SOURCESINK:
       return f'{precision} {matrix.ptr_type} {matrix.name}, {sub_offset}'
     else:
       if matrix.addressing == "none":

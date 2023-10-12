@@ -33,9 +33,10 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     self._mem_region_b = None
 
   def build(self,
-            ops: List[Symbol],
+            op1: Symbol,
+            op2: Symbol,
             dest: Symbol,
-            operation_descriptions):
+            operation_description):
     self._reset()
 
     # Note: of trans_a==True than an operand is given as KxM instead of (MxK).
@@ -43,29 +44,30 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
     # transposing it on the fly. In, short, the loader guaranties to deliver
     # an operand as (MxK) to shr. mem.
     # self._symbol_table.add_scope()
-    print("EX1", ", ".join([str(op) for op in ops]))
-    for op in ops:
-      if op.obj.direction == DataFlowDirection.SOURCE:
-        print(op)
-        self._symbol_table.add_scope()
-        self._make_loader_and_symbol(operand=op, do_transpose=False)
-        self._ops.append(op)
-      # elif op.obj.direction == DataFlowDirection.SOURCESINK:
-      #  builder = ShrMemNewAllocBuilder(self._vm, self._symbol_table)
-      #  symbol = builder.build(op.obj.get_name(), op.obj.get_volume(), obj)
-      #  self._instructions.extend(builder.get_instructions())
-      #  self._ops.append(symbol)
-      else:
-        self._ops.append(op)
+    print("EX1", ", ".join([str(op) for op in [op1, op2]]))
+    if not op1.obj.temporary:
+      print(op1)
+      self._symbol_table.add_scope()
+      self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=False)
+    else:
+      self._op1 = op2
+    if not op2.obj.temporary:
+      print(op1)
+      self._symbol_table.add_scope()
+      self._op2 = self._make_loader_and_symbol(operand=op2, do_transpose=False)
+    else:
+      self._op2 = op2
     print("EX2", ", ".join([str(op) for op in self._ops]))
 
-    self._insert_sync_threads()
+    if not op1.obj.temporary and not op2.obj.temporary:
+      self._insert_sync_threads()
 
     gemm_params = {'vm': self._vm,
-                   'ops': self._ops,
+                   'op1': self._op1,
+                   'op2': self._op2,
                    'dest': dest,
                    'num_threads': self._num_threads,
-                   'operation_descriptions': operation_descriptions}
+                   'operation_description': operation_description}
     self._instructions.append(ShrMemBasedProduct(**gemm_params))
 
   def _make_loader_and_symbol(self, operand, do_transpose):
