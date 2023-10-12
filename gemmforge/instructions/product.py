@@ -12,6 +12,7 @@ class ShrMemBasedProduct(AbstractInstruction):
     self._op1 = kwargs['op1']
     self._op2 = kwargs['op2']
     self._dest = kwargs['dest']
+    self._result_tensor = kwargs['result_tensor']
     self._operation_description = kwargs['operation_description']
     self._num_threads = kwargs['num_threads']
 
@@ -40,7 +41,7 @@ class ShrMemBasedProduct(AbstractInstruction):
     operation = self._operation_description
     print(operation)
     op1 = self._op1
-    threads_needed_for_operation = op1.obj.get_volume() // op1.obj.get_dimensions()[0]
+    threads_needed_for_operation = self._result_tensor.get_volume() // self._result_tensor.get_dimensions()[0]
     writer.If(self.gen_mask_threads(int(threads_needed_for_operation))).__enter__()
 
     # We always want coalesced write, therefore we need to see which index

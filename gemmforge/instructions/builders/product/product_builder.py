@@ -36,6 +36,7 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
             op1: Symbol,
             op2: Symbol,
             dest: Symbol,
+            result_tensor,
             operation_description):
     self._reset()
 
@@ -59,6 +60,8 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
       self._op2 = op2
     print("EX2", ", ".join([str(op) for op in self._ops]))
 
+    self._result_tensor = result_tensor
+
     if not op1.obj.temporary and not op2.obj.temporary:
       self._insert_sync_threads()
 
@@ -66,6 +69,7 @@ class ShrMemBasedProductBuilder(AbstractBuilder):
                    'op1': self._op1,
                    'op2': self._op2,
                    'dest': dest,
+                   'result_tensor': result_tensor,
                    'num_threads': self._num_threads,
                    'operation_description': operation_description}
     self._instructions.append(ShrMemBasedProduct(**gemm_params))

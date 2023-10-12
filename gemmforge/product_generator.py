@@ -33,6 +33,8 @@ class ProductGenerator(GemmLikeGenerator):
     self._operation_descriptions = list()
     # No beta supported for this operation
     # self._betas = list()
+    self._num_compute_threads = list()
+    self._num_active_threads = list()
 
   # complete_operation_descriptions = List[self._descr, tensor_a, tensor_b, tensor_c, alpha, args]
   def set(self, complete_operation_descriptions):
@@ -201,20 +203,26 @@ class ProductGenerator(GemmLikeGenerator):
     return
 
   def _deduce_num_threads(self):
-    max_thread_count = 0
+    for i, operation_descr in enumerate(self._operation_descriptions):
+      op1 = None
+      op2 = None
+      result = None
+      for tensor in self._tensors:
+        if tensor.name == operation_descr.leftTerm.name:
+          op1 = tensor
+        elif tensor.name == operation_descr.rightTerm.name:
+          op2 = tensor
+        elif tensor.name == operation_descr.result.name:
+          result = tensor
 
-    for tensor in self._tensors:
-      if tensor.direction == DataFlowDirection.SOURCE:
-        total_cells = tensor.get_actual_volume()
-        # Every thread gets a line, because only the first dimension is contiguously stored
-        thread_count = total_cells / tensor.get_actual_num_dimensions()[0]
+      assert( result.direction == DataFlowDirection.SINK or result.direction == DataFlowDirection.SOURCESINK)
+      total_cells = result.get_actual_volume()
+      # Every thread gets a line, because only the first dimension is contiguously stored
+      thread_count = total_cells / result.get_actual_num_dimensions()[0]
 
-        if thread_count > max_thread_count:
-          max_thread_count = thread_count
-
-    num_vector_units_required = math.ceil(thread_count / self._hw_descr.vec_unit_length)
-    self._num_compute_threads = thread_count
-    self._num_active_threads = num_vector_units_required * self._hw_descr.vec_unit_length
+      num_vector_units_required = math.ceil(thread_count / self._hw_descr.vec_unit_length)
+      self._num_compute_threads.append(thread_count)
+      self._num_active_threads.append(num_vector_units_required * self._hw_descr.vec_unit_length)
 
   def _populate_global_scope(self):
     for tensor in self._tensors:
@@ -243,10 +251,11 @@ class ProductGenerator(GemmLikeGenerator):
                 'op1': op1,
                 'op2': op2,
                 'result': result,
+                'result_tensor': result,
                 'alphas': self._alphas[i],
                 'operation_description': operation_descr,
-                'num_compute_threads': self._num_compute_threads,
-                'num_active_threads': self._num_active_threads}
+                'num_compute_threads': self._num_compute_threads[i],
+                'num_active_threads': self._num_active_threads[i]}
 
       kernel_factory = ProductKernelsFactory(**params)
       self._kernel_type = kernel_factory.product_kernel_type()
