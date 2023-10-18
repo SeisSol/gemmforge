@@ -23,7 +23,7 @@ class GenericProductThreadPolicy(AbstractTensorThreadPolicy):
 
   def get_num_ops_per_block(self):
     print("WARNING: TODO: IMPROVE GENERIC PRODUCT THREAD POLICY 2")
-    accumulator_length = self._res.get_size() / self._res.get_dimensions()[0]
+    accumulator_length = int(self._res.get_size() / self._res.get_dimensions()[0])
     max_num_regs_per_thread = self._estimate_num_registers_per_mult(accumulator_length)
 
     hw_descr = self._vm.get_hw_descr()
@@ -35,4 +35,4 @@ class GenericProductThreadPolicy(AbstractTensorThreadPolicy):
     mults_wrt_num_regs = hw_descr.max_reg_per_block / (self._num_threads * max_num_regs_per_thread)
     mults_per_sm = int(min(mults_wrt_shr_mem, mults_wrt_num_regs))
 
-    return max(int(mults_per_sm / hw_descr.max_block_per_sm), 1)
+    return int(max(int(mults_per_sm / hw_descr.max_block_per_sm), 1))

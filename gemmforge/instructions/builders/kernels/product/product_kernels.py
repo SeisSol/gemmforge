@@ -50,7 +50,7 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     max_line_width = 0
     for tensor in [self._op1, self._op2, self._result]:
       if tensor.direction == DataFlowDirection.SINK or tensor.direction == DataFlowDirection.SOURCESINK:
-        line_width = tensor.get_size() / tensor.get_dimensions()[0]
+        line_width = tensor.get_dimensions()[1]
         if line_width > max_line_width:
           max_line_width = line_width
 

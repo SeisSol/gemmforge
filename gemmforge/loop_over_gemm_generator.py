@@ -249,10 +249,10 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 raise GenerationError(f"gemm_generator: requested instr {instr} is not ready")
             tab_count += 1
             gemm_loop_offsets = {"lhs": ("", "+ 0"), "rhs": ("", "+ 0"), "result": ("", "+ 0")}
-            for descr_item in self._complete_operation_description:
+            for it, descr_item in enumerate(self._complete_operation_description):
               if descr_item[0] == "forLoopBegin":
                 descr = descr_item[1]
-                file.Pragma("unroll")
+                file.Pragma("unroll 2")
                 file.For(
                   f"int {descr['index']} = {descr['start']}; {descr['index']} < {descr['stop']}; {descr['iter']}{descr['index']}").__enter__()
                 tab_count += 1
@@ -271,6 +271,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 raise InternalError("OuterLoopBody in LOG not yet implemented")
               elif descr_item[0] == "gemm":
                 with file.Scope():
+                  s = str(self._complete_operation_description[it])
+                  src.write(" " * (tab_count+1) + "//" + s + "\n")
                   gemm_generator = self._gemm_generators[current_gemm_generator]
                   gemm_generator._generate_device_kernel(gemm_loop_offsets, self.get_responsible_buffer)
                   gemm_kernels.append(gemm_generator._kernel)

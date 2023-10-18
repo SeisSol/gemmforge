@@ -125,7 +125,7 @@ class ProductGenerator(GemmLikeGenerator):
     with constructs.Cpp(src) as file:
 
       max_num_threads_per_block = self._num_active_threads * self._num_ops_per_block
-      kernel_bounds = [max_num_threads_per_block]
+      kernel_bounds = max_num_threads_per_block
       team_index_str = self._lexic.batch_indexer_gemm()
 
       mem_sizes = [shr_mem_obj.get_total_size() for shr_mem_obj in self._shr_mem_obj]
@@ -134,7 +134,7 @@ class ProductGenerator(GemmLikeGenerator):
                                          self._base_name,
                                          self._get_func_params(),
                                          self._precision,
-                                         max(mem_sizes)):
+                                         int(max(mem_sizes))):
         with file.If(f'{self.get_element_size_guard(file)}'):
           with file.If(f'{self.get_flag_guard(file)}'):
             names = set()
@@ -360,7 +360,7 @@ class ProductGenerator(GemmLikeGenerator):
 
   def _get_block_dim_spec(self):
     super(ProductGenerator, self)._get_block_dim_spec()
-    return f'block({self._num_active_threads}, {self._num_ops_per_block}, 1)'
+    return f'block({max(self._num_active_threads)}, {self._num_ops_per_block}, 1)'
 
   def _get_grid_dim_spec(self):
     super(ProductGenerator, self)._get_grid_dim_spec()
@@ -370,4 +370,3 @@ class ProductGenerator(GemmLikeGenerator):
 
   def _get_sorted_non_tmp_tensors(self):
     return sorted([m for m in self._tensors if not m.temporary], key=lambda x: x.name)
-  
