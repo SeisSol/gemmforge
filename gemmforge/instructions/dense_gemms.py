@@ -37,7 +37,16 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
       writer(f'{self._vm.fp_as_str()} {value_var};')
 
       writer.Emptyline()
-      writer.Pragma('unroll')
+      unroll_count = ""
+      if op1_data_view.columns * self._dest.obj.size <= 2048:
+        unroll_count = ""
+      elif op1_data_view.columns * self._dest.obj.size > 2048:
+        unroll_count = (op1_data_view.columns+1)/2
+      elif op1_data_view.columns * self._dest.obj.size > 2048 * 4:
+        unroll_count = (op1_data_view.columns+1)/4
+      else:
+        unroll_count = 1
+      writer.Pragma(f'unroll {unroll_count}')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
         writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
