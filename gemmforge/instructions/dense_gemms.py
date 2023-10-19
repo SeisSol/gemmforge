@@ -37,15 +37,14 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
       writer(f'{self._vm.fp_as_str()} {value_var};')
 
       writer.Emptyline()
+
       unroll_count = ""
-      if op1_data_view.columns * self._dest.obj.size <= 2048:
+      if self._dest.obj.size <= 64:
         unroll_count = ""
-      elif op1_data_view.columns * self._dest.obj.size > 2048:
-        unroll_count = (op1_data_view.columns+1)/2
-      elif op1_data_view.columns * self._dest.obj.size > 2048 * 4:
-        unroll_count = (op1_data_view.columns+1)/4
-      else:
-        unroll_count = 1
+      elif self._dest.obj.size > 64:
+        k =  (self._dest.obj.size+63)//64
+        unroll_count = (op1_data_view.columns+k-1)//k
+
       writer.Pragma(f'unroll {unroll_count}')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
@@ -56,7 +55,8 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
 
   def _get_inner_loop(self, writer, op1_value):
     op2_data_view = self._op2.data_view
-    writer.Pragma('unroll')
+
+    writer.Pragma(f'unroll')
     with writer.For(f'int n = 0; n < {self._dest.obj.size}; ++n'):
       if self._trans_b:
         op2_addr = f'n + {op2_data_view.lead_dim} * k'

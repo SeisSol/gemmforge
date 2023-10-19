@@ -252,10 +252,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
             for it, descr_item in enumerate(self._complete_operation_description):
               if descr_item[0] == "forLoopBegin":
                 descr = descr_item[1]
-                if self._num_compute_threads < 16:
+                if int(descr['stop']) < 4:
                   unroll_count = ""
-                elif self._num_compute_threads <= 32:
-                  unroll_count = 2
                 else:
                   unroll_count = 1
                 file.Pragma(f"unroll {unroll_count}")
