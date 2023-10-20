@@ -217,13 +217,15 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     return None
 
   def find_nearest_divisor(self, N, K):
-      E = K  # Start with the smallest divisor
+      N = int(N)
+      K = int(K)
+      E = K
 
       while E > 0:
           if N % E == 0:
               return E  # E is a divisor of N
 
-          E -= 1  # Increment E
+          E -= 1
 
       return 1 
 
@@ -280,8 +282,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 if int(descr['stop']) < 4 or unroll_count >= int(descr['stop']):
                   unroll_count = ""
                 else:
-                  unroll_count_old = unroll_count
-                  unroll_count = self.find_nearest_divisor(int(descr["stop"]), unroll_count)
+                  unroll_count_old = int(unroll_count)
+                  unroll_count = self.find_nearest_divisor(int(descr["stop"]), int(unroll_count))
                   if unroll_count == 1:
                     unroll_count = self.find_nearest_divisor(int(descr["stop"])+1, unroll_count_old )
                   if unroll_count == 1:
