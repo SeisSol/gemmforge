@@ -79,6 +79,8 @@ class StoreRegToGlbTensor(AbstractInstruction):
                  vm: VM,
                  dest: Symbol,
                  src: Symbol,
+                 alpha: float,
+                 beta: float,
                  num_threads: int):
         super(StoreRegToGlbTensor, self).__init__(vm)
 
@@ -93,6 +95,8 @@ class StoreRegToGlbTensor(AbstractInstruction):
         self._src = src
         self._num_threads = num_threads
         self._is_ready = True
+        self._alpha = alpha
+        self._beta = beta
 
     def gen_code(self, writer):
         # Important this class assumes that we store the ith row of tensor in a register,
@@ -155,18 +159,32 @@ class StoreRegToGlbTensor(AbstractInstruction):
             cols = dims[1]
             writer(f"int rows_left = {thread_idx_x[0]};")
             if (len(dims) >= 2):
-              for i in range(len(dims)-1, 0, -1):
-                if i == 1:
-                  s1 = f"const int row_offset_{i-1} = rows_left;"
-                  s2 = ""
-                else:
-                  s1 = f"const int row_offset_{i-1} = rows_left / {acc_dims[i]//dims[1]};"
-                  s2 = f"rows_left -= row_offset_{i-1} * {acc_dims[i]//dims[1]};"
-                writer(s1)
-                writer(s2)
+                for i in range(len(dims)-1, -1, -1):
+                    if i == 1:
+                        #s1 = f"const int row_offset_{i-1} = rows_left;"
+                        #s2 = ""
+                        #s3 = f"const int dim_offset_{dest_indices[i-1]} = row_offset_{i-1};"
+                        s1 = ""
+                        s2 = ""
+                        #s3 = ""
+                    elif i == 0:
+                        #s1 = f"const int row_offset_{i} = rows_left % {dims[0]};"
+                        s1 = f"const int row_offset_{i} = rows_left;"
+                        #s2 = f"rows_left -= row_offset_{i} * {acc_dims[i]//dims[1]}; // should be 0"
+                        #s3 = f"const int dim_offset_{dest_indices[i]} = row_offset_{i};"
+                        s2 = ""
+                    else:
+                        s1 = f"const int row_offset_{i-1} = rows_left / {acc_dims[i]//dims[1]};"
+                        s2 = f"rows_left -= row_offset_{i-1} * {acc_dims[i]//dims[1]};"
+                        #s3 = f"const int dim_offset_{dest_indices[i]} = row_offset_{i-1};"
+                    writer(s1)
+                    writer(s2)
+                    #writer(s3)
             else:
-              s1 = f"const int row_offset_{i-1} = rows_left;"
-              writer(s1)
+                s1 = f"const int row_offset_{i-1} = rows_left;"
+                #s3 = f"const int dim_offset_{dest_indices[i-1]} = row_offset_{i-1};"
+                writer(s1)
+                #writer(s3)
             access_str = ""
             if (len(dims)>= 2):
               for i in range(len(dims)):
@@ -180,8 +198,13 @@ class StoreRegToGlbTensor(AbstractInstruction):
               access_str += f"row_offset_{i} + "
 
             with writer.For(f'int i = 0; i < {cols}; ++i'):
-                writer(
-                    f"{self._dest.name}[{access_str}i * {dims[1]}] = {self._src.name}[i];")
-
+                betaadd = "" if self._beta == 0.0 else f" + {self._beta} * {self._dest.name}[{access_str}i * {dims[0]}]"
+                alphamul = "" if self._alpha == 1.0 else f"{self._alpha} * "
+                if int(cols) > 1:
+                    writer(
+                        f"{self._dest.name}[{access_str}i * {dims[0]}] = {alphamul}{self._src.name}[i]{betaadd};")
+                else:
+                    writer(
+                        f"{self._dest.name}[{access_str}i * {dims[0]}] = {alphamul}{self._src.name}{betaadd};")
     def __str__(self) -> str:
         return 'not implemented'

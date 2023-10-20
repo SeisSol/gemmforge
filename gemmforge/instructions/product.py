@@ -40,33 +40,46 @@ class ShrMemBasedProduct(AbstractInstruction):
     operation = self._operation_description
     print(operation)
     op1 = self._op1
-    threads_needed_for_operation = self._result_tensor.get_volume() // self._result_tensor.get_dimensions()[0]
+    threads_needed_for_operation = self._result_tensor.get_accumulated_dimensions()[-1] // self._result_tensor.get_dimensions()[1]
     writer.If(self.gen_mask_threads(int(threads_needed_for_operation))).__enter__()
 
     dims = self._result_tensor.get_dimensions()
     accumulated_dims = self._result_tensor.get_accumulated_dimensions()
 
-    # We always want coalesced write, therefore we need to see which index
-    # has stride one
     dest_strides = operation.result.memoryLayout._stride
     dest_indices = operation.result.indices
     loop_iterator_rows = None
+    """
     for offset in range(len(dest_strides)):
       print(offset, dest_strides[offset], dest_indices[offset])
+      print(dest_strides[offset], dims[1])
       if dest_strides[offset] == dims[1]:
         loop_iterator_rows = dest_indices[offset]
+    print(dest_indices, dest_strides, loop_iterator_rows)
     assert (loop_iterator_rows != None)
+    """
+    loop_iterator_rows = operation.result.indices[1]
+    #raise Exception(loop_iterator_rows)
 
     offests_strs = list()
 
     acc_dims = accumulated_dims
     writer(f"int rows_left = {thread_idx_x};")
     if (len(dims) >= 2):
-      for i in range(len(dims)-1, 0, -1):
+      for i in range(len(dims)-1, -1, -1):
         if i == 1:
-          s1 = f"const int row_offset_{i-1} = rows_left;"
+          #s1 = f"const int row_offset_{i-1} = rows_left;"
+          #s2 = ""
+          #s3 = f"const int dim_offset_{dest_indices[i-1]} = row_offset_{i-1};"
+          s1 = ""
           s2 = ""
-          s3 = f"const int dim_offset_{dest_indices[i-1]} = row_offset_{i-1};"
+          s3 = ""
+        elif i == 0:
+          #s1 = f"const int row_offset_{i} = rows_left % {dims[1]};"
+          s1 = f"const int row_offset_{i} = rows_left;"
+          #s2 = f"rows_left -= row_offset_{i} * {acc_dims[i]//dims[1]}; // should be 0"
+          s2 = ""
+          s3 = f"const int dim_offset_{dest_indices[i]} = row_offset_{i};"
         else:
           s1 = f"const int row_offset_{i-1} = rows_left / {acc_dims[i]//dims[1]};"
           s2 = f"rows_left -= row_offset_{i-1} * {acc_dims[i]//dims[1]};"
@@ -82,7 +95,8 @@ class ShrMemBasedProduct(AbstractInstruction):
 
     # The dictionary should be ordered we need python 3.8
     it = 0
-    item = [(a,b) for (a,b) in operation.loopRanges.items() if a == loop_iterator_rows][0]
+    item = operation.loopRanges[loop_iterator_rows]
+    
 
     unit_stride_iterator = None
     for offset in range(len(dest_strides)):
@@ -94,7 +108,7 @@ class ShrMemBasedProduct(AbstractInstruction):
     #row_offset_str = f"const int row_offset = {thread_idx_x} % {self._result_tensor.get_dimensions()[0]};"
     #writer(row_offset_str)
 
-    (loop_iterator, loop_range) = item
+    (loop_iterator, loop_range) = loop_iterator_rows, item
     writer.Pragma("unroll")
     writer.For(
       f"int {loop_iterator} = {loop_range.start}; {loop_iterator} < {loop_range.stop}; ++{loop_iterator}").__enter__()
@@ -109,17 +123,20 @@ class ShrMemBasedProduct(AbstractInstruction):
     dest_indices = operation.result.indices
     kernel_str = ""
     kernel_str += dest.name
-    kernel_str += f"["
-    #for offset in range(len(dest_strides)):
-    #  if loop_iterator_rows and dest_indices[offset] == loop_iterator_rows:
-    #    kernel_str += thread_idx_x
-    #  else:
-    #    kernel_str += dest_indices[offset]
-    #  kernel_str += " * " + str(dest_strides[offset])
-    #  if offset != len(dest_strides) - 1:
-    #    kernel_str += " + "
-    kernel_str += item[0]
-    kernel_str += "] = "
+    if loop_range.stop == 1:
+      kernel_str += " = "
+    else:
+      kernel_str += f"["
+      #for offset in range(len(dest_strides)):
+      #  if loop_iterator_rows and dest_indices[offset] == loop_iterator_rows:
+      #    kernel_str += thread_idx_x
+      #  else:
+      #    kernel_str += dest_indices[offset]
+      #  kernel_str += " * " + str(dest_strides[offset])
+      #  if offset != len(dest_strides) - 1:
+      #    kernel_str += " + "
+      kernel_str += loop_iterator_rows
+      kernel_str += "] = "
     if operation.alpha != 1.0:
       kernel_str += str(operation.alpha) + " * "
     kernel_str += op1.name

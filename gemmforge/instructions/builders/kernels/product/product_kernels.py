@@ -15,7 +15,8 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     self._op2 = kwargs['op2']
     self._result = kwargs['result']
     self._result_tensor = kwargs['result_tensor']
-    self._alphas = kwargs['alphas']
+    self._alpha = kwargs['alpha']
+    self._beta = kwargs['beta']
     self._num_compute_threads = kwargs['num_compute_threads']
     self._num_active_threads = kwargs['num_active_threads']
     self._operation_description = kwargs['operation_description']
@@ -92,6 +93,8 @@ class ShrMemBasedProductKernelBuilder(AbstractBuilder):
     store = StoreRegToGlbTensor(self._vm,
                                 self._symbol_table[self._result],
                                 self._symbol_table[self._reg_array_obj],
+                                self._alpha,
+                                self._beta,
                                 self._num_compute_threads)
     self._instructions.append(store)
 
