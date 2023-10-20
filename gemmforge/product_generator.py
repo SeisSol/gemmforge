@@ -32,7 +32,7 @@ class ProductGenerator(GemmLikeGenerator):
     self._alphas = list()
     self._operation_descriptions = list()
     # No beta supported for this operation
-    # self._betas = list()
+    self._betas = list()
     self._num_compute_threads = list()
     self._num_active_threads = list()
 
@@ -94,6 +94,7 @@ class ProductGenerator(GemmLikeGenerator):
 
       self._alphas.append(descr_item[1]["alpha"])
       self._operation_descriptions.append(operation_description)
+      self._betas.append(1.0 if operation_description.add else 0.0)
 
     print(self._tensors)
 
@@ -216,9 +217,8 @@ class ProductGenerator(GemmLikeGenerator):
           result = tensor
 
       assert( result.direction == DataFlowDirection.SINK or result.direction == DataFlowDirection.SOURCESINK)
-      total_cells = result.get_actual_volume()
       # Every thread gets a line, because only the first dimension is contiguously stored
-      thread_count = total_cells / result.get_actual_num_dimensions()[0]
+      thread_count = result.get_accumulated_dimensions()[-1] / result.get_dimensions()[1]
 
       num_vector_units_required = math.ceil(thread_count / self._hw_descr.vec_unit_length)
       self._num_compute_threads.append(thread_count)
@@ -252,7 +252,8 @@ class ProductGenerator(GemmLikeGenerator):
                 'op2': op2,
                 'result': result,
                 'result_tensor': result,
-                'alphas': self._alphas[i],
+                'alpha': self._alphas[i],
+                'beta': self._betas[i],
                 'operation_description': operation_descr,
                 'num_compute_threads': self._num_compute_threads[i],
                 'num_active_threads': self._num_active_threads[i]}
