@@ -237,6 +237,17 @@ class GemmGenerator(GemmLikeGenerator):
       #  raise Exception("UWU")
     self._symbol_table.add_scope()
 
+  def _get_loop_size(self):
+    if self._trans_a:
+      l1 = self._mat_a.get_actual_num_rows()
+    else:
+      l1 = self._mat_a.get_actual_num_cols()
+    if self._trans_b:
+      l2 = self._mat_b.get_actual_num_rows()
+    else:
+      l2 = self._mat_b.get_actual_num_cols()
+    return l1 * l2
+
   def _emit_instructions(self):
     params = {'vm': self._vm,
               'gemm_kernel_type': self._kernel_type,

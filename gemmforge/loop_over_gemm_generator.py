@@ -216,6 +216,17 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
         return buff_name
     return None
 
+  def find_nearest_divisor(self, N, K):
+      E = K  # Start with the smallest divisor
+
+      while E > 0:
+          if N % E == 0:
+              return E  # E is a divisor of N
+
+          E -= 1  # Increment E
+
+      return 1 
+
   def _generate_kernel(self):
     self._kernel = ""
     src = StringIO()
@@ -249,13 +260,33 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 raise GenerationError(f"gemm_generator: requested instr {instr} is not ready")
             tab_count += 1
             gemm_loop_offsets = {"lhs": ("", "+ 0"), "rhs": ("", "+ 0"), "result": ("", "+ 0")}
+            loop_size = list()
+            cc = 0
+            for descr_item in self._complete_operation_description:
+              if descr_item[0] == "gemm":
+                gemm_generator = self._gemm_generators[cc]
+                loop_size.append(gemm_generator._get_loop_size())
+                cc+=1
+
             for it, descr_item in enumerate(self._complete_operation_description):
               if descr_item[0] == "forLoopBegin":
                 descr = descr_item[1]
-                if int(descr['stop']) < 4:
+                inner_loop_size = loop_size[current_gemm_generator]
+                unroll_count = 1
+                elcount = inner_loop_size
+                while elcount < 1024:
+                  unroll_count += 1
+                  elcount += inner_loop_size
+                if int(descr['stop']) < 4 or unroll_count >= int(descr['stop']):
                   unroll_count = ""
                 else:
-                  unroll_count = 1
+                  unroll_count_old = unroll_count
+                  unroll_count = self.find_nearest_divisor(int(descr["stop"]), unroll_count)
+                  if unroll_count == 1:
+                    unroll_count = self.find_nearest_divisor(int(descr["stop"])+1, unroll_count_old )
+                  if unroll_count == 1:
+                    unroll_count = self.find_nearest_divisor(int(descr["stop"])+2, unroll_count_old )
+                    
                 file.Pragma(f"unroll {unroll_count}")
                 file.For(
                   f"int {descr['index']} = {descr['start']}; {descr['index']} < {descr['stop']}; {descr['iter']}{descr['index']}").__enter__()
