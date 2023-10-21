@@ -29,6 +29,14 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
 
     self._is_ready = True
 
+  def find_nearest_block_divisor(self, number, blocks):
+    for _number in [number, number+1, number-1]:
+      for _divisor in range(2,_number):
+        if _number//_divisor == blocks and _number % _divisor == 0:
+          return _divisor
+
+    return ""
+
   def gen_code(self, writer):
     value_var = 'value'
     op1_data_view = self._op1.data_view
@@ -40,9 +48,15 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
       writer.Emptyline()
 
       if self._apply_log_loop_heuristics:
-        writer.Pragma(f'unroll 1')
+        n = self._dest.obj.size
+        if n > 128:
+          rblocks = (n+127) // 128
+          s = self.find_nearest_block_divisor(n, rblocks)
+          writer.Pragma(f'unroll 1')
+        else:
+          writer.Pragma(f'unroll {op1_data_view.columns}')
       else:
-        writer.Pragma(f'unroll')
+        writer.Pragma(f'unroll {op1_data_view.columns}')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
         writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
@@ -53,7 +67,7 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
   def _get_inner_loop(self, writer, op1_value):
     op2_data_view = self._op2.data_view
 
-    writer.Pragma(f'unroll')
+    writer.Pragma(f'unroll {self._dest.obj.size}')
     with writer.For(f'int n = 0; n < {self._dest.obj.size}; ++n'):
       if self._trans_b:
         op2_addr = f'n + {op2_data_view.lead_dim} * k'

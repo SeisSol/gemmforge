@@ -144,6 +144,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
           self._matrices.add(c)
           print("Add: ", c)
 
+    loop_count = 0
     for offset, descr_item in enumerate(self._complete_operation_description):
       if descr_item[0] == "gemm":
         operation_description = descr_item[1]["descr"]
@@ -292,7 +293,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                     unroll_count = self.find_nearest_divisor(int(descr["stop"])+2, unroll_count_old )
                 file.Pragma(f"unroll {unroll_count}")
                 """
-                file.Pragma(f"unroll")
+                file.Pragma(f"unroll {int(descr['stop']) - int(descr['start'])}")
                 file.For(
                   f"int {descr['index']} = {descr['start']}; {descr['index']} < {descr['stop']}; {descr['iter']}{descr['index']}").__enter__()
                 tab_count += 1
