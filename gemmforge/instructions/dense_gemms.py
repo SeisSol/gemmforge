@@ -56,7 +56,7 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
         else:
           writer.Pragma(f'unroll {op1_data_view.columns}')
       else:
-        writer.Pragma(f'unroll {op1_data_view.columns}')
+        writer.Pragma(f'unroll')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
         writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
@@ -67,7 +67,10 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
   def _get_inner_loop(self, writer, op1_value):
     op2_data_view = self._op2.data_view
 
-    writer.Pragma(f'unroll {self._dest.obj.size}')
+    if self._apply_log_loop_heuristics:
+      writer.Pragma(f'unroll {self._dest.obj.size}')
+    else:
+      writer.Pragma(f'unroll')
     with writer.For(f'int n = 0; n < {self._dest.obj.size}; ++n'):
       if self._trans_b:
         op2_addr = f'n + {op2_data_view.lead_dim} * k'

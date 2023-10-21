@@ -297,6 +297,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 """
                 if self._apply_log_loop_heuristics:
                   file.Pragma(f"unroll {int(descr['stop']) - int(descr['start'])}")
+                else:
+                  file.Pragma(f"unroll")
                 file.For(
                   f"int {descr['index']} = {descr['start']}; {descr['index']} < {descr['stop']}; {descr['iter']}{descr['index']}").__enter__()
                 tab_count += 1
