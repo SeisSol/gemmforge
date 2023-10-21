@@ -10,6 +10,7 @@ class ShrMemBasedDenseGemmKernelBuilder(BaseGemmKernelBuilder):
 
   def __init__(self, **kwargs):
     super(ShrMemBasedDenseGemmKernelBuilder, self).__init__(**kwargs)
+    self._apply_log_loop_heuristics = kwargs['apply_log_loop_heuristics']
 
   def build_kernel(self):
     builder = ShrMemAllocBuilder(self._vm, self._symbol_table)
@@ -22,7 +23,8 @@ class ShrMemBasedDenseGemmKernelBuilder(BaseGemmKernelBuilder):
                                           self._symbol_table,
                                           self._reg_array_obj,
                                           self._shr_mem_obj,
-                                          self._num_active_threads)
+                                          self._num_active_threads,
+                                          self._apply_log_loop_heuristics)
 
     builder.build(trans_a=self._trans_a,
                   trans_b=self._trans_b,
@@ -48,7 +50,8 @@ class RegisterOnlyDenseGemmKernelBuilder(BaseGemmKernelBuilder):
                                            self._symbol_table,
                                            self._reg_array_obj,
                                            self._shr_mem_obj,
-                                           self._num_active_threads)
+                                           self._num_active_threads,
+                                           self._apply_log_loop_heuristics)
 
     builder.build(trans_a=self._trans_a,
                   trans_b=self._trans_b,

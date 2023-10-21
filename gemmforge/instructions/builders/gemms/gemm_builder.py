@@ -14,7 +14,8 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
                symbol_table,
                register_array,
                shr_mem,
-               num_threads: int):
+               num_threads: int,
+               apply_log_loop_heuristics):
     super(ShrMemBasedDenseGemmBuilder, self).__init__(vm, symbol_table)
     self._dest_regs = register_array
     self._shr_mem = shr_mem
@@ -29,6 +30,8 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
 
     self._mem_region_a = None
     self._mem_region_b = None
+    
+    self._apply_log_loop_heuristics = apply_log_loop_heuristics
 
   def build(self,
             trans_a: bool,
@@ -60,7 +63,8 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
                    'op1': self._op1,
                    'op2': self._op2,
                    'dest': dest,
-                   'num_threads': self._num_threads}
+                   'num_threads': self._num_threads,
+                   'apply_log_loop_heuristics': self._apply_log_loop_heuristics}
     self._instructions.append(ShrMemBasedDenseGemm(**gemm_params))
 
   def _make_loader_and_symbol(self, operand, do_transpose):
@@ -101,7 +105,8 @@ class RegisterOnlyDenseGemmBuilder(AbstractBuilder):
                symbol_table,
                register_array,
                shr_mem,
-               num_threads: int):
+               num_threads: int,
+               apply_log_loop_heuristics):
     super(RegisterOnlyDenseGemmBuilder, self).__init__(vm, symbol_table)
     self._dest_regs = register_array
     self._shr_mem = shr_mem
@@ -113,6 +118,7 @@ class RegisterOnlyDenseGemmBuilder(AbstractBuilder):
 
     self._mem_region_a = None
     self._mem_region_b = None
+    self._apply_log_loop_heuristics = apply_log_loop_heuristics
 
   def build(self,
             trans_a: bool,
@@ -128,7 +134,8 @@ class RegisterOnlyDenseGemmBuilder(AbstractBuilder):
                    'op1': op1,
                    'op2': op2,
                    'dest': dest,
-                   'num_threads': self._num_threads}
+                   'num_threads': self._num_threads,
+                   'apply_log_loop_heuristics': self._apply_log_loop_heuristics}
     self._instructions.append(RegisterOnlyDenseGemm(**gemm_params))
 
   def get_srh_mem_loads(self):

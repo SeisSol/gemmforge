@@ -16,6 +16,7 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
     self._op2 = kwargs['op2']
     self._dest = kwargs['dest']
     self._num_threads = kwargs['num_threads']
+    self._apply_log_loop_heuristics = kwargs['apply_log_loop_heuristics']
 
     if self._op1.stype == SymbolType.Batch:
       raise InternalError('gemm: `op1` is a batch type, must be either glb. or shr.')
@@ -38,7 +39,10 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
 
       writer.Emptyline()
 
-      writer.Pragma(f'unroll')
+      if self._apply_log_loop_heuristics:
+        writer.Pragma(f'unroll 1')
+      else:
+        writer.Pragma(f'unroll')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
         writer(f'{value_var} = {self._op1.name}[{op1_addr}];')

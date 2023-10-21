@@ -33,7 +33,8 @@ class GemmGenerator(GemmLikeGenerator):
 
     self._factory = GemmKernelsFactory
 
-  def set(self, trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, base_name=None, preserve_matrix_properties=False):
+  def set(self, trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, base_name=None, preserve_matrix_properties=False,
+          apply_log_loop_heuristics=True):
     self._instructions = []
 
     self._mat_a = mat_a
@@ -59,6 +60,7 @@ class GemmGenerator(GemmLikeGenerator):
 
     self._base_name = base_name if base_name is not None else self._generate_base_name()
     self._is_set = True
+    self._apply_log_loop_heuristics = apply_log_loop_heuristics
 
   def generate(self):
     self._check_if_set()
@@ -260,7 +262,8 @@ class GemmGenerator(GemmLikeGenerator):
               'alpha': self._alpha,
               'beta': self._beta,
               'num_compute_threads': self._num_compute_threads,
-              'num_active_threads': self._num_active_threads}
+              'num_active_threads': self._num_active_threads,
+              'apply_log_loop_heuristics': self._apply_log_loop_heuristics}
 
     kernel_factory = self._factory(**params)
     self._kernel_type = kernel_factory.gemm_kernel_type()
