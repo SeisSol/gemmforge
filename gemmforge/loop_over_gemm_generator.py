@@ -43,7 +43,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     self._buff_name_to_matrix_names = dict()
     self._buffer_matrices = list()
 
-    self._apply_log_loop_heuristics = False
+    self._apply_log_loop_heuristics = True
 
   def get_next_tmp_name(self):
     tmp_name = "tmp" + str(self._tmp_id)

@@ -31,7 +31,7 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
 
   def find_nearest_block_divisor(self, number, blocks):
     for _number in [number, number+1, number-1]:
-      for _divisor in range(2,_number):
+      for _divisor in range(1,_number):
         if _number//_divisor == blocks and _number % _divisor == 0:
           return _divisor
 
@@ -48,11 +48,13 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
       writer.Emptyline()
 
       if self._apply_log_loop_heuristics:
-        n = self._dest.obj.size
-        if n > 128:
-          rblocks = (n+127) // 128
-          s = self.find_nearest_block_divisor(n, rblocks)
+        n = self._dest.obj.size * op1_data_view.columns
+        if n >= 2048:
           writer.Pragma(f'unroll 1')
+        elif n > 1024:
+          writer.Pragma(f'unroll 2')
+        elif n > 512:
+          writer.Pragma(f'unroll 4')
         else:
           writer.Pragma(f'unroll {op1_data_view.columns}')
       else:
