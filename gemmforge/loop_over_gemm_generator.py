@@ -43,7 +43,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
     self._buff_name_to_matrix_names = dict()
     self._buffer_matrices = list()
 
-    self._apply_log_loop_heuristics = True
+    self._apply_log_loop_heuristics = False
 
   def get_next_tmp_name(self):
     tmp_name = "tmp" + str(self._tmp_id)
@@ -148,6 +148,10 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
 
     loop_count = 0
     for offset, descr_item in enumerate(self._complete_operation_description):
+      if descr_item[0] == "forLoopBegin":
+        loop_count += 1
+      if descr_item[0] == "forLoopEnd":
+        loop_count -= 1
       if descr_item[0] == "gemm":
         operation_description = descr_item[1]["descr"]
         aname = operation_description.leftTerm.name
@@ -180,7 +184,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                            beta=operation_description.beta,
                            base_name=f"LOGGemmKernel{offset}",
                            preserve_matrix_properties=True,
-                           apply_log_loop_heuristics=self._apply_log_loop_heuristics)
+                           apply_log_loop_heuristics=self._apply_log_loop_heuristics and loop_count>=1)
         self._alphas.append(operation_description.alpha)
         self._betas.append(operation_description.beta)
         self._gemm_generators.append(gemm_generator)
@@ -281,6 +285,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
             file("*/")
 
             for it, descr_item in enumerate(self._complete_operation_description):
+              loop_count = 0
               if descr_item[0] == "forLoopBegin":
                 descr = descr_item[1]
                 """
@@ -302,15 +307,17 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 file.Pragma(f"unroll {unroll_count}")
                 """
                 if self._apply_log_loop_heuristics:
-                  file.Pragma(f"unroll {int(descr['stop']) - int(descr['start'])}")
+                  file.Pragma(f"unroll")
                 else:
                   file.Pragma(f"unroll")
                 file.For(
                   f"int {descr['index']} = {descr['start']}; {descr['index']} < {descr['stop']}; {descr['iter']}{descr['index']}").__enter__()
                 tab_count += 1
+                loop_count += 1
               elif descr_item[0] == "forLoopEnd":
                 file.For("").__exit__(None, None, None)
                 tab_count -= 1
+                loop_count -= 1
               elif descr_item[0] == "InnerLoopBody":
                 for key in ["lhs", "rhs", "result"]:
                   statement = descr_item[1][key]
