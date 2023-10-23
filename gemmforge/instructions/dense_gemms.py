@@ -49,17 +49,19 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
 
       if self._apply_log_loop_heuristics:
         n = self._dest.obj.size * op1_data_view.columns
-        blocks_of_1024 = n//1024
-        if blocks_of_1024 == 0:
-          writer.Pragma(f'unroll')
-        elif blocks_of_1024 == 1:
+        blocks_of_1024 = n//1025
+        if blocks_of_1024 <= 1:
+          writer.Pragma(f'unroll {op1_data_view.columns}')
+        elif blocks_of_1024 == 2:
+          writer.Pragma(f'unroll 8')
+        elif blocks_of_1024 == 3 or blocks_of_1024 == 4:
           writer.Pragma(f'unroll 4')
-        elif blocks_of_1024 == 2 or blocks_of_1024 == 3:
+        elif blocks_of_1024 == 5 or blocks_of_1024 == 6:
           writer.Pragma(f'unroll 2')
         else:
           writer.Pragma(f'unroll 1')
       else:
-        writer.Pragma(f'unroll')
+        writer.Pragma(f'unroll  {op1_data_view.columns}')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):
         op1_addr = f'{thread_idx_x} + k * {op1_data_view.lead_dim}'
         writer(f'{value_var} = {self._op1.name}[{op1_addr}];')
