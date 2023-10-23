@@ -274,6 +274,12 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 loop_size.append(gemm_generator._get_loop_size())
                 cc+=1
 
+            file("/*")
+            file(f"This is the LoG created from the following YaTeTo description:")
+            for descr in self._complete_operation_description:
+              file(str(descr))
+            file("*/")
+
             for it, descr_item in enumerate(self._complete_operation_description):
               if descr_item[0] == "forLoopBegin":
                 descr = descr_item[1]
