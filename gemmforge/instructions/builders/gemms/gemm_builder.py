@@ -15,7 +15,8 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
                register_array,
                shr_mem,
                num_threads: int,
-               apply_log_loop_heuristics):
+               apply_log_loop_heuristics,
+               load_both_matrices):
     super(ShrMemBasedDenseGemmBuilder, self).__init__(vm, symbol_table)
     self._dest_regs = register_array
     self._shr_mem = shr_mem
@@ -32,6 +33,7 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
     self._mem_region_b = None
     
     self._apply_log_loop_heuristics = apply_log_loop_heuristics
+    self._load_both_matrices = load_both_matrices
 
   def build(self,
             trans_a: bool,
@@ -49,7 +51,10 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
     if trans_a:
       self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=True)
     else:
-      self._op1 = op1
+      if self._load_both_matrices:
+        self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=False)
+      else:
+        self._op1 = op1
 
     # Note: we will handle transposition of the second operand during
     # the matrix multiplication

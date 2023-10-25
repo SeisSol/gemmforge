@@ -50,7 +50,8 @@ class ShrMemBasedDenseGemm(AbstractInstruction):
       if self._apply_log_loop_heuristics:
         #n = self._dest.obj.size * op1_data_view.columns
         #blocks_of_1024 = n//1025
-        writer.Pragma(f'unroll')
+        #writer.Pragma(f'unroll')
+        pass
       else:
         writer.Pragma(f'unroll')
       with writer.For(f'int k = 0; k < {op1_data_view.columns}; ++k'):

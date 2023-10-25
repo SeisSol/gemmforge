@@ -184,7 +184,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                            beta=operation_description.beta,
                            base_name=f"LOGGemmKernel{offset}",
                            preserve_matrix_properties=True,
-                           apply_log_loop_heuristics=self._apply_log_loop_heuristics and loop_count>=1)
+                           apply_log_loop_heuristics=self._apply_log_loop_heuristics and loop_count>=1,
+                           load_bath_matrices=True)
         self._alphas.append(operation_description.alpha)
         self._betas.append(operation_description.beta)
         self._gemm_generators.append(gemm_generator)
@@ -308,8 +309,8 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                 """
                 if self._apply_log_loop_heuristics:
                   file.Pragma(f"unroll")
-                else:
-                  file.Pragma(f"unroll")
+                #else:
+                #  file.Pragma(f"unroll")
                 file.For(
                   f"int {descr['index']} = {descr['start']}; {descr['index']} < {descr['stop']}; {descr['iter']}{descr['index']}").__enter__()
                 tab_count += 1

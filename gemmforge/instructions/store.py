@@ -197,6 +197,7 @@ class StoreRegToGlbTensor(AbstractInstruction):
             else:
               access_str += f"row_offset_{i} + "
 
+            writer.Pragma("unroll")
             with writer.For(f'int i = 0; i < {cols}; ++i'):
                 betaadd = "" if self._beta == 0.0 else f" + {self._beta} * {self._dest.name}[{access_str}i * {dims[0]}]"
                 alphamul = "" if self._alpha == 1.0 else f"{self._alpha} * "
