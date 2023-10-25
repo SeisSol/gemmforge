@@ -37,7 +37,7 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
     #if load_and_transpose and prefer_exact:
     #  return ExactTransposePatchLoader(**params)
     #elif src.data_view.lead_dim > num_loads_per_column:
-    if load_and_transpose and prefer_exact:
+    if load_and_transpose and prefer_exact and (src.obj.num_rows % num_threads == 0 or num_threads % src.obj.num_rows == 0):
       return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
 
     if src.data_view.lead_dim != src.obj.num_rows:
