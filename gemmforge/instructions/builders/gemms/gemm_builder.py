@@ -51,7 +51,7 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
     if trans_a:
       self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=True, prefer_exact=self._load_both_matrices)
     else:
-      if self._load_both_matrices:
+      if self._load_both_matrices and op1.obj.get_actual_volume() + op2.obj.get_actual_volume() < 12000:
         self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=False)
       else:
         self._op1 = op1
