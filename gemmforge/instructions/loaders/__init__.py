@@ -6,13 +6,14 @@ from .shr_transpose_mem_loaders import ArbitraryLeadingDimensionExactTransposePa
     ExtendedTransposePatchLoader
 
 
-def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpose=False):
+def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpose=False, prefer_exact=False):
   params = {'vm': vm,
             'dest': dest,
             'src': src,
             'shr_mem': shr_mem,
             'num_threads': num_threads,
-            'load_and_transpose': load_and_transpose}
+            'load_and_transpose': load_and_transpose,
+            'prefer_exact': prefer_exact}
 
   if isinstance(src.obj, DenseTensor):
     # num_loads_per_column = ceil(src.data_view.dimensions[0] / num_threads) * num_threads
@@ -33,7 +34,13 @@ def shm_mem_loader_factory(vm, dest, src, shr_mem, num_threads, load_and_transpo
           return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
         return ExactPatchLoader(**params)
 
-    if src.data_view.lead_dim > num_loads_per_column:
+    #if load_and_transpose and prefer_exact:
+    #  return ExactTransposePatchLoader(**params)
+    #elif src.data_view.lead_dim > num_loads_per_column:
+    if load_and_transpose and prefer_exact:
+      return ArbitraryLeadingDimensionExactTransposePatchLoader(**params)
+
+    if src.data_view.lead_dim != src.obj.num_rows:
       if load_and_transpose:
         return ExactTransposePatchLoader(**params)
       else:

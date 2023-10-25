@@ -49,7 +49,7 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
     # an operand as (MxK) to shr. mem.
     self._symbol_table.add_scope()
     if trans_a:
-      self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=True)
+      self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=True, prefer_exact=self._load_both_matrices)
     else:
       if self._load_both_matrices:
         self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=False)
@@ -72,7 +72,7 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
                    'apply_log_loop_heuristics': self._apply_log_loop_heuristics}
     self._instructions.append(ShrMemBasedDenseGemm(**gemm_params))
 
-  def _make_loader_and_symbol(self, operand, do_transpose):
+  def _make_loader_and_symbol(self, operand, do_transpose, prefer_exact=False):
     shr_mem_region = Symbol(name=self._name_shr_reg(),
                             stype=SymbolType.SharedMem,
                             obj=operand.obj)
@@ -83,7 +83,8 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
                                      src=operand,
                                      shr_mem=self._shr_mem,
                                      num_threads=self._num_threads,
-                                     load_and_transpose=do_transpose)
+                                     load_and_transpose=do_transpose,
+                                     prefer_exact = prefer_exact)
 
     self._instructions.append(load_op)
     self._load_instrs.append(load_op)
