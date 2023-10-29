@@ -185,7 +185,7 @@ class LoopOverGemmGenerator(GemmLikeGenerator):
                            base_name=f"LOGGemmKernel{offset}",
                            preserve_matrix_properties=True,
                            apply_log_loop_heuristics=self._apply_log_loop_heuristics and loop_count>=1,
-                           load_bath_matrices=True)
+                           load_both_matrices=False)
         self._alphas.append(operation_description.alpha)
         self._betas.append(operation_description.beta)
         self._gemm_generators.append(gemm_generator)

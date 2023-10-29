@@ -11,7 +11,7 @@ class ShrMemBasedDenseGemmKernelBuilder(BaseGemmKernelBuilder):
   def __init__(self, **kwargs):
     super(ShrMemBasedDenseGemmKernelBuilder, self).__init__(**kwargs)
     self._apply_log_loop_heuristics = kwargs['apply_log_loop_heuristics']
-    self._load_both_matrices = kwargs['apply_log_loop_heuristics']
+    self._load_both_matrices = kwargs['load_both_matrices']
 
   def build_kernel(self):
     builder = ShrMemAllocBuilder(self._vm, self._symbol_table)
