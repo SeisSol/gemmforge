@@ -34,7 +34,7 @@ class GemmGenerator(GemmLikeGenerator):
     self._factory = GemmKernelsFactory
 
   def set(self, trans_a, trans_b, mat_a, mat_b, mat_c, alpha, beta, base_name=None, preserve_matrix_properties=False,
-          apply_log_loop_heuristics=False, load_both_matrices=False):
+          apply_log_loop_heuristics=False, load_both_matrices=True):
     self._instructions = []
 
     self._mat_a = mat_a

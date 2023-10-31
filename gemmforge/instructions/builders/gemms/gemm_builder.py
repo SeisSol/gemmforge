@@ -47,14 +47,14 @@ class ShrMemBasedDenseGemmBuilder(AbstractBuilder):
     # In this case, a loader will load an operand from glb. mem. to shr. mem
     # transposing it on the fly. In, short, the loader guaranties to deliver
     # an operand as (MxK) to shr. mem.
-    if trans_a or ( self._load_both_matrices and op1.obj.get_actual_volume() + op2.obj.get_actual_volume() < 12000 \
+    if trans_a or ( self._load_both_matrices \
         and op1.stype != SymbolType.SharedMem) or op2.stype != SymbolType.SharedMem:
       self._symbol_table.add_scope()
 
     if trans_a:
       self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=True, prefer_exact=self._load_both_matrices)
     else:
-      if self._load_both_matrices and op1.obj.get_actual_volume() + op2.obj.get_actual_volume() < 12000 \
+      if self._load_both_matrices \
         and op1.stype != SymbolType.SharedMem:
         self._op1 = self._make_loader_and_symbol(operand=op1, do_transpose=False)
       else:
